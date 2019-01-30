@@ -46,25 +46,34 @@ Platform.LoadModule = function(ModuleName, Path) {
 Platform.applications = {};
 
 Platform.initApplication = function(appName) {
-  
-  const appListFile = fs.readFileSync("appList.json", 'UTF-8');
-  const appList = JSON.parse(appListFile);
-  if(!appList[appName]) {
-    throw new Error("There is no an application with the name <" + 
-                      appName + "> in the application list. Please, add the application to the list (" + 
-                      path.join(Platform.dir, "appList.json") + ")");
-  };
-  const application = new Application(appName, 
-                                      path.join(Platform.dir, appList[appName].directory), 
-                                      "Application.js");
-  application.init()
-  .then(() => {
-    Platform.applications[appName] = application;
-    console.log("Application <" + appName + "> has started.");
-  })
-  .catch((err) => {
-    Log.error("Unsuccessful attempt to initialize application " + appName, err);
-  })
-  
-  return application;
+  const self = this;
+
+  const mainFunction = function(callback) {
+    const appListFile = fs.readFileSync("appList.json", 'UTF-8');
+    const appList = JSON.parse(appListFile);
+    if(!appList[appName]) {
+      throw new Error("There is no an application with the name <" + 
+                        appName + "> in the application list. Please, add the application to the list (" + 
+                        path.join(Platform.dir, "appList.json") + ")");
+    };
+    const application = new Application(appName, 
+                                        path.join(Platform.dir, appList[appName].directory), 
+                                        "Application.js");
+    application.init()
+    .then(() => {
+      Platform.applications[appName] = application;
+      console.log("Application <" + appName + "> has started.");
+      callback(null, application);
+    })
+    .catch((err) => {
+      Log.error("Unsuccessful attempt to initialize application " + appName);
+      callback(err);
+    })
+  }
+
+  return new Promise(function(resolve, reject) {
+      mainFunction(function(error, result) {
+          error ? reject(error) : resolve(result);
+      });
+  });
 }

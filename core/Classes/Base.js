@@ -33,7 +33,10 @@ function Base(application, cube, name, dirname, filename) {
     }
 
     if (load) {
-        Require(moduleFileName, { Application: application, Module: this });
+        if(cube === undefined && filename === "Cube.js") {
+            cube = this;
+        }
+        Require(moduleFileName, { Application: application, Module: this, Cube: cube });
         storedModule = { lastUpdated: fs.statSync(moduleFileName).mtime }
         _private.modules[id] = storedModule;
     }

@@ -3,6 +3,8 @@
 const _      = require('lodash');
 const _async = require("async");
 
+const View = require("../UI/View.js");
+
 Model.New = function(PredefinedValues, callback) {
     var newInstance = PredefinedValues;
     if (PredefinedValues && PredefinedValues.isNewRecord !== false) {
@@ -273,20 +275,40 @@ Model.prototype.ShowForm = function(FormName, Params, callbackOnShow, callbackOn
     Form.Show(Params, callbackOnShow, callbackOnClose);
 };
 
-Model.ShowForm = function(FormName, modal, Params, callbackOnShow, callbackOnClose) {
-    if (!FormName) {
-        FormName = 'ListForm';
+Model.showView = function(_arguments) {
+
+    if(!_arguments) {
+        _arguments = {};
     }
-    if (!Params) {
-        Params = {};
+    if(!_.isPlainObject(_arguments)) {
+        throw new Error("Arguments must be an object!");
     }
-    var Form = Application.InitForm(
-        FormName,
-        Application,
-        Model.Cube,
-        Model.Type,
-        Model.Name);
-    Form.Show(Params, modal, undefined, callbackOnShow, callbackOnClose);
+    
+    if(_arguments.options && !_.isPlainObject(_arguments.options)) {
+        throw new Error("Parametr 'options' must be an object!");
+    } else {
+        _arguments.options = {};
+    }
+    
+    if(_arguments.params && !_.isPlainObject(_arguments.params)) {
+        throw new Error("Parametr 'params' must be an object!");
+    } else {
+        _arguments.params = {};
+    }
+
+    if (!_arguments.name) {
+        _arguments.name = 'List';
+    } else {
+        _arguments.name = name;
+    }
+
+    _arguments.application = Application;
+    _arguments.cube        = Model.cube;
+    _arguments.class       = Model.class;
+    _arguments.modelName   = Model.modelName;
+
+    const view = new View(_arguments);
+    view.show();
 };
 
 Model.lookUp = function(FormName, modal, Params, callbackOnShow, callbackOnClose) {

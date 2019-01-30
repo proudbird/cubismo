@@ -58,13 +58,16 @@ sockets.listen(server);
 //   }}
 // }
 
-try {
-  const app = Platform.initApplication("Just-In-Time");
-  for(var key in app.Cubes) {
-    const start = app.Cubes[key].onStart;
+Platform.initApplication("Just-In-Time")
+.then((application) => {
+  for(let key in application.Cubes) {
+    const cube = application.Cubes[key];
+    const start = cube.onStart;
     if(start) {
       start();
-  }}
-} catch(e) {
-  Log.debug(e.message, e);
-}
+    }
+  }
+})
+.catch(err => {
+  console.log(err);
+})

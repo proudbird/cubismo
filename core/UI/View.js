@@ -1,23 +1,29 @@
 /* global Tools */
 "use strict";
+const fs     = require("fs");
+const path   = require("path");
 
-function View(options, params) {
-    
-    if(!options || !options.name) {
-        throw new Error("View must have options atleast with the 'name' property!");
-    }
+const Require = require("../Require.js");
+
+function View(_arguments) {
     
     const _private = {};
-    _private.callbackOnClose = undefined;
-    _private.callbackOnShow  = undefined;
+    _private.showCallback   = _arguments.showCallback;
+    _private.closeCallback  = _arguments.closeCallback;
     
     Object.defineProperty(this, "id", { value: Tools.SID(), enumerable: false, writable: false });
-    Object.defineProperty(this, "name", { value: options.name, enumerable: false, writable: false });
+    Object.defineProperty(this, "name", { value: _arguments.name, enumerable: false, writable: false });
     
-    this.params = params;
-    if(options.instance) {
-        this.instance = params.instance;
+    this.params = _arguments.params;
+    if(_arguments.instance) {
+        this.instance = _arguments.instance;
         this.instance.view = this;
     }
     
+    const pathToFile = path.join(
+        _arguments.cube.dirname, _arguments.class, 
+        [_arguments.class, _arguments.modelName, "Views", _arguments.name, "js"].join(".")
+    );
+    Require(pathToFile, { Application: _arguments.application, View: this });
 }
+module.exports = View;
