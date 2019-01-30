@@ -379,11 +379,11 @@ function syncDBStructure(application, connection) {
 
         const mainFunction = function(callback) {
             if(!safeChanges.length && !unSafeChanges.length) {
-                return callback(null);
+                return callback(null, 3);
             }
 
             log("----------------------------------------------------");
-            log("Changes in application structure:".toUpperCase());
+            log("Unsaved changes in application structure:".toUpperCase());
             log("----------------------------------------------------");
             
             if(safeChanges.length ) {
@@ -411,13 +411,29 @@ function syncDBStructure(application, connection) {
                 output: process.stdout
             });
 
+            function wrongAnswer() {
+                rl.question("Please, type 'Y' or 'N':  ", (answer) => {
+                    if(answer.toUpperCase() === "Y") {
+                        rl.close();
+                        callback(null, 1);
+                    } else if(answer.toUpperCase() === "N") {
+                        rl.close();
+                        callback(null, 2);
+                    } else {
+                        wrongAnswer();
+                    }
+                });
+            }
+
             rl.question('Do you want to execute listed changes? [Y/N]: ', (answer) => {
                 if(answer.toUpperCase() === "Y") {
                     rl.close();
-                    callback(null, true);
+                    callback(null, 1);
                 } else if(answer.toUpperCase() === "N") {
                     rl.close();
-                    callback(null, false);
+                    callback(null, 2);
+                } else {
+                    wrongAnswer();
                 }
             });
         }
@@ -487,11 +503,18 @@ function syncDBStructure(application, connection) {
             return askChanges()
         })
         .then((result => {
-            if(result) {
-                return executeChanges();
+            if(result === 1) {
+                executeChanges()
+                .then(() => {
+                    callback(null);
+                })
+            } else if(result === 2) {
+                console.log(" ");
+                console.log("\x1b[33m" + "Application starting without sincronizing database structure!" + "\x1b[0m");
+                callback(null);
             } else {
                 // NOTHING TO DO
-                return;
+                callback(null);
             }
         }))
         .catch(err => {

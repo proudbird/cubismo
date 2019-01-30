@@ -44,7 +44,7 @@ var server = http.createServer(router);
 server.testName = "platform";
 server.listen(process.env.PORT || 21021, process.env.IP || "0.0.0.0", function(){
   var addr = server.address();
-  Log.info("cubismo server listening at " + addr.address + ":" + addr.port);
+  console.log("cubismo server listening at " + addr.address + ":" + addr.port);
 });
 
 sockets.listen(server);
@@ -60,7 +60,6 @@ sockets.listen(server);
 
 try {
   const app = Platform.initApplication("Just-In-Time");
-  Log.info("Application <" + app.name + "> has started.");
   for(var key in app.Cubes) {
     const start = app.Cubes[key].onStart;
     if(start) {

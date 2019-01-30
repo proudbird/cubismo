@@ -60,6 +60,7 @@ Platform.initApplication = function(appName) {
   application.init()
   .then(() => {
     Platform.applications[appName] = application;
+    console.log("Application <" + appName + "> has started.");
   })
   .catch((err) => {
     Log.error("Unsuccessful attempt to initialize application " + appName, err);
