@@ -5,7 +5,8 @@ const fs     = require("fs");
 const path   = require("path");
 const _async = require("async");
 
-const Require = require("./Require");
+const Require    = require("./Require");
+const MainWindow = require("./UI/Window.js");
 
 const constructors = {};
 constructors.Base         = require('./Classes/Base.js');
@@ -71,6 +72,18 @@ function Application(name, dirname, filename) {
                 error ? reject(error) : resolve(result);
             });
         });
+    }
+
+    this.__proto__.show = function() {
+        
+        const _arguments = {};
+        _arguments.options     = {};
+        _arguments.params      = {};
+        _arguments.name        = "MainWindow";
+        _arguments.application = this;
+    
+        const view = new MainWindow(_arguments);
+        view.show();
     }
 }
 module.exports = Application;

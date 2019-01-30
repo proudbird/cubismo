@@ -3,7 +3,8 @@
 const fs     = require("fs");
 const path   = require("path");
 
-const Require = require("../Require.js");
+const Require    = require("../Require.js");
+const ConfigView = require("./ConfigView.js");
 
 function View(_arguments) {
     
@@ -19,11 +20,36 @@ function View(_arguments) {
         this.instance = _arguments.instance;
         this.instance.view = this;
     }
-    
-    const pathToFile = path.join(
-        _arguments.cube.dirname, _arguments.class, 
-        [_arguments.class, _arguments.modelName, "Views", _arguments.name, "js"].join(".")
-    );
-    Require(pathToFile, { Application: _arguments.application, View: this });
+
+    this.__proto__.show = function() {
+        show(this, _arguments, _private);
+    }
 }
 module.exports = View;
+
+function show(view, _arguments, _private) {
+
+    const file = [];
+    if(_arguments.class) {
+        file.push(_arguments.class);
+    }
+    if(_arguments.modelName) {
+        file.push(_arguments.modelName);
+        file.push("Views");
+    }
+    file.push(_arguments.name);
+    file.push("js");
+
+    let pathToFile = path.join(
+        _arguments.application.dirname, _arguments.cube ? _arguments.cube.name : "", _arguments.class || "", 
+        file.join(".")
+    );
+
+    if(_arguments.name === "List" && !fs.existsSync(pathToFile)) {
+        pathToFile = path.join(__dirname, "./DefaultViews/" + _arguments.class + ".Views.List.js");
+    }
+
+    Require(pathToFile, { Application: _arguments.application, View: view });
+
+    ConfigView(view, _arguments, pathToFile.replace(".js",  ".Config.js"));
+}

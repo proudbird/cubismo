@@ -1,8 +1,17 @@
-/* globals Form UIElement */
+/* global Tools */
+"use strict";
+const fs     = require("fs");
+const path   = require("path");
 
-UIElement.NewWindow = function(URL) {
-    var Message = {};
-    Message.Directive = 'NewWindow';
-    Message.URL       = URL;
-    Form.Client.emit('message', Message);
+const Require    = require("../Require.js");
+const ConfigView = require("./ConfigView.js");
+
+const View = require("./View.js");
+
+function MainWindow(_arguments) {
+    
+    const _private = {};
+    
+    View.call(this, _arguments);
 }
+module.exports = MainWindow;

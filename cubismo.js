@@ -60,6 +60,7 @@ sockets.listen(server);
 
 Platform.initApplication("Just-In-Time")
 .then((application) => {
+  application.show();
   for(let key in application.Cubes) {
     const cube = application.Cubes[key];
     const start = cube.onStart;
