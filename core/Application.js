@@ -175,11 +175,13 @@ function syncDBStructure(application, connection) {
             const start = dbCol.type.indexOf("(") + 1;
             const end = dbCol.type.indexOf(")");
             length = parseInt(dbCol.type.substring(start, end));
+        } else if(dbCol.type === "DATE") { 
+            type = "DATEONLY";
         } else {
-            type = modelCol.type;
+            type = dbCol.type;
         }
 
-        if(type === "STRING" === modelCol.type.key) {
+        if(type === "STRING" && modelCol.type.key === "STRING") {
             if(length === modelCol.type._length) {
                 // nothing to change
             } else if(length < modelCol.type._length) {
@@ -210,6 +212,8 @@ function syncDBStructure(application, connection) {
                     });
                 }
             }
+        } else if(type === modelCol.type.key) {
+            // nothing to change
         } else {
             if(!rows) {
                 // table doesn't have rows, so we can change column without data loss
@@ -247,7 +251,11 @@ function syncDBStructure(application, connection) {
                         attribute:  { type: modelCol.type }
                     });
                     // delete column from the list - it will allow us to detect those columns we need to delete
-                    delete dbStructure[tableName][modelCol.field];
+                    try {
+                        delete dbStructure[tableName][modelCol.field];
+                    } catch(err) {
+
+                    }
                     return next(null);
                 } else {
                     // table in DB has such a column
@@ -334,7 +342,7 @@ function syncDBStructure(application, connection) {
 
         const mainFunction = function(callback) {
             if(!safeChanges.length && !unSafeChanges.length) {
-                callback(null);
+                return callback(null);
             }
 
             log("----------------------------------------------------");
@@ -342,7 +350,7 @@ function syncDBStructure(application, connection) {
             log("----------------------------------------------------");
             
             if(safeChanges.length ) {
-                log("Safe changes:");
+                log("\x1b[32m" + "Safe changes:");
                 safeChanges.forEach(change => {
                     log("  " + change.message + ": " + change.tableName);
                 })
@@ -351,12 +359,12 @@ function syncDBStructure(application, connection) {
             log(" ");
 
             if(unSafeChanges.length ) {
-                log("Unsafe changes (data loss possible):");
+                log("\x1b[31m" + "Unsafe changes (data loss possible):");
                 unSafeChanges.forEach(change => {
                     log("  " + change.message + ": " + change.tableName);
                 })
             }
-            log("----------------------------------------------------");
+            log("\x1b[0m" + "----------------------------------------------------");
             log(" ");
 
             const readline = require('readline');
@@ -366,7 +374,7 @@ function syncDBStructure(application, connection) {
                 output: process.stdout
             });
 
-            rl.question('Do you want to execute listed changes? (Y/N): ', (answer) => {
+            rl.question('Do you want to execute listed changes? [Y/N]: ', (answer) => {
                 if(answer.toUpperCase() === "Y") {
                     rl.close();
                     callback(null, true);
