@@ -163,7 +163,7 @@ generator.define = function(application, db, appModelDefinition) {
     if (model.codeLenght > 0) {
       attributes.Code = {
         type: model.codeType == "INTEGER" ? DBTypes.INTEGER : DBTypes.STRING(model.codeLenght),
-        autoIncrement: model.autoIncrement,
+        autoIncrement: false, //model.autoIncrement,
         unique: model.uniqueCode
       }
     }
