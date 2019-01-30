@@ -464,7 +464,7 @@ function syncDBStructure(application, connection) {
                     case "addColumn":
                         qi.addColumn(change.tableName, change.key, change.attribute)
                         .then(result => {
-                            Log.debug('Added attribute ' + change.key + ' to object ' + change.model.Name);
+                            Log.debug('Added attribute ' + change.key + ' to object ' + change.model.name);
                             next(null);
                         })
                         .catch(err => {
@@ -474,7 +474,7 @@ function syncDBStructure(application, connection) {
                     case "changeColumn":
                         qi.changeColumn(change.tableName, change.key, change.attribute)
                         .then(result => {
-                            Log.debug('Changed attribute ' + change.key + ' in object ' + change.model.Name);
+                            Log.debug('Changed attribute ' + change.key + ' in object ' + change.model.name);
                             next(null);
                         })
                         .catch(err => {
