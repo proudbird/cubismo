@@ -57,7 +57,13 @@ Platform.initApplication = function(appName) {
   const application = new Application(appName, 
                                       path.join(Platform.dir, appList[appName].directory), 
                                       "Application.js");
-  Platform.applications[appName] = application;
+  application.init()
+  .then(() => {
+    Platform.applications[appName] = application;
+  })
+  .catch((err) => {
+    Log.error("Unsuccessful attempt to initialize application " + appName, err);
+  })
   
   return application;
 }

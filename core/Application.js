@@ -32,13 +32,44 @@ function Application(name, dirname, filename) {
 
     _private.modelDefinition = {};
 
-    defineApplicationStructure(this, _private.modelDefinition);
+    
+    this.init = function() {
+        const self = this;
 
-    defineModelStructure(this, _private.connection.driver, _private.modelDefinition);
-
-    syncDBStructure(this, _private.connection);
-
-    //_private.connection.driver.sync();
+        const mainFunction = function(callback) {
+            _private.connection.authenticate()
+            .then(() => {
+                try {
+                    defineApplicationStructure(self, _private.modelDefinition);
+                } catch(err) {
+                    callback(new Error("Unsuccessful attempt to define application structure", err));
+                }
+    
+                try {
+                    defineModelStructure(self, _private.connection.driver, _private.modelDefinition);
+                } catch(err) {
+                    callback(new Error("Unsuccessful attempt to define application model structure", err));
+                }
+                    
+                syncDBStructure(self, _private.connection)
+                .then(() => {
+                    callback(null);
+                })
+                .catch(err => {
+                    callback(new Error("Unsuccessful attempt to synchronize application model structure with database", err));
+                })
+            })
+            .catch(err => {
+                callback(err);
+            })
+        }
+    
+        return new Promise(function(resolve, reject) {
+            mainFunction(function(error, result) {
+                error ? reject(error) : resolve(result);
+            });
+        });
+    }
 }
 
 module.exports = Application;
@@ -166,7 +197,7 @@ function syncDBStructure(application, connection) {
             "booked", "Date", "parentId", "ownerId",
             "createdAt", "updatedAt", "deletedAt", "order"];
 
-    function changeColumn(tableName, modelCol, dbCol, rows) {
+    function changeColumn(model, tableName, modelCol, dbCol, rows) {
 
         let type;
         let length;
@@ -190,7 +221,8 @@ function syncDBStructure(application, connection) {
                     message:    "Object attribute modified (" + modelCol.field + ")",
                     tableName:  tableName, 
                     key:        modelCol.field, 
-                    attribute:  { type: modelCol.type }
+                    attribute:  { type: modelCol.type },
+                    model: model
                 });
             } else {
                 if(!rows) {
@@ -200,7 +232,8 @@ function syncDBStructure(application, connection) {
                         message:    "Object attribute modified (" + modelCol.field + ")",
                         tableName:  tableName, 
                         key:        modelCol.field, 
-                        attribute:  { type: modelCol.type }
+                        attribute:  { type: modelCol.type },
+                        model: model
                     });
                 } else {
                     unSafeChanges.push({ 
@@ -208,7 +241,8 @@ function syncDBStructure(application, connection) {
                         message:    "Object attribute modified (" + modelCol.field + ")",
                         tableName:  tableName, 
                         key:        modelCol.field, 
-                        attribute:  { type: modelCol.type }
+                        attribute:  { type: modelCol.type },
+                        model: model
                     });
                 }
             }
@@ -222,7 +256,8 @@ function syncDBStructure(application, connection) {
                     message:    "Object attribute modified (" + modelCol.field + ")",
                     tableName:  tableName, 
                     key:        modelCol.field, 
-                    attribute:  { type: modelCol.type }
+                    attribute:  { type: modelCol.type },
+                    model: model
                 });
             } else {
                 unSafeChanges.push({ 
@@ -230,7 +265,8 @@ function syncDBStructure(application, connection) {
                     message:    "Object attribute modified (" + modelCol.field + ")",
                     tableName:  tableName, 
                     key:        modelCol.field, 
-                    attribute:  { type: modelCol.type }
+                    attribute:  { type: modelCol.type },
+                    model: model
                 });
             }
         }
@@ -248,7 +284,8 @@ function syncDBStructure(application, connection) {
                         message:    "Object attribute added (" + modelCol.field + ")",
                         tableName:  tableName, 
                         key:        modelCol.field, 
-                        attribute:  { type: modelCol.type }
+                        attribute:  { type: modelCol.type },
+                        model: model
                     });
                     // delete column from the list - it will allow us to detect those columns we need to delete
                     try {
@@ -266,7 +303,7 @@ function syncDBStructure(application, connection) {
                         const dbCol = description[modelCol.field];
                         model.count()
                         .then(rows => {
-                            changeColumn(tableName, modelCol, dbCol, rows);
+                            changeColumn(model, tableName, modelCol, dbCol, rows);
                             // delete column from the list - it will allow us to detect those columns we need to delete
                             try {
                                 delete dbStructure[tableName][modelCol.field];
@@ -303,7 +340,7 @@ function syncDBStructure(application, connection) {
                 if (!dbStructure[tableName]) {
                     // DB doesn't have such a table, so let's create it
                     safeChanges.push({ 
-                        action:    "ctreateTable",
+                        action:    "createTable",
                         message:    "New object added (" + model.tableName + ")",
                         tableName:  model.tableName, 
                         attributes: model.attributes, 
@@ -393,47 +430,78 @@ function syncDBStructure(application, connection) {
     }
 
     function executeChanges() {
-        qi.createTable(model.tableName, model.attributes, model.options, model)
-        .then(result => {
-            Log.debug('Created table ' + model.tableName);
-        })
-        .catch(err => {
-            Log.error('Error on creating table ' + model.tableName, err);
+
+        const mainFunction = function(callback) {
+            var changes = safeChanges.concat(unSafeChanges);
+            _async.forEach(changes, function(change, next) {
+                switch (change.action) {
+                    case "createTable":
+                        qi.createTable(change.tableName, change.attributes, change.options, change.model)
+                        .then(result => {
+                            Log.debug('Created object ' + change.model.name);
+                            next(null);
+                        })
+                        .catch(err => {
+                            next(new Error("Unsuccessful attempt to create object " + change.model.name, err));
+                        });
+                        break;
+                    case "addColumn":
+                        qi.addColumn(change.tableName, change.key, change.attribute)
+                        .then(result => {
+                            Log.debug('Added attribute ' + change.key + ' to object ' + change.model.Name);
+                            next(null);
+                        })
+                        .catch(err => {
+                            next(new Error("Unsuccessful attempt to add attribute " + change.key + " to object "  + change.model.name, err));
+                        })
+                        break;
+                    case "changeColumn":
+                        qi.changeColumn(change.tableName, change.key, change.attribute)
+                        .then(result => {
+                            Log.debug('Changed attribute ' + change.key + ' in object ' + change.model.Name);
+                            next(null);
+                        })
+                        .catch(err => {
+                            next(new Error("Unsuccessful attempt to change attribute " + change.key + " in object "  + change.model.name, err));
+                        })
+                        break;
+                }
+            }, function(err) {
+                callback(err);
+            })
+        }
+
+        return new Promise(function(resolve, reject) {
+            mainFunction(function(error, result) {
+                error ? reject(error) : resolve(result);
+            });
         });
+    }
 
-        qi.addColumn(tableName, column.field, {type: column.type})
-        .then(result => {
-            Log.debug('Added column ' + column.field + ' in table ' + model.tableName);
+    const mainFunction = function(callback) {
+        connection.getDbStructure()
+        .then(dbStructure => {
+            return compareTables(driver, dbStructure)
         })
+        .then(() => {
+            return askChanges()
+        })
+        .then((result => {
+            if(result) {
+                return executeChanges();
+            } else {
+                // NOTHING TO DO
+                return;
+            }
+        }))
         .catch(err => {
-            Log.error('Error on adding column ' + column.field + ' in table ' + model.tableName, err);
-        })
-
-        qi.changeColumn(tableName, column.field, {type: column.type})
-        .then(result => {
-            Log.debug('Changeded column ' + column.field + ' in table ' + model.tableName);
-        })
-        .catch(err => {
-            Log.error('Error on changing column ' + column.field + ' in table ' + model.tableName, err);
+            callback(err);
         })
     }
 
-    connection.getDbStructure()
-    .then(dbStructure => {
-        return compareTables(driver, dbStructure)
-    })
-    .then(() => {
-        return askChanges()
-    })
-    .then((result => {
-        if(result) {
-            return executeChanges();
-        } else {
-            // NOTHING TO DO
-            return;
-        }
-    }))
-    .catch(err => {
-        Log.error("Error on gettin DB structure", err)
-    })
+    return new Promise(function(resolve, reject) {
+        mainFunction(function(error, result) {
+            error ? reject(error) : resolve(result);
+        });
+    });
 }

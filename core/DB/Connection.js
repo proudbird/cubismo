@@ -29,14 +29,25 @@ class Connection {
       return;
     }
 
-    this.driver.authenticate()
-      .then(function() {
-        Log.info("Databese for the application <" + app.name + "> is connected.");
-      })
-      .catch(function(err) {
-        Log.warn("Can't connect to the databese for the application <" + app.name + ">. Please, check the database config (" + configFileName + ")", err);
-      })
-      .done();
+    this.authenticate = function() {
+      const self = this;
+
+      const mainFunction = function(callback) {
+        self.driver.authenticate()
+        .then(function() {
+          callback(null);
+        })
+        .catch(function(err) {
+          callback(new Error("Can't connect to the databese for the application <" + app.name + ">. Please, check the database config (" + configFileName + ")", err));
+        })
+      }
+
+      return new Promise(function(resolve, reject) {
+          mainFunction(function(error, result) {
+              error ? reject(error) : resolve(result);
+          });
+      });
+    }
   }
 
   query(query, model, callback) {

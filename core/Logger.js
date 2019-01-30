@@ -50,11 +50,11 @@ class Log{
     }
     
     error(message, e) {
-        log("ERROR", FgRed + Bright, message, e ? e.stack : undefined);
+        log("ERROR", FgRed + Bright, message, e ? e : undefined);
     }
     
     fatal(message, e) {
-        log("FATAL", FgRed + Bright + BgWhite, message, e ? e.stack : undefined);
+        log("FATAL", FgRed + Bright + BgWhite, message, e ? e : undefined);
     }
     
     debug(message, e) {

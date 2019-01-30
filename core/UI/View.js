@@ -15,10 +15,9 @@ function View(options, params) {
     Object.defineProperty(this, "name", { value: options.name, enumerable: false, writable: false });
     
     this.params = params;
-    if(params.instance) {
+    if(options.instance) {
         this.instance = params.instance;
         this.instance.view = this;
     }
-    
     
 }
