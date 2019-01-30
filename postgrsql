@@ -1,0 +1,18 @@
+sudo su -
+service postgresql start
+
+sudo -u postgres psql
+
+\c just_in_time
+\dt
+
+SELECT * FROM "CT_Mj1iI6tu";
+SELECT * FROM "CT_HwSMZV29";
+SELECT * FROM "CT_fp9wd0Rr";
+SELECT * FROM "CL_sNr9JUfY";
+SELECT * FROM "CT_X6F4nifo";
+
+DROP DATABASE "just_in_time"; 
+CREATE DATABASE "just_in_time"; 
+
+\d CT_X6F4nifo

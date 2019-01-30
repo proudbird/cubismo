@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en" ng-app>
+  <head>
+    <title>JiT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/files/css/webix.css">
+    <link rel="stylesheet" href="/files/css/jit.css">
+    <link rel="stylesheet" href="/files/css/renderjson.css">
+    
+    <script src="/files/js/socket.io.js"></script>
+    <script src="/files/js/webix_debug.js"></script>
+    <script src="/files/js/jit.js"></script>
+    <script src="/files/js/renderjson.js"></script>
+    <script src="/files/js/tinymce.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <script type="text/javascript" charset="utf-8">
+        try {
+          const electron = require('electron');
+          var remote = electron.remote;
+          var ipcRenderer = electron.ipcRenderer;
+          var main = remote.require("./main.js");
+          var shell = electron.shell;
+          //var app = electron.app;
+          console.dir(electron);
+          window.Environment = 'client';
+        } catch(Err) {
+          //console.dir(Err);
+          window.Environment = 'browser';
+        }
+        window.ApplicationID = webix.uid();
+        window.ApplicationID = "AppName";
+        window.Session = {ID: webix.uid()};
+        //window.WindowID = webix.uid();
+        
+        var Token = localStorage.getItem('token');
+        var User = localStorage.getItem('user');
+        
+        var LoginForm = webix.ui(
+          {
+            id: "LoginForm",
+            rows: [
+              {},
+              {
+                cols: [
+                  {},
+                  {
+                    template: "<div style='font-size: large; padding-top: 4px; color: #5a5c51'>cubismo</div>", 
+                    type: "header",
+                    width: 400
+                  },
+                  {}
+                ]
+              },
+              {
+                cols: [
+                  {},
+                  {
+                    view: "form",
+                    width: 400,
+                    elements: [
+                      {
+                        template: "Access control", 
+                        type: "section"
+                      },
+                      {
+                        view: "text",
+                        id: "login",
+                        name: "login",
+                        label: "Username",
+                        labelWidth: 100,
+                        value: 'admin'
+                      },
+                      {
+                        view: "text",
+                        id: "password",
+                        name: "password",
+                        label: "Password",
+                        type:"password",
+                        labelWidth: 100,
+                        value: 'admin'
+                      },
+                      {
+                        view: "button",
+                        id: "signin",
+                        name: "signin",
+                        label: "Sign in",
+                        width: 100,
+                        align: "center"
+                      }
+                    ]
+                  },
+                  {}
+                ]
+              },
+              {}
+            ]
+            
+          }
+        );
+        
+        // localStorage.removeItem('token');
+        // localStorage.removeItem('user');
+        
+        $$('signin').attachEvent("onItemClick",function(){
+          User = $$('login').getValue();
+          webix.ajax().post("AppName/login", 
+          {
+            "login": $$('login').getValue(),
+            "password": $$('password').getValue(),
+            "appID": window.ApplicationID
+          }, function(text, data, XmlHttpRequest) {
+            if(data.json().Token)
+              ShowApplication();
+              Token = data.json().Token;
+              localStorage.setItem('token', Token);
+              localStorage.setItem('user', User);
+          });
+        })
+        
+        webix.codebase = "./files";
+        webix.ui({
+            id:"appView"
+        });
+        
+        var ShowApplication = function() {
+          LoginForm.hide();
+          //webix.ajax("AppName/window?appID=" + window.ApplicationID + "&environment=" + window.Environment, function(text){
+          webix.ajax("AppName/window?appID=AppName&environment=" + window.Environment, function(text){
+              webix.ui(JSON.parse(text, function(key, value) {
+                if (typeof value === "string" &&
+                    value.startsWith("/Function(") &&
+                    value.endsWith(")/")) {
+                  value = value.substring(10, value.length - 2);
+                  return eval("(" + value + ")");
+                }
+                return value;
+              }), $$("appView"));
+          });
+        }
+        
+        if(!Token) {
+          LoginForm.show();
+        } else {
+          ShowApplication();
+        }
+      </script>
+    </div>
+  </body>
+</html>

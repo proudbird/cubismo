@@ -1,0 +1,10 @@
+{
+  "applications":
+    {
+      "detalio": 
+        {
+        "directory": "\/home\/ubuntu\/workspace\/apps\/detalio",
+        "developMode": "true"
+        }
+    }
+}
