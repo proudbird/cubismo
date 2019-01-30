@@ -1,9 +1,9 @@
 {
   "name": "cubismo",
-  "version": "1.0.0",
+  "version": "0.3.2",
   "description": "A powerfull platform for creating and managing business WEB-based applications",
-  "main": "server.js",
-  "repository": "",
+  "main": "cubismo.js",
+  "repository": "https://github.com/proudbird/cubismo.git",
   "author": "Orlix Ltd. <info@orlix.by>",
   "dependencies": {
     "async": "^2.6.0",

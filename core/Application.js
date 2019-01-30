@@ -178,7 +178,8 @@ function syncDBStructure(application, connection) {
         } else {
             type = modelCol.type;
         }
-        if(["STRING", "INTEGER", "TEXT"].includes(modelCol.type.key)) {
+
+        if(type === "STRING" === modelCol.type.key) {
             if(length === modelCol.type._length) {
                 // nothing to change
             } else if(length < modelCol.type._length) {
