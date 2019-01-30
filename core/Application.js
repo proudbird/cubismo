@@ -1,25 +1,25 @@
 /* globals Tools Log */
 "use strict";
-const _ = require("lodash");
-const fs = require("fs");
-const path = require("path");
+const _      = require("lodash");
+const fs     = require("fs");
+const path   = require("path");
 const _async = require("async");
 
-const _require = require("./Require");
+const Require = require("./Require");
 
 const constructors = {};
-constructors.Base = require('./Classes/Base.js');
-constructors.Collection = require('./Classes/Collection.js');
-constructors.Cubes = require('./Classes/Cubes.js');
-constructors.Cube = require('./Classes/Cube.js');
-constructors.Common = require('./Classes/Common.js');
-constructors.Сonstants = require('./Classes/Сonstants.js');
-constructors.Catalogs = require('./Classes/Catalogs.js');
-constructors.Recorders = require('./Classes/Recorders.js');
-constructors.Registers = require('./Classes/Registers.js');
+constructors.Base         = require('./Classes/Base.js');
+constructors.Collection   = require('./Classes/Collection.js');
+constructors.Cubes        = require('./Classes/Cubes.js');
+constructors.Cube         = require('./Classes/Cube.js');
+constructors.Common       = require('./Classes/Common.js');
+constructors.Сonstants    = require('./Classes/Сonstants.js');
+constructors.Catalogs     = require('./Classes/Catalogs.js');
+constructors.Recorders    = require('./Classes/Recorders.js');
+constructors.Registers    = require('./Classes/Registers.js');
 constructors.Enumerations = require('./Classes/Enumerations.js');
 
-const DBConnection = require('./DB/Connection.js');
+const DBConnection   = require('./DB/Connection.js');
 const ModelGenerator = require('./ModelGenerator.js');
 
 function Application(name, dirname, filename) {
@@ -31,7 +31,6 @@ function Application(name, dirname, filename) {
     _private.connection = new DBConnection(this);
 
     _private.modelDefinition = {};
-
     
     this.init = function() {
         const self = this;
@@ -42,13 +41,15 @@ function Application(name, dirname, filename) {
                 try {
                     defineApplicationStructure(self, _private.modelDefinition);
                 } catch(err) {
-                    callback(new Error("Unsuccessful attempt to define application structure", err));
+                    Log.error("Unsuccessful attempt to define application structure");
+                    callback(err);
                 }
     
                 try {
                     defineModelStructure(self, _private.connection.driver, _private.modelDefinition);
                 } catch(err) {
-                    callback(new Error("Unsuccessful attempt to define application model structure", err));
+                    Log.error("Unsuccessful attempt to define application model structure");
+                    callback(err);
                 }
                     
                 syncDBStructure(self, _private.connection)
@@ -56,7 +57,8 @@ function Application(name, dirname, filename) {
                     callback(null);
                 })
                 .catch(err => {
-                    callback(new Error("Unsuccessful attempt to synchronize application model structure with database", err));
+                    Log.error("Unsuccessful attempt to synchronize application model structure with database");
+                    callback(err);
                 })
             })
             .catch(err => {
@@ -71,7 +73,6 @@ function Application(name, dirname, filename) {
         });
     }
 }
-
 module.exports = Application;
 
 function defineApplicationStructure(application, appModelDefinition) {
@@ -81,7 +82,6 @@ function defineApplicationStructure(application, appModelDefinition) {
 
     const _cubes = new constructors.Cubes(application, undefined, undefined, application.filename, undefined)
     application.addElement("Cubes", _cubes);
-
 
     const files = fs.readdirSync(appDir);
     for (let i = 0; i < files.length; i++) {
@@ -142,7 +142,7 @@ function defineApplicationStructure(application, appModelDefinition) {
                                     const commonModuleName = splitedName[2];
 
                                     const _commonModules = _cube.Common.Modules;
-                                    const _module = new constructors.Base(application, _cube, commonModuleName, path.join(cubeDir, "Common", "Modules"), classFile);
+                                    const _module = new constructors.Base(application, _cube, commonModuleName, path.join(cubeDir, "Common"), classFile);
                                     _commonModules.addElement(commonModuleName, _module);
                                 }
 
@@ -172,11 +172,11 @@ function defineModelStructure(application, connection, appModelDefinition) {
 
     ModelGenerator.on("modelready", function(model, moduleFile) {
         // firstly load common methods for the class
-        _require(path.join(__dirname, "./Classes/Commons.js"), { Application: application, Model: model, Tools: Tools, Log: Log });
+        Require(path.join(__dirname, "./Classes/Commons.js"), { Application: application, Model: model, Tools: Tools, Log: Log });
         // then load specific methods for the class
-        _require(path.join(__dirname, "./Classes/" + model.class + ".Model.js"), { Application: application, Model: model, Tools: Tools, Log: Log });
+        Require(path.join(__dirname, "./Classes/" + model.class + ".Model.js"), { Application: application, Model: model, Tools: Tools, Log: Log });
         // then load methods, determined in model module
-        _require(moduleFile, { Application: application, Module: model, Tools: Tools, Log: Log });
+        Require(moduleFile, { Application: application, Module: model, Tools: Tools, Log: Log });
         // bind model to the class
         const _class = application[model.cube.name][model.class];
         _class.addElement(model.modelName, model);
@@ -458,7 +458,8 @@ function syncDBStructure(application, connection) {
                             next(null);
                         })
                         .catch(err => {
-                            next(new Error("Unsuccessful attempt to create object " + change.model.name, err));
+                            Log.error("Unsuccessful attempt to create object " + change.model.name);
+                            next(err);
                         });
                         break;
                     case "addColumn":
@@ -468,7 +469,8 @@ function syncDBStructure(application, connection) {
                             next(null);
                         })
                         .catch(err => {
-                            next(new Error("Unsuccessful attempt to add attribute " + change.key + " to object "  + change.model.name, err));
+                            Log.error("Unsuccessful attempt to add attribute " + change.key + " to object "  + change.model.name);
+                            next(err);
                         })
                         break;
                     case "changeColumn":
@@ -478,7 +480,8 @@ function syncDBStructure(application, connection) {
                             next(null);
                         })
                         .catch(err => {
-                            next(new Error("Unsuccessful attempt to change attribute " + change.key + " in object "  + change.model.name, err));
+                            Log.error("Unsuccessful attempt to change attribute " + change.key + " in object "  + change.model.name);
+                            next(err);
                         })
                         break;
                 }

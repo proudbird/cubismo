@@ -14,12 +14,8 @@ module.exports = function() {
   global.Callback = global.Tools.Callback;
   global.Window   = global.Tools.Window;
   global.Dialog   = global.Tools.Dialog;
-  global.Async    = require("async")
   global.TEMP     = "temp/"
   global.Platform = require("./Platform");
-  global.Sessions = require("./Sessions");
-  global.Globals  = {};
-  global.Token    = undefined;
 
   global.Query = require("./Query");
   global.AND      = global.Query.Operations.AND;

@@ -1,9 +1,11 @@
-/* globals __ROOT Tools Platform SEQUELIZE INFO WARN*/
+/* globals Tools*/
 "use strict";
 
-const _ = require("lodash");
-const fs = require("fs");
+const _    = require("lodash");
+const fs   = require("fs");
 const path = require("path");
+
+const SEQUELIZE = require("sequelize");
 
 class Connection {
 
@@ -80,30 +82,6 @@ class Connection {
 
     const mainFunction = function(callback) {
       self.provider.getDbStructure(self.driver)
-        .then((result) => {
-          return callback(null, result);
-        })
-        .catch((error) => {
-          return callback(error);
-        });
-    };
-
-    if (callback && typeof callback === "object") {
-      return mainFunction(callback);
-    }
-
-    return new Promise(function(resolve, reject) {
-      mainFunction(function(error, result) {
-        error ? reject(error) : resolve(result);
-      });
-    });
-  }
-
-  createTable(callback) {
-    const self = this;
-
-    const mainFunction = function(callback) {
-      this.provider.createTable(self.driver)
         .then((result) => {
           return callback(null, result);
         })
