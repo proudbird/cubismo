@@ -3,6 +3,7 @@
 const _ = require("lodash");
 const fs = require("fs");
 const path = require("path");
+const _async = require("async");
 
 const _require = require("./Require");
 
@@ -37,7 +38,7 @@ function Application(name, dirname, filename) {
 
     syncDBStructure(this, _private.connection);
 
-    _private.connection.driver.sync();
+    //_private.connection.driver.sync();
 }
 
 module.exports = Application;
@@ -158,54 +159,272 @@ function syncDBStructure(application, connection) {
     const driver = connection.driver;
     const qi = driver.queryInterface;
 
-    const table = "CT_X6F4nifo";
-    qi.dropTable(table)
-        .then(result => {
-            Log.debug('Table ${table} is dropped');
-            
-            connection.getDbStructure()
-                .then(curStructure => {
-                    Log.debug('Got structure for ${driver.config.database}');
-                    for (let key in connection.driver.models) {
-                        const model = connection.driver.models[key];
-                        const tableName = model.tableName;
-                        if (!curStructure[tableName]) {
-                            // DB doesn't have such a table, so let's create it
-                            qi.createTable(model.tableName, model.attributes, model.options, model)
-                                .then(result => {
-                                    Log.debug('Created table ${model.tableName}');
-                                })
-                                .catch(err => {
-                                    Log.error('Error on creating table ${model.tableName}', err);
-                                });
-                        }
-                        else {
-                            for (let key in model.attributes) {
-                                const column = model.attributes[key];
-                                if (!curStructure[tableName][column.fieldName]) {
-                                    qi.addColumn(tableName, column.fieldName, column.type)
-                                        .then(result => {
-                                            Log.debug('Added column ${column.fieldName} in table ${model.tableName}');
-                                        })
-                                        .catch(err => {
-                                            Log.error('Error on adding column ${column.fieldName} in table ${model.tableName}', err);
-                                        })
-                                }
-                                else {
-                                    // @TODO change it only, if it is possible
-                                }
+    const safeChanges = [];
+    const unSafeChanges = [];
+    
+    const serviceFields = ["id", "droped", "isFolder", 
+            "booked", "Date", "parentId", "ownerId",
+            "createdAt", "updatedAt", "deletedAt", "order"];
+
+    function changeColumn(tableName, modelCol, dbCol, rows) {
+
+        let type;
+        let length;
+        if(dbCol.type.includes("CHARACTER VARYING")) {
+            type = "STRING";
+            const start = dbCol.type.indexOf("(") + 1;
+            const end = dbCol.type.indexOf(")");
+            length = parseInt(dbCol.type.substring(start, end));
+        } else {
+            type = modelCol.type;
+        }
+        if(["STRING", "INTEGER", "TEXT"].includes(modelCol.type.key)) {
+            if(length === modelCol.type._length) {
+                // nothing to change
+            } else if(length < modelCol.type._length) {
+                safeChanges.push({ 
+                    action:    "changeColumn",
+                    message:    "Object attribute modified (" + modelCol.field + ")",
+                    tableName:  tableName, 
+                    key:        modelCol.field, 
+                    attribute:  { type: modelCol.type }
+                });
+            } else {
+                if(!rows) {
+                    // table doesn't have rows, so we can change column without data loss
+                    safeChanges.push({ 
+                        action:    "changeColumn",
+                        message:    "Object attribute modified (" + modelCol.field + ")",
+                        tableName:  tableName, 
+                        key:        modelCol.field, 
+                        attribute:  { type: modelCol.type }
+                    });
+                } else {
+                    unSafeChanges.push({ 
+                        action:    "changeColumn",
+                        message:    "Object attribute modified (" + modelCol.field + ")",
+                        tableName:  tableName, 
+                        key:        modelCol.field, 
+                        attribute:  { type: modelCol.type }
+                    });
+                }
+            }
+        } else {
+            if(!rows) {
+                // table doesn't have rows, so we can change column without data loss
+                safeChanges.push({ 
+                    action:    "changeColumn",
+                    message:    "Object attribute modified (" + modelCol.field + ")",
+                    tableName:  tableName, 
+                    key:        modelCol.field, 
+                    attribute:  { type: modelCol.type }
+                });
+            } else {
+                unSafeChanges.push({ 
+                    action:    "changeColumn",
+                    message:    "Object attribute modified (" + modelCol.field + ")",
+                    tableName:  tableName, 
+                    key:        modelCol.field, 
+                    attribute:  { type: modelCol.type }
+                });
+            }
+        }
+    }
+
+    function compareColumns(model, tableName, description, dbStructure) {
+        var self = this;
+
+        const mainFunction = function(callback) {
+            _async.forEach(model.fieldRawAttributesMap, function(modelCol, next) {
+                if (!description[modelCol.field]) {
+                    // table doesn't have such a column, so let's add it
+                    safeChanges.push({ 
+                        action:    "addColumn",
+                        message:    "Object attribute added (" + modelCol.field + ")",
+                        tableName:  tableName, 
+                        key:        modelCol.field, 
+                        attribute:  { type: modelCol.type }
+                    });
+                    // delete column from the list - it will allow us to detect those columns we need to delete
+                    delete dbStructure[tableName][modelCol.field];
+                    return next(null);
+                } else {
+                    // table in DB has such a column
+                    if(serviceFields.includes(modelCol.field)) {
+                        // no needs to change service fields
+                        return next(null);
+                    } else {
+                        const dbCol = description[modelCol.field];
+                        model.count()
+                        .then(rows => {
+                            changeColumn(tableName, modelCol, dbCol, rows);
+                            // delete column from the list - it will allow us to detect those columns we need to delete
+                            try {
+                                delete dbStructure[tableName][modelCol.field];
+                            } catch(err) {
+
                             }
-                        }
+                            return next(null);
+                        })
+                        .catch(err => {
+                            // delete column from the list - it will allow us to detect those columns we need to delete
+                            //delete dbStructure[tableName][modelCol.field];
+                            return next(err);
+                        });
                     }
+                }
+            }, function(err) {
+                callback(err);
+            });
+        };
+
+        return new Promise(function(resolve, reject) {
+            mainFunction(function(error, result) {
+                error ? reject(error) : resolve(result);
+            });
+        });
+    }
+
+    function compareTables(driver, dbStructure) {
+        var self = this;
+
+        const mainFunction = function(callback) {
+            _async.forEach(driver.models, function(model, next) {
+                const tableName = model.tableName;
+                if (!dbStructure[tableName]) {
+                    // DB doesn't have such a table, so let's create it
+                    safeChanges.push({ 
+                        action:    "ctreateTable",
+                        message:    "New object added (" + model.tableName + ")",
+                        tableName:  model.tableName, 
+                        attributes: model.attributes, 
+                        options:    model.options, 
+                        model:      model
+                    });
+                    next();
+                } else {
+                    qi.describeTable(tableName)
+                    .then(description => {
+                        // delete table from the list - it will allow us to detect those table we need to drop
+                        delete dbStructure[tableName];
+                        return compareColumns(model, tableName, description, dbStructure)
+                    })
+                    .then(() => { next(null) })
+                    .catch(err => {
+                        next(err);
+                    });
+                }
+            }, function(err) {
+                callback(err);
+            });
+        }
+        
+        return new Promise(function(resolve, reject) {
+            mainFunction(function(error, result) {
+                error ? reject(error) : resolve(result);
+            });
+        });
+    }
+
+    function askChanges() {
+        function log(message) {
+            console.log(message);
+        }
+
+        const mainFunction = function(callback) {
+            if(!safeChanges.length && !unSafeChanges.length) {
+                callback(null);
+            }
+
+            log("----------------------------------------------------");
+            log("Changes in application structure:".toUpperCase());
+            log("----------------------------------------------------");
+            
+            if(safeChanges.length ) {
+                log("Safe changes:");
+                safeChanges.forEach(change => {
+                    log("  " + change.message + ": " + change.tableName);
                 })
-                .catch(err => {
-                    Log.error("Error on gettin DB structure", err)
+            }
+
+            log(" ");
+
+            if(unSafeChanges.length ) {
+                log("Unsafe changes (data loss possible):");
+                unSafeChanges.forEach(change => {
+                    log("  " + change.message + ": " + change.tableName);
                 })
+            }
+            log("----------------------------------------------------");
+            log(" ");
+
+            const readline = require('readline');
+
+            const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+
+            rl.question('Do you want to execute listed changes? (Y/N): ', (answer) => {
+                if(answer.toUpperCase() === "Y") {
+                    rl.close();
+                    callback(null, true);
+                } else if(answer.toUpperCase() === "N") {
+                    rl.close();
+                    callback(null, false);
+                }
+            });
+        }
+
+        return new Promise(function(resolve, reject) {
+            mainFunction(function(error, result) {
+                error ? reject(error) : resolve(result);
+            });
+        });
+    }
+
+    function executeChanges() {
+        qi.createTable(model.tableName, model.attributes, model.options, model)
+        .then(result => {
+            Log.debug('Created table ' + model.tableName);
         })
         .catch(err => {
-            Log.error("Error on trying drop table", err)
+            Log.error('Error on creating table ' + model.tableName, err);
+        });
+
+        qi.addColumn(tableName, column.field, {type: column.type})
+        .then(result => {
+            Log.debug('Added column ' + column.field + ' in table ' + model.tableName);
         })
-        .done();
+        .catch(err => {
+            Log.error('Error on adding column ' + column.field + ' in table ' + model.tableName, err);
+        })
 
+        qi.changeColumn(tableName, column.field, {type: column.type})
+        .then(result => {
+            Log.debug('Changeded column ' + column.field + ' in table ' + model.tableName);
+        })
+        .catch(err => {
+            Log.error('Error on changing column ' + column.field + ' in table ' + model.tableName, err);
+        })
+    }
 
+    connection.getDbStructure()
+    .then(dbStructure => {
+        return compareTables(driver, dbStructure)
+    })
+    .then(() => {
+        return askChanges()
+    })
+    .then((result => {
+        if(result) {
+            return executeChanges();
+        } else {
+            // NOTHING TO DO
+            return;
+        }
+    }))
+    .catch(err => {
+        Log.error("Error on gettin DB structure", err)
+    })
 }
