@@ -83,7 +83,13 @@ function Application(name, dirname, filename) {
         _arguments.application = this;
     
         const view = new MainWindow(_arguments);
-        view.show();
+        return view.show();
+    }
+
+    this.views = {};
+
+    this.__proto__.window = function() {
+        return this.views[process.env.WINDOW];
     }
 }
 module.exports = Application;

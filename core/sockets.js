@@ -29,17 +29,24 @@ function listen(server) {
     socket.on('WindowLoad', function (Message, WindowID) {
       process.env.WINDOW = WindowID;
       Platform.Clients[WindowID] = socket;
-      Platform.Forms[Message.WindowID].Client = socket;
+      const application = Platform.applications[Message.ApplicationID];
+      application.views[Message.WindowID].client = socket;
+      //Platform.views[Message.WindowID].Client = socket;
         // for(var key in Platform.Applications[Message.ApplicationID].Cubes) {
         //   var Start = Platform.Applications[Message.ApplicationID].Cubes[key].OnStart;
         //   if(Start) {
         //     Start();
         // }}
+
+      const onLoad = application.views[Message.WindowID].onLoad;
+      if(onLoad) {
+        onLoad();
+      }
     });
     
     socket.on('FormLoad', function (Message, WindowID) {
       process.env.WINDOW = WindowID;
-      Platform.Forms[Message.FormID].Client = Platform.Clients[WindowID];
+      Platform.views[Message.FormID].client = Platform.Clients[WindowID];
     });
   
     socket.on('message', function (msg, WindowID) {

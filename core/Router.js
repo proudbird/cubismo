@@ -30,7 +30,7 @@ router.get('/favicon.ico', function(req, res, next) {
 router.get('/:app/views/:view', function(req, res, next) {
   var AppName = req.params.app;
 if (req.params.view == 'Window') {
-  var View = Platform.Applications.View(AppName);
+  var View = Platform.applications[AppName].show();
     var ViewConfig = JSON.stringify(View, function(key, value) {
         if (typeof value === "function") {
           return "/Function(" + value.toString() + ")/";
@@ -46,10 +46,10 @@ router.get('/:app/window', function(req, res, next) {
   //@TODO
   req.query.appID = AppName;
   //
-  if (!Platform.Applications[req.query.appID]) {
-    Platform.Applications.Init(AppName, req.query.appID);
+  if (!Platform.applications[req.query.appID]) {
+    //Platform.Applications.Init(AppName, req.query.appID);
   }
-  var View = Platform.Applications.View(req.query.appID);
+  var View = Platform.applications[req.query.appID].show();
     var ViewConfig = JSON.stringify(View, function(key, value) {
         if (typeof value === "function") {
           return "/Function(" + value.toString() + ")/";

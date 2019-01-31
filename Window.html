@@ -30,7 +30,8 @@
           window.Environment = 'browser';
         }
         window.ApplicationID = webix.uid();
-        window.ApplicationID = "AppName";
+        console.log(window.location.pathname.replace("/",""))
+        window.ApplicationID = window.location.pathname.replace("/","");
         window.Session = {ID: webix.uid()};
         //window.WindowID = webix.uid();
         

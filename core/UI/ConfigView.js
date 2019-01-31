@@ -8,12 +8,23 @@ const Traverse = require('traverse');
 
 function ConfigView(View, _arguments, pathToFile) {
 
-  const config = require(pathToFile).Init(View.id);
+  let config = require(pathToFile);
+  if(config.Init) {
+    config = config.Init(View.id);
+  }
 
   Traverse(config).map(function(node) {
     if(node && typeof node != 'function') {
       const uiElement = node;
       if (node.view && node.name && node.name !== 'data') {
+        if(!node.id) {
+          if(node.main) {
+            node.id = this.node_.id = View.id;
+          } else {
+            node.id = this.node_.id = Tools.SID();
+          }
+          this.update(node);
+        }
         Object.defineProperty(View, node.name, { value: { config: uiElement }, enumerable: true, writable: false });
         
         const dataValue = Tools.getPropertyByTrack(View, node.dataBind);
@@ -29,10 +40,12 @@ function ConfigView(View, _arguments, pathToFile) {
 
         const pathToUIFile =  path.join(__dirname, uiElement.view + ".js");
         if(fs.existsSync(pathToUIFile)) {
-          Require(pathToUIFile, { Application: _arguments.application, View: View, UIElement: uiElement });
+          Require(pathToUIFile, { Application: _arguments.application, View: View, UIElement: View[node.name] });
         }
       }
     }
   });
+
+  View.config = config;
 }
 module.exports = ConfigView;

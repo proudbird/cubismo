@@ -189,9 +189,9 @@ webix.DataDriver.json = webix.extend({
 	}
 }, webix.DataDriver.json);
 
-// Window
+// MainWindow
 webix.protoUI({
-  name:"Window",
+  name:"MainWindow",
   $init: function (config) {
     this.$ready.push(this._Init);
   },
@@ -201,6 +201,7 @@ webix.protoUI({
     var Message = {};
     Message.FormID    = this.config.id;
     Message.Command   = 'OnLoad';
+
     ServerCall(Message);
   }
 }, webix.ui.layout);
@@ -1457,8 +1458,9 @@ socket.on('disconnect', function () {
  });
 
 function ServerCall(Message) {
-  Message.appID = window.ApplicationID;;
+  Message.appID = window.ApplicationID;
   Message.User = User;
+  console.log(Message);
   scope.send(Message);
 }
 
@@ -1746,6 +1748,8 @@ socket.on('message', function (msg, callback) {
   } else if(msg.directive == 'masterChanged') {
     $$(msg.viewId).serverChange = true;
     $$(msg.viewId).setValue(msg.value);
+  } else if(msg.directive === 'sidabar.add') {
+    $$(msg.viewId).add(msg.value);
   }
 });
 

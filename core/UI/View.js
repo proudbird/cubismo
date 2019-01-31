@@ -21,8 +21,10 @@ function View(_arguments) {
         this.instance.view = this;
     }
 
+    _arguments.application.views[this.id] = this;
+
     this.__proto__.show = function() {
-        show(this, _arguments, _private);
+        return show(this, _arguments, _private);
     }
 }
 module.exports = View;
@@ -51,5 +53,11 @@ function show(view, _arguments, _private) {
 
     Require(pathToFile, { Application: _arguments.application, View: view });
 
-    ConfigView(view, _arguments, pathToFile.replace(".js",  ".Config.js"));
+    let pathToConfig = pathToFile.replace(".js",  ".Config.json");
+    if(!fs.existsSync(pathToConfig)) {
+        pathToConfig = pathToFile.replace(".json",  ".Config.js");
+    }
+    ConfigView(view, _arguments, pathToConfig);
+
+    return view.config;
 }
