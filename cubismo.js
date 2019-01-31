@@ -7,9 +7,9 @@ process.on('uncaughtException', function (err) {
   const _stack = err.stack.split('\n');
   let newStack = [];
   for(let i = 0; i < _stack.length; i++) {
-    //if(_stack[i].includes("D:\\cubismo\\apps\\detalio")) {
+    if(_stack[i].includes(path.join(__dirname, "core"))) {
       newStack.push(_stack[i]);
-    //}
+    }
   }
   newStack = newStack.join('\n');
   console.log('\n');
@@ -22,9 +22,9 @@ process.on('unhandledRejection', function (err) {
   const _stack = err.stack.split('\n');
   let newStack = [];
   for(let i = 0; i < _stack.length; i++) {
-    //if(_stack[i].includes("D:\\cubismo-p\\apps\\Test")) {
+    if(_stack[i].includes(path.join(__dirname, "core"))) {
       newStack.push(_stack[i]);
-    //}
+    }
   }
   newStack = newStack.join('\n');
   console.log('\n');
