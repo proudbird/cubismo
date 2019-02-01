@@ -4,7 +4,6 @@ service postgresql start
 sudo -u postgres psql
 
 \c just_in_time
-\dt
 
 SELECT * FROM "CT_Mj1iI6tu";
 SELECT * FROM "CT_HwSMZV29";
