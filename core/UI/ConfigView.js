@@ -22,6 +22,7 @@ function ConfigView(View, _arguments, pathToFile) {
             node.id = this.node_.id = View.id;
           } else {
             node.id = this.node_.id = Tools.SID();
+            node.viewId = this.node_.viewId = View.id;
           }
           this.update(node);
         }

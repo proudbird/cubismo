@@ -8,22 +8,96 @@ function listen(server) {
 
   io = socketio.listen(server);
 
-  io.on('connection', function (socket) {
-  
-    let windowId = socket.handshake.query.WindowID;
-  
-    if(windowId && Platform.Clients[windowId]) {
-      Platform.Clients[windowId] = socket;
-      Platform.Forms[windowId].Client = socket;
+  io.on('connection', function (socket, callback) {
+
+    const applicationId = socket.handshake.query.applicationId;
+    const application = Platform.applications[applicationId];
+    if(!application) {
+      const err = "Application <" + applicationId + "> is not defined.";
+      if(callback) {
+        callback(err);
+      } else { 
+        return Log.error(err);
+      }
+    } else {
+      application.show(socket)
+      .then((view) => {
+        var viewConfig = JSON.stringify(view, function(key, value) {
+          if (typeof value === "function") {
+            return "/Function(" + value.toString() + ")/";
+          }
+          return value;
+        });
+        socket.emit("window", viewConfig);
+      })
     }
-  
+
     socket.on('error', function (Err) {
       console.log('socket.io gave error = > ' + Err);
     });
     
-    
     socket.on('disconnect', function () {
       //sockets.splice(sockets.indexOf(socket), 1);
+    });
+
+    socket.on('event', function (action, callback) {
+      process.env.WINDOW = action.windowId;
+
+      const application = Platform.applications[action.applicationId];
+      if(!application) {
+        const err = "Application <" + action.applicationId + "> is not defined.";
+        if(callback) {
+          callback(err);
+        } else { 
+          return Log.error(err);
+        }
+      }
+
+      const view = application.views[action.viewId];
+      if(!view) {
+        const err = "View with ID <" + action.viewId + "> is not defined.";
+        if(callback) {
+          callback(err);
+        } else { 
+          return Log.error(err);
+        }
+      }
+
+      const uiElement = view[action.element];
+      if(!uiElement) {
+        const err = "UI element with name <" + action.element + "> is not defined.";
+        if(callback) {
+          callback(err);
+        } else { 
+          return Log.error(err);
+        }
+      }
+
+      const procedure = uiElement.config.events[action.event];
+      if(procedure) {
+        const eventHandler = view[procedure];
+        if(eventHandler) {
+          try {
+            const _arguments = action.arguments || [];
+            eventHandler(_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
+          } catch(err) {
+            if(callback) {
+              callback(err);
+            } else { 
+              Log.error("Error on handling UI element event", err);
+            }
+          }
+        } else {
+          const err = "Can't find method <" + event.procedure + ">.";
+          if(callback) {
+            callback(err);
+          } else { 
+            return Log.error(err);
+          }
+        }
+      } else {
+        // missing handler is not an error
+      }
     });
     
     socket.on('WindowLoad', function (Message, WindowID) {
@@ -60,20 +134,18 @@ function listen(server) {
       };
         try {
           process.env.USER = msg.User;
-          const Application = Platform.Applications[msg.appID];
-          if(!Application) {
+          const application = Platform.applications[msg.appID];
+          if(!application) {
             return;
           }
-          process.env.Application = msg.appID;
-          let User = Application.Users[msg.User];
-          if(User) {
-            User.Client = socket;
-          }
-          UIEventController.IncomingCall(msg);
+          //UIEventController.IncomingCall(msg);
         } catch(e) {
           console.log(e);
         }
     });
+
+
+
   });
   
   return io;

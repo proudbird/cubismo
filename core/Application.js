@@ -74,23 +74,45 @@ function Application(name, dirname, filename) {
         });
     }
 
-    this.__proto__.show = function() {
+    this.__proto__.show = function(client) {
         
         const _arguments = {};
         _arguments.options     = {};
         _arguments.params      = {};
         _arguments.name        = "MainWindow";
         _arguments.application = this;
+        _arguments.client      = client;
     
         const view = new MainWindow(_arguments);
-        return view.show();
+
+        const mainFunction = function(callback) {
+            view.show()
+            .then((viewConfig) => {
+                return callback(null, viewConfig);
+            })
+            .catch((err) => {
+                return callback(err);
+            })
+        }
+
+        return new Promise(function(resolve, reject) {
+            mainFunction(function(error, result) {
+                error ? reject(error) : resolve(result);
+            });
+        });
     }
 
     this.views = {};
 
-    this.__proto__.window = function() {
-        return this.views[process.env.WINDOW];
-    }
+    Object.defineProperty(this.__proto__, "window", {
+        enumerable: false,
+        set() {
+            throw new Error("It is not allowed to change property 'window' of an application!");
+        },
+        get() {
+            return this.views[process.env.WINDOW];
+        }
+    });
 }
 module.exports = Application;
 

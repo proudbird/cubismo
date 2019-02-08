@@ -3,6 +3,9 @@
   "view": "MainWindow",
   "main": true,
   "css":  "window",
+  "events": {
+    "onLoad": "onLoad"
+  },
   "rows": [
     {
       "name": "Header",
@@ -16,7 +19,9 @@
           "name": "Sidebar",
           "view": "sidebar",
           "width": 150,
-          "onItemClick": "OpenMenuItem",
+          "events": {
+            "onItemClick": "sidebar_onItemClick"
+          },
           "data": []
         },
         {

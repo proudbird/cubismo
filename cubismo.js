@@ -1,4 +1,5 @@
 /* globals __ROOT Tools Platform Log*/
+const  path = require('path');
 
 process.env.NODE_ENV= "development";
 process.env.BLUEBIRD_WARNINGS = 0;
@@ -7,9 +8,9 @@ process.on('uncaughtException', function (err) {
   const _stack = err.stack.split('\n');
   let newStack = [];
   for(let i = 0; i < _stack.length; i++) {
-    if(_stack[i].includes(path.join(__dirname, "core"))) {
+    //if(_stack[i].includes(path.join(__dirname, "core"))) {
       newStack.push(_stack[i]);
-    }
+    //}
   }
   newStack = newStack.join('\n');
   console.log('\n');
@@ -41,34 +42,9 @@ var router = require("./core/Router.js");
 var http   = require("http");
 var server = http.createServer(router);
 
-server.testName = "platform";
 server.listen(process.env.PORT || 21021, process.env.IP || "0.0.0.0", function(){
   var addr = server.address();
   console.log("cubismo server listening at " + addr.address + ":" + addr.port);
 });
 
 sockets.listen(server);
-
-// if (!Platform.Applications["detalio"]) {
-//   Platform.Applications.Init("detalio", "detalio");
-//   for(var key in Platform.Applications["detalio"].Cubes) {
-//     var Start = Platform.Applications["detalio"].Cubes[key].OnStart;
-//     if(Start) {
-//       Start();
-//   }}
-// }
-
-Platform.initApplication("Just-In-Time")
-.then((application) => {
-  application.show();
-  for(let key in application.Cubes) {
-    const cube = application.Cubes[key];
-    const start = cube.onStart;
-    if(start) {
-      start();
-    }
-  }
-})
-.catch(err => {
-  console.log(err);
-})

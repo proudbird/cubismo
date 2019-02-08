@@ -24,40 +24,77 @@ function View(_arguments) {
     _arguments.application.views[this.id] = this;
 
     this.__proto__.show = function() {
-        return show(this, _arguments, _private);
+        const self = this;
+        const mainFunction = function(callback) {
+            show(self, _arguments, _private)
+            .then((viewConfig) => {
+                return callback(null, viewConfig);
+            })
+            .catch((err) => {
+                return callback(err);
+            })
+        }
+        
+        if(_arguments && _arguments.showCallback) {
+            return mainFunction(_arguments.showCallback);
+        }
+        return new Promise(function(resolve, reject) {
+            mainFunction(function(error, result) {
+                error ? reject(error) : resolve(result);
+            });
+        });   
     }
 }
 module.exports = View;
 
 function show(view, _arguments, _private) {
+    const self = this;
 
-    const file = [];
-    if(_arguments.class) {
-        file.push(_arguments.class);
+    const mainFunction = function(callback) {
+        const file = [];
+        if(_arguments && _arguments.class) {
+            file.push(_arguments.class);
+        }
+        if(_arguments && _arguments.modelName) {
+            file.push(_arguments.modelName);
+            file.push("Views");
+        }
+        file.push(_arguments.name);
+        file.push("js");
+
+        let pathToFile = path.join(
+            _arguments.application.dirname, _arguments.cube ? _arguments.cube.name : "", _arguments.class || "", 
+            file.join(".")
+        );
+
+        if(_arguments.name === "List" && !fs.existsSync(pathToFile)) {
+            pathToFile = path.join(__dirname, "./DefaultViews/" + _arguments.class + ".Views.List.js");
+        }
+
+        Require(pathToFile, { Application: _arguments.application, View: view });
+
+        let pathToConfig = pathToFile.replace(".js",  ".Config.json");
+        if(!fs.existsSync(pathToConfig)) {
+            pathToConfig = pathToFile.replace(".json",  ".Config.js");
+        }
+
+        if(view.onInit) {
+            view.onInit(function() {
+                ConfigView(view, _arguments, pathToConfig);
+                return callback(null, view.config);
+            });
+        } else {
+            ConfigView(view, _arguments, pathToConfig);
+            return callback(null, view.config);
+        }
     }
-    if(_arguments.modelName) {
-        file.push(_arguments.modelName);
-        file.push("Views");
+
+    if (_private.showCallback) {
+        return mainFunction(_private.showCallback);
     }
-    file.push(_arguments.name);
-    file.push("js");
-
-    let pathToFile = path.join(
-        _arguments.application.dirname, _arguments.cube ? _arguments.cube.name : "", _arguments.class || "", 
-        file.join(".")
-    );
-
-    if(_arguments.name === "List" && !fs.existsSync(pathToFile)) {
-        pathToFile = path.join(__dirname, "./DefaultViews/" + _arguments.class + ".Views.List.js");
-    }
-
-    Require(pathToFile, { Application: _arguments.application, View: view });
-
-    let pathToConfig = pathToFile.replace(".js",  ".Config.json");
-    if(!fs.existsSync(pathToConfig)) {
-        pathToConfig = pathToFile.replace(".json",  ".Config.js");
-    }
-    ConfigView(view, _arguments, pathToConfig);
-
-    return view.config;
+    return new Promise(function(resolve, reject) {
+        mainFunction(function(error, result) {
+            error ? reject(error) : resolve(result);
+        });
+    });
 }

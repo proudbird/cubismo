@@ -1,18 +1,30 @@
 /* globals Tools UIElement */
 
 UIElement.add = function(value, callback) {
-    
-  const message = {
-      directive: "sidabar.add",
-      viewId   : UIElement.config.id,
-      value    : value
-    }
-    
-    Application.window().client.emit('message', message, function(err) {
-      if(callback) {
-        callback(err);
-      } else {
-        Log.error("Unsuccessful attempt to add item to sidebar", err);
+
+    const mainFunction = function(callback) {
+      const message = {
+        directive: "add",
+        elementId: UIElement.config.id,
+        arguments: [value]
       }
-    });
+      
+      Application.window.directiveToClient("directive", message, function(err) {
+        if(err) {
+            callback(err);
+        } else {
+            callback(null);
+        }
+      })
+  }
+  
+  if(callback) {
+      return mainFunction(callback);
+  }
+
+  return new Promise(function(resolve, reject) {
+      mainFunction(function(error, result) {
+          error ? reject(error) : resolve(result);
+      });
+  });
 }

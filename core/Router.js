@@ -14,11 +14,33 @@ router.use(bodyParser.json()); // support json encoded bodies
 router.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 router.use(fileUpload());
 
-router.get('/:app', function(req, res, next) {
-  var AppName = req.params.app;
-  if (AppName != 'favicon.ico') {
-    var View = fs.readFileSync(__ROOT + '/Window.html', 'UTF-8');
-    res.send(View.replace(/AppName/g, AppName));
+router.get('/:applicationId', function(req, res, next) {
+  function sendWindow() {
+    const view = fs.readFileSync(__ROOT + '/Window.html', 'UTF-8');
+    res.send(view);
+  }
+
+  const applicationId = req.params.applicationId;
+  if(applicationId != 'favicon.ico') {
+    const application = Platform.applications[applicationId];
+    if(!application) {
+      Platform.initApplication("Just-In-Time")
+      .then((application) => {
+        for(let key in application.Cubes) {
+          const cube = application.Cubes[key];
+          const start = cube.onStart;
+          if(start) {
+            start();
+          }
+        }
+        sendWindow();
+      })
+      .catch(err => {
+        console.log(err);
+      })
+    } else {
+      sendWindow();
+    }
   }
 });
 
@@ -49,15 +71,16 @@ router.get('/:app/window', function(req, res, next) {
   if (!Platform.applications[req.query.appID]) {
     //Platform.Applications.Init(AppName, req.query.appID);
   }
-  var View = Platform.applications[req.query.appID].show();
-    var ViewConfig = JSON.stringify(View, function(key, value) {
-        if (typeof value === "function") {
-          return "/Function(" + value.toString() + ")/";
-        }
-        return value;
-      });
-    res.send(ViewConfig);
-
+  // Platform.applications[req.query.appID].show()
+  // .then((view) => {
+  //   var viewConfig = JSON.stringify(view, function(key, value) {
+  //     if (typeof value === "function") {
+  //       return "/Function(" + value.toString() + ")/";
+  //     }
+  //     return value;
+  //   });
+  //   res.send(viewConfig);
+  // })
 });
 
 router.post('/:app/login', function(req, res) {
@@ -68,26 +91,38 @@ router.post('/:app/login', function(req, res) {
   if(!req.body.password)
     res.status(400).send('Password is required');
   
-  var Application = Platform.Applications[req.body.appID];
-  if(!Platform.Applications[req.body.appID]) {
-    Platform.Applications.Init(req.params.app, req.body.appID);
-    var Application = Platform.Applications[req.body.appID];
+  var Application = Platform.applications[req.body.appID];
+  if(!Platform.applications[req.body.appID]) {
+    Platform.initApplication("Just-In-Time")
+    .then((application) => {
+      application.show();
+      for(let key in application.Cubes) {
+        const cube = application.Cubes[key];
+        const start = cube.onStart;
+        if(start) {
+          start();
+        }
+      }
+    })
+    .catch(err => {
+      console.log(err);
+    })
   }
   
-  var Users = Application.DBConnection.models.sysUsers;
-  Users.findOne({where: { Login: req.body.login }}).then(User => {
-    if(User) {
-      if(User.Password === req.body.password) {
-        Token = '15151651651';
-        res.status(200).send({Token: Token});
-        //Application.User = Application.Users[req.body.login];
-      } else {
-        res.status(400).send('Wrong password!');
-      }
-    } else {
-    res.status(400).send('Wrong username!');
-    }
-  })
+  // var Users = Application.DBConnection.models.sysUsers;
+  // Users.findOne({where: { Login: req.body.login }}).then(User => {
+  //   if(User) {
+  //     if(User.Password === req.body.password) {
+  //       Token = '15151651651';
+  //       res.status(200).send({Token: Token});
+  //       //Application.User = Application.Users[req.body.login];
+  //     } else {
+  //       res.status(400).send('Wrong password!');
+  //     }
+  //   } else {
+  //   res.status(400).send('Wrong username!');
+  //   }
+  // })
 });
 
 router.get('/:app/files', function(req, res, next) {

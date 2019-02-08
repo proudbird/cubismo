@@ -1,5 +1,4 @@
 /* globals __ROOT Tools */
-
 const _    = require("lodash");
 const fs   = require("fs");
 const path = require("path");
@@ -13,35 +12,6 @@ Platform.Forms   = {};
 Platform.Clients = {};
 
 Platform.dir = __ROOT;
-
-Platform.LoadModule = function(ModuleName, Path) {
-  
-  try {
-    if(process.env.NODE_ENV === "development") {
-      delete require.cache[require.resolve(ModuleName)];
-    }
-    return require(ModuleName);
-  } catch (err) {
-    if (!Path) {
-      Path = __ROOT;
-    }
-    var FileName = Tools.FindFileName(ModuleName.replace('.js','')+'.js', Path, true);
-  }
-  
-  if (FileName) {
-    if(process.env.NODE_ENV === "development") {
-      delete require.cache[require.resolve(FileName)];
-    }
-    try {
-      return require(FileName);
-    } catch (ex) {
-      throw new Error("Exception in module '" + ModuleName + "' => " + ex);
-    }
-  }
-  else {
-    throw new Error("Cannot find module '" + ModuleName + "'");
-  }
-}
 
 Platform.applications = {};
 
