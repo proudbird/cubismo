@@ -1,56 +1,48 @@
 /* globals Tools Application ID ContainerID webix*/
+module.exports.Init = function (model) {
 
-module.exports.Init = function (model, owner, instance) {
+  const formTitle = "Catalog " + model.modelName;
 
-  var formTitle = "Look up for " + model.Name;
-  var dataSchema = {
-    mainObject: {
-      cube: model.Cube.Name,
-      type: model.Type,
-      model: model.Name
-    },
-    queryOptions: {order: []},
-    attributes: []
-  };
+  const columns    = [];
+  const attributes = [];
 
-  if(model.Owner) {
-    dataSchema.mainObject.type = model.Owner.Type;
-    dataSchema.mainObject.model = model.Owner.Name;
-    dataSchema.mainObject.collection = model.Name;
-  }
+  const serviceFields = ["droped", "isFolder", 
+            "booked", "Date", "parentId", "ownerId",
+            "createdAt", "updatedAt", "deletedAt", "order"];
 
-  var columns = [];
-
-  for (const key in model.tableAttributes) {
-    if (model.tableAttributes.hasOwnProperty(key)) {
+  for (let key in model.tableAttributes) {
+    if (model.tableAttributes.hasOwnProperty(key) && !serviceFields.includes(key)) {
       const element = model.tableAttributes[key];
-      columns.push({ id: element.fieldName, header: element.fieldName });
-      dataSchema.attributes.push(element.fieldName);
+      columns.push({ id: element.fiel, header: element.fieldName });
+      attributes.push(element.field);
     }
   }
 
+  const query = {
+    SELECT: attributes,
+    FROM:   model.name,
+    ORDER:  [["Name_ru", "ASC"]]
+  }
+
   return {
-    view: "Form",
-    id: ID,
-    containerID: ContainerID,
-    name: "Form",
+    view: "View",
+    name: "CatalogList",
     header: formTitle,
     rows: [
       { 
         view: "Treetable",
-        id: Tools.SID(),
-        formID: ID,
         name: "List",
+        autoConfig: true,
         treeType: true,
+        select: true,
+        columns: columns,
         dynamic: true,
         autoUpdate: true,
         updateInterval: 30,
-        autoConfig: true,
-        dataSchema: dataSchema,
-        url: Application.Name + '/data?appID=' + Application.ID + '&dataSchema=',
-        onItemDblClickCommand: 'select',
-        select: true,
-        columns: columns
+        query: query,
+        events: {
+          onItemDblClick: "List_onItemDblClick"
+        }
       }
     ]
   }

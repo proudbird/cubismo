@@ -10,7 +10,7 @@ function ConfigView(View, _arguments, pathToFile) {
 
   let config = require(pathToFile);
   if(config.Init) {
-    config = config.Init(View.id);
+    config = config.Init(_arguments.model);
   }
 
   Traverse(config).map(function(node) {

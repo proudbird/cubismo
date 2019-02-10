@@ -17,12 +17,12 @@ module.exports = function() {
   global.TEMP     = "temp/"
   global.Platform = require("./Platform");
 
-  global.Query = require("./Query");
-  global.AND      = global.Query.Operations.AND;
-  global.OR       = global.Query.Operations.OR;
-  global.EQ       = global.Query.Operations.EQ;
-  global.LIKE     = global.Query.Operations.LIKE;
-  global.iLIKE    = global.Query.Operations.iLIKE;
-  global.AS       = global.Query.Operations.AS;
-  global.EXISTSAS = global.Query.Operations.EXISTSAS;
+  // global.Query = require("./Query");
+  // global.AND      = global.Query.Operations.AND;
+  // global.OR       = global.Query.Operations.OR;
+  // global.EQ       = global.Query.Operations.EQ;
+  // global.LIKE     = global.Query.Operations.LIKE;
+  // global.iLIKE    = global.Query.Operations.iLIKE;
+  // global.AS       = global.Query.Operations.AS;
+  // global.EXISTSAS = global.Query.Operations.EXISTSAS;
 }

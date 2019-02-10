@@ -22,6 +22,8 @@ constructors.Enumerations = require('./Classes/Enumerations.js');
 
 const DBConnection   = require('./DB/Connection.js');
 const ModelGenerator = require('./ModelGenerator.js');
+const Query = require('./Query.js');
+
 
 function Application(name, dirname, filename) {
 
@@ -30,6 +32,10 @@ function Application(name, dirname, filename) {
     constructors.Collection.call(this, undefined, undefined, name, dirname, filename);
 
     _private.connection = new DBConnection(this);
+
+    const p = path.join(__dirname, "./Query.js");
+    
+    this.Query = new Query(this, _private.connection.driver);
 
     _private.modelDefinition = {};
     

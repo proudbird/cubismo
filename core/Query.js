@@ -1,30 +1,27 @@
-'use strict';
-module.exports = Query;
-
+/* globals Tools Log */
+"use strict";
 const _ = require('lodash');
 
-function Query(options, model) {
+function Query(application, driver) {
   
+  const _private = {};
+  _private.driver      = driver;
+  _private.application = application;
 
-  if (!options) {
-    options = {};
-  }
-
-  this.SELECT = options.SELECT;
-  this.FROM   = options.FROM;
-  this.WHERE  = options.WHERE;
-  this.LIMIT  = options.LIMIT;
-  this.ORDER  = options.ORDER;
-
-  this.model = model;
-
-  this.EXECUTE = function (callback) {
+  this.execute = function (options, model, callback) {
     const self = this;
-    const Application = Platform.Applications[process.env.Application];
+
+    if (!options) {
+      options = {};
+    }
+
+    if(!model && typeof options.FROM === "string") {
+      model = _private.driver.models[options.FROM];
+    }
 
     function mainFunction(callback) {
-      Application.DB
-        .Query(buildSQLQuery(self), self.model)
+      _private.driver
+        .query(buildSQLQuery(_private.driver, options), model ? { model: model }: undefined)
         .then(result => {
           return callback(null, result);
         })
@@ -45,7 +42,7 @@ function Query(options, model) {
   }
 }
 
-function buildSQLQuery(query) {
+function buildSQLQuery(driver, query) {
   //SELECT
   var result = 'SELECT ';
   const select = query.SELECT;
@@ -64,8 +61,14 @@ function buildSQLQuery(query) {
   }
 
   //FROM
+  let from = query.FROM;
+  if(typeof from != "string") {
+    from = from.tableName;
+  } else {
+    from = driver.models[from].tableName;
+  }
   result = result + fields.join(', ');
-  result += ' FROM "' + query.FROM.tableName + '" T1';
+  result += ' FROM "' + from + '" T1';
 
   //WHERE
   const where = query.WHERE;
@@ -179,3 +182,5 @@ module.exports.Operations = {
     return { operator: "EXISTSAS", param: param, value: value };
   }
 };
+
+module.exports = Query;

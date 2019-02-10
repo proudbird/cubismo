@@ -20,17 +20,17 @@ process.on('uncaughtException', function (err) {
 });
 
 process.on('unhandledRejection', function (err) {
-  const _stack = err.stack.split('\n');
-  let newStack = [];
-  for(let i = 0; i < _stack.length; i++) {
-    if(_stack[i].includes(path.join(__dirname, "core"))) {
-      newStack.push(_stack[i]);
-    }
-  }
-  newStack = newStack.join('\n');
+  //const _stack = err.stack.split('\n');
+  //let newStack = [];
+  //for(let i = 0; i < _stack.length; i++) {
+    //if(_stack[i].includes(path.join(__dirname, "core"))) {
+      //newStack.push(_stack[i]);
+    //}
+  //}
+  //newStack = newStack.join('\n');
   console.log('\n');
   console.log('Caught promise exception: ' + err);
-  console.log(newStack);
+  //console.log(newStack);
   console.log('\n');
 });
 

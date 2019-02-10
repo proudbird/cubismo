@@ -275,7 +275,7 @@ Model.prototype.ShowForm = function(FormName, Params, callbackOnShow, callbackOn
     Form.Show(Params, callbackOnShow, callbackOnClose);
 };
 
-Model.showView = function(_arguments) {
+Model.show = function(_arguments) {
 
     if(!_arguments) {
         _arguments = {};
@@ -308,7 +308,13 @@ Model.showView = function(_arguments) {
     _arguments.modelName   = Model.modelName;
 
     const view = new View(_arguments);
-    view.show();
+    view.show()
+    .then(config => {
+        Application.window.Viewbar.addView(config);
+    })
+    .catch(err => {
+        Log.error("Error on adding view", err);
+    })
 };
 
 Model.lookUp = function(FormName, modal, Params, callbackOnShow, callbackOnClose) {

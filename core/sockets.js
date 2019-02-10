@@ -1,6 +1,7 @@
 /* globals __ROOT Tools Platform Application Form */
 
 var UIEventController = require("./UIEventController");
+const Query = require("./Query");
 
 function listen(server) {
   var socketio = require("socket.io");
@@ -40,45 +41,67 @@ function listen(server) {
       //sockets.splice(sockets.indexOf(socket), 1);
     });
 
-    socket.on('event', function (action, callback) {
-      process.env.WINDOW = action.windowId;
+    socket.on('getData', function (message, callback) {
+      const application = getApplication(message);
+      const view        = getView(message, application);
+      const uiElement   = getUIElement(message, view);
 
-      const application = Platform.applications[action.applicationId];
+      const queryString = uiElement.config.query;
+      application.Query.execute(queryString)
+      .then(result => {
+        callback(result[0]);
+      })
+    });
+
+    function getApplication(message) {
+      const application = Platform.applications[message.applicationId];
       if(!application) {
-        const err = "Application <" + action.applicationId + "> is not defined.";
-        if(callback) {
-          callback(err);
-        } else { 
-          return Log.error(err);
+        const err = "Application <" + message.applicationId + "> is not defined.";
+        if(err) {
+          return Log.error(err)
         }
+      } else {
+        return application;
       }
+    }
 
-      const view = application.views[action.viewId];
+    function getView(message, application) {
+      const view = application.views[message.viewId];
       if(!view) {
-        const err = "View with ID <" + action.viewId + "> is not defined.";
-        if(callback) {
-          callback(err);
-        } else { 
-          return Log.error(err);
+        const err = "View with ID <" + message.viewId + "> is not defined.";
+        if(err) {
+          return Log.error(err)
         }
+      } else {
+        return view;
       }
+    }
 
-      const uiElement = view[action.element];
+    function getUIElement(message, view) {
+      const uiElement = view[message.element];
       if(!uiElement) {
-        const err = "UI element with name <" + action.element + "> is not defined.";
-        if(callback) {
-          callback(err);
-        } else { 
-          return Log.error(err);
+        const err = "UI element with name <" + message.element + "> is not defined.";
+        if(err) {
+          return Log.error(err)
         }
+      } else {
+        return uiElement;
       }
+    }
 
-      const procedure = uiElement.config.events[action.event];
+    socket.on('event', function (message, callback) {
+      process.env.WINDOW = message.windowId;
+
+      const application = getApplication(message);
+      const view        = getView(message, application);
+      const uiElement   = getUIElement(message, view);
+
+      const procedure = uiElement.config.events[message.event];
       if(procedure) {
         const eventHandler = view[procedure];
         if(eventHandler) {
           try {
-            const _arguments = action.arguments || [];
+            const _arguments = message.arguments || [];
             eventHandler(_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
           } catch(err) {
             if(callback) {
@@ -88,7 +111,7 @@ function listen(server) {
             }
           }
         } else {
-          const err = "Can't find method <" + event.procedure + ">.";
+          const err = "Can't find method <" + message.event.procedure + ">.";
           if(callback) {
             callback(err);
           } else { 

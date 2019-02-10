@@ -69,13 +69,14 @@ function show(view, _arguments, _private) {
 
         if(_arguments.name === "List" && !fs.existsSync(pathToFile)) {
             pathToFile = path.join(__dirname, "./DefaultViews/" + _arguments.class + ".Views.List.js");
+            _arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
         }
 
         Require(pathToFile, { Application: _arguments.application, View: view });
 
         let pathToConfig = pathToFile.replace(".js",  ".Config.json");
         if(!fs.existsSync(pathToConfig)) {
-            pathToConfig = pathToFile.replace(".json",  ".Config.js");
+            pathToConfig = pathToConfig.replace(".Config.json",  ".Config.js");
         }
 
         if(view.onInit) {

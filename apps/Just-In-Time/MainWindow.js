@@ -10,15 +10,15 @@ View.onLoad = function(params) {
   View.Sidebar.add(
     { 
       id: Tools.SID(), 
-      value: "Products", 
+      value: "Addresses", 
       command: "openForm", 
-      cube: "Goods", 
+      cube: "Enterprise", 
       class: "Catalogs", 
-      type: "Products"  
+      type: "Addresses"  
     }
   );
 }
 
-View.sidebar_onItemClick = function(item) {
-  console.log(item);
+View.Sidebar_onItemClick = function(item) {
+  Application[item.cube][item.class][item.type].show();
 }

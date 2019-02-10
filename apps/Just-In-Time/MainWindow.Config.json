@@ -20,13 +20,13 @@
           "view": "sidebar",
           "width": 150,
           "events": {
-            "onItemClick": "sidebar_onItemClick"
+            "onItemClick": "Sidebar_onItemClick"
           },
           "data": []
         },
         {
-          "name": "Tabview",
-          "view": "tabview",
+          "name": "Viewbar",
+          "view": "Viewbar",
           "tabbar": {
             "tabOffset": 0
           },
