@@ -57,7 +57,7 @@ module.exports = function(pathToModule, _arguments, clearCache) {
             return _module;
         }
         catch (err) {
-            throw new Error("Error on loadin module '" + pathToModule + "'", err);
+            throw err;
         }
     }
     else {

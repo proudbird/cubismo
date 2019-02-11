@@ -22,8 +22,10 @@ webix.protoUI({
     this.$ready.push(this._Init);
   },
   _Init: function () {
+    console.log("id: " + this.config.id)
+    console.log("view id: " + this.config.viewId)
     callServer("event",
-      { viewId: this.config.id, element: this.config.name, event: "onLoad" }
+      { viewId: this.config.viewId, element: this.config.name, event: "onLoad" }
     );
   }
 }, webix.ui.layout);
@@ -45,6 +47,70 @@ webix.protoUI({
     }
   }
 }, webix.ui.sidebar);
+
+webix.protoUI({
+  name: "Toolbar",
+  defaults:{
+    on:{
+     
+    }
+  },
+  $init: function (config) {
+    this.$ready.push(this._Init);
+  },
+  _Init: function () {
+  },
+
+}, webix.ui.toolbar);
+
+webix.protoUI({
+  name: "Button",
+  defaults:{
+    on:{
+      onItemClick: function(id, e) {
+        if (id) {
+          callServer("event", { 
+            viewId   : this.config.viewId, 
+            element  : this.config.name, 
+            event    : "onItemClick",
+            owner    : this.config.owner,
+            arguments: []
+          });
+        }
+      }
+    }
+  },
+  $init: function (config) {
+    this.$view.className += " webix_el_button";
+    this.$ready.push(this._Init);
+  },
+  _Init: function () {
+  },
+
+}, webix.ui.button);
+
+webix.protoUI({
+  name: "Text",
+  defaults:{
+    on:{
+      onChange: function(newv, oldv) {
+        callServer("event", { 
+          viewId   : this.config.viewId, 
+          element  : this.config.name, 
+          event    : "onChange",
+          arguments: [newv, oldv]
+        });
+      }
+    }
+  },
+  $init: function (config) {
+    this.$view.className += " webix_el_text";
+    this.$ready.push(this._Init);
+  },
+  _Init: function () {
+  },
+
+}, webix.ui.text);
 
 webix.protoUI({
   name:"Treetable",

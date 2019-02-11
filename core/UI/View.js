@@ -44,6 +44,28 @@ function View(_arguments) {
             });
         });   
     }
+
+    this.__proto__.close = function() {
+        const self = this;
+        const mainFunction = function(callback) {
+            close(self, _arguments, _private)
+            .then((viewConfig) => {
+                return callback(null, viewConfig);
+            })
+            .catch((err) => {
+                return callback(err);
+            })
+        }
+        
+        if(_arguments && _arguments.closeCallback) {
+            return mainFunction(_arguments.closeCallback);
+        }
+        return new Promise(function(resolve, reject) {
+            mainFunction(function(error, result) {
+                error ? reject(error) : resolve(result);
+            });
+        });  
+    }
 }
 module.exports = View;
 
@@ -72,6 +94,11 @@ function show(view, _arguments, _private) {
             _arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
         }
 
+        if(_arguments.name === "Item" && !fs.existsSync(pathToFile)) {
+            pathToFile = path.join(__dirname, "./DefaultViews/" + _arguments.class + ".Views.Item.js");
+            _arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
+        }
+
         Require(pathToFile, { Application: _arguments.application, View: view });
 
         let pathToConfig = pathToFile.replace(".js",  ".Config.json");
@@ -88,6 +115,24 @@ function show(view, _arguments, _private) {
             ConfigView(view, _arguments, pathToConfig);
             return callback(null, view.config);
         }
+    }
+
+    if (_private.showCallback) {
+        return mainFunction(_private.showCallback);
+    }
+    return new Promise(function(resolve, reject) {
+        mainFunction(function(error, result) {
+            error ? reject(error) : resolve(result);
+        });
+    });
+}
+
+function close(view, _arguments, _private) {
+    const self = this;
+
+    const mainFunction = function(callback) {
+        const file = [];
+        
     }
 
     if (_private.showCallback) {

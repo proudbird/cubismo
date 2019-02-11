@@ -5,13 +5,13 @@ const _async = require("async");
 
 const View = require("../UI/View.js");
 
-Model.New = function(PredefinedValues, callback) {
-    var newInstance = PredefinedValues;
-    if (PredefinedValues && PredefinedValues.isNewRecord !== false) {
-        newInstance = this.build(PredefinedValues);
+Model.new = function(predefinedValues, callback) {
+    var newInstance = predefinedValues;
+    if (predefinedValues && predefinedValues.isNewRecord !== false) {
+        newInstance = this.build(predefinedValues);
     }
     else {
-        newInstance = this.build(PredefinedValues);
+        newInstance = this.build(predefinedValues);
     }
 
     if (this.associations instanceof Object) {
@@ -23,13 +23,36 @@ Model.New = function(PredefinedValues, callback) {
         }
     }
 
-    if (PredefinedValues) {
-        for (let key in PredefinedValues) {
+    if (predefinedValues) {
+        for (let key in predefinedValues) {
             if (!newInstance[key] && this.associations[key]) {
-                newInstance[key] = PredefinedValues[key];
+                newInstance[key] = predefinedValues[key];
             }
         }
     }
+
+    Object.defineProperty(newInstance, "Name", {
+        get: function() {
+            return this.getDataValue("Name" + Application.lang);
+        },
+        set: function(value) {
+            return this.setDataValue("Name" + Application.lang, value);
+        }
+    })
+    for(let key in Model.definition.attributes) {
+        const attribute = Model.definition.attributes[key];
+        if(attribute.type.lang && attribute.type.lang.length) {
+            Object.defineProperty(newInstance, key, {
+                get: function() {
+                    return this.getDataValue(attribute.fieldId + Application.lang);
+                },
+                set: function(value) {
+                    return this.setDataValue(attribute.fieldId + Application.lang, value);
+                }
+            })
+        }
+    }
+
     return newInstance;
 };
 
@@ -95,14 +118,24 @@ Model.Select = function(Options, Callback) {
     });
 };
 
-Model.prototype.Save = function(Callback) {
-    var self = this;
+Model.afterSave((result, options) => {
+    return saveAssociations(result);
+})
 
-    function saveAssociations(Model, result, callback) {
+Model.afterUpdate((result, options) => {
+    return saveAssociations(result);
+})
+
+function saveAssociations(result) {
+
+    function mainFunction(Model, result, callback) {
         _async.forEach(Model.associations, function(association, Next) {
             if (association.associationType === 'BelongsTo') {
                 const setAccessor = association.accessors.set;
                 const value = result[association.as];
+                if(!value) {
+                    return Next();
+                }
                 result[setAccessor](value)
                     //result[setAccessor](value.id)
                     .then(() => {
@@ -165,29 +198,8 @@ Model.prototype.Save = function(Callback) {
         });
     }
 
-    function mainFunction(callback) {
-        self
-            .save()
-            .then(result => {
-                if (Model.associations) {
-                    saveAssociations(Model, result, function(error) {
-                        return callback(error, result);
-                    });
-                }
-            })
-            .catch((error) => {
-                // console.log('Error on saving instanse:/n ' + error);
-                callback(error);
-                return error;
-            });
-    }
-
-    if (Callback) {
-        return mainFunction(Callback);
-    }
-
     return new Promise(function(resolve, reject) {
-        mainFunction(function(error, result) {
+        mainFunction(Model, result, function(error, result) {
             error ? reject(error) : resolve(result);
         });
     });
@@ -275,6 +287,8 @@ Model.prototype.ShowForm = function(FormName, Params, callbackOnShow, callbackOn
     Form.Show(Params, callbackOnShow, callbackOnClose);
 };
 
+Object.defineProperty(Model.prototype, "model", { value: Model, enumerable: false, writable: false,})
+
 Model.show = function(_arguments) {
 
     if(!_arguments) {
@@ -306,6 +320,49 @@ Model.show = function(_arguments) {
     _arguments.cube        = Model.cube;
     _arguments.class       = Model.class;
     _arguments.modelName   = Model.modelName;
+
+    const view = new View(_arguments);
+    view.show()
+    .then(config => {
+        Application.window.Viewbar.addView(config);
+    })
+    .catch(err => {
+        Log.error("Error on adding view", err);
+    })
+};
+
+Model.prototype.show = function(_arguments) {
+
+    if(!_arguments) {
+        _arguments = {};
+    }
+    if(!_.isPlainObject(_arguments)) {
+        throw new Error("Arguments must be an object!");
+    }
+    
+    if(_arguments.options && !_.isPlainObject(_arguments.options)) {
+        throw new Error("Parametr 'options' must be an object!");
+    } else {
+        _arguments.options = {};
+    }
+    
+    if(_arguments.params && !_.isPlainObject(_arguments.params)) {
+        throw new Error("Parametr 'params' must be an object!");
+    } else {
+        _arguments.params = {};
+    }
+
+    if (!_arguments.name) {
+        _arguments.name = 'Item';
+    } else {
+        _arguments.name = name;
+    }
+
+    _arguments.application = Application;
+    _arguments.cube        = Model.cube;
+    _arguments.class       = Model.class;
+    _arguments.modelName   = Model.modelName;
+    _arguments.instance    = this;
 
     const view = new View(_arguments);
     view.show()

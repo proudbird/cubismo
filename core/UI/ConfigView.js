@@ -8,9 +8,9 @@ const Traverse = require('traverse');
 
 function ConfigView(View, _arguments, pathToFile) {
 
-  let config = require(pathToFile);
+  let config = Require(pathToFile, { Application: _arguments.application });
   if(config.Init) {
-    config = config.Init(_arguments.model);
+    config = config.Init(_arguments.instance ? _arguments.instance : _arguments.model);
   }
 
   Traverse(config).map(function(node) {
@@ -26,8 +26,59 @@ function ConfigView(View, _arguments, pathToFile) {
           }
           this.update(node);
         }
-        Object.defineProperty(View, node.name, { value: { config: uiElement }, enumerable: true, writable: false });
-        
+
+        if(node.owner && node.composition === "default") {
+          let pathToDefaultCommandsFile = path.join(__dirname, "./DefaultViews/Catalogs.List.Toolbar.Config.js");
+          if(_arguments.instance) {
+            pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Item");
+          }
+          const toolbar = require(pathToDefaultCommandsFile).Init(node.owner);
+          node.elements = this.node_.elements = toolbar;
+          let owner = View[node.owner];
+          if(!owner) {
+            Object.defineProperty(View, node.owner, { value: {}, enumerable: true, writable: false });
+          }
+          Object.defineProperty(View[node.owner], node.name, { 
+            value: { config: uiElement }, enumerable: true, writable: false 
+          });
+        } else if(node.owner) {
+          const ownerPath = node.owner.split(".");
+          let target = View[node.owner];
+          if(ownerPath.length = 2) {
+            target = View[ownerPath[0]][ownerPath[1]];
+          }
+          //Object.defineProperty(target, node.name, { 
+            //value: { config: uiElement }, enumerable: true, writable: false 
+          //});
+          let pathToDefaultCommandsFile = path.join(__dirname, "./DefaultViews/Catalogs.List.Toolbar.js");
+          let commands = require(pathToDefaultCommandsFile);
+          _arguments.view = View;
+          _arguments.uiElement = target;
+          if(_arguments.instance) {
+            pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Item");
+            commands = require(pathToDefaultCommandsFile);
+          }
+          commands.defineCommand(node.name, _arguments);
+        } else {
+          let element = View[node.name];
+          if(element) {
+            Object.defineProperty(element, "config", { value: uiElement, enumerable: true, writable: true });
+          } else {
+            Object.defineProperty(View, node.name, { value: { config: uiElement }, enumerable: true, writable: false });
+            element = View[node.name];
+          }
+          Object.defineProperty(element, "value", {
+            enumerable: true, 
+            get: function() {
+
+            },
+            set: function(value) {
+
+            } 
+          });
+          element.value = _arguments.instance;
+        }
+
         const dataValue = Tools.getPropertyByTrack(View, node.dataBind);
         if(dataValue) {
           Object.defineProperty(View[node.name], "data", { value: dataValue, enumerable: true });

@@ -119,6 +119,16 @@ function Application(name, dirname, filename) {
             return this.views[process.env.WINDOW];
         }
     });
+
+    Object.defineProperty(this.__proto__, "lang", {
+        enumerable: false,
+        set() {
+            throw new Error("It is not allowed to change property 'lang' of an application!");
+        },
+        get() {
+            return process.env.LANG;
+        }
+    });
 }
 module.exports = Application;
 

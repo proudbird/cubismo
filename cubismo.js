@@ -4,6 +4,8 @@ const  path = require('path');
 process.env.NODE_ENV= "development";
 process.env.BLUEBIRD_WARNINGS = 0;
 
+process.env.LANG = "ru";
+
 process.on('uncaughtException', function (err) {
   const _stack = err.stack.split('\n');
   let newStack = [];

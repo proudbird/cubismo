@@ -78,7 +78,17 @@ function listen(server) {
     }
 
     function getUIElement(message, view) {
-      const uiElement = view[message.element];
+      let uiElement = view[message.element];
+      if(message.owner) {
+        if(message.owner.includes(".")) {
+          const ownerPath = message.owner.split(".");
+          if(ownerPath.length = 2) {
+            uiElement = view[ownerPath[0]][ownerPath[1]];
+          }
+        } else {
+          uiElement = view[message.owner];
+        }
+      }
       if(!uiElement) {
         const err = "UI element with name <" + message.element + "> is not defined.";
         if(err) {
@@ -96,13 +106,26 @@ function listen(server) {
       const view        = getView(message, application);
       const uiElement   = getUIElement(message, view);
 
+      const _arguments = message.arguments || [];
+      if(uiElement[message.element]) {
+        uiElement[message.element](_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
+        return;
+      }
+
+      if(message.event === "onChange") {
+        uiElement.value = _arguments[0];
+      }
+
+      if(!uiElement.config.events) {
+        // there is no events handlers at all
+        return;
+      }
       const procedure = uiElement.config.events[message.event];
       if(procedure) {
         const eventHandler = view[procedure];
         if(eventHandler) {
           try {
-            const _arguments = message.arguments || [];
-            eventHandler(_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
+            view[procedure](_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
           } catch(err) {
             if(callback) {
               callback(err);
