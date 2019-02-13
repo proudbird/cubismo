@@ -49,7 +49,8 @@ function listen(server) {
       const queryString = uiElement.config.query;
       application.Query.execute(queryString)
       .then(result => {
-        callback(null, result[0]);
+        const data = Tools.makeHierarchical(result[0], "parentId", "data");
+        callback(null, data);
       })
       .catch(err => {
         callback(err)

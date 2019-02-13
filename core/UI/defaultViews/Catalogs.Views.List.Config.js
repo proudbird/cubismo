@@ -17,17 +17,17 @@ module.exports.Init = function (type) {
     attributes.push(atr);
   })
 
-  columns.push({ id: "Code", header: "Code", fillspace:true });
+  columns.push({ id: "Code", header: "Code", fillspace:true, template:"{common.treetable()} #Code#"  });
   attributes.push("Code");
 
-  let fieldId = "Name";
-  let order = fieldId;
+  let NameField = "Name";
+  let order = NameField;
   if(definition.nameLang && definition.nameLang.length) {
-    fieldId = fieldId + "_" + Application.lang;
-    order = fieldId;
+    NameField = NameField + "_" + Application.lang;
+    order = NameField;
   }
-  columns.push({ id: fieldId, header: "Name", fillspace:true });
-  attributes.push(fieldId);
+  columns.push({ id: NameField, header: "Name", fillspace:true });
+  attributes.push(NameField);
 
   for (let key in definition.attributes) {
     const element = definition.attributes[key];
