@@ -8,10 +8,11 @@ async function edit(_arguments) {
   item.show();
 }
 
-async function remove(_arguments) {
+async function remove(_arguments, immediate) {
   const selected = await _arguments.view.List.getSelected();
-  const item = selected[0];
-  return await item.delete();
+  selected.forEach(async (item) => {
+    await item.delete(immediate);
+  });
 }
 
 function defineCommand(command, _arguments) {
@@ -29,6 +30,11 @@ function defineCommand(command, _arguments) {
     case "DefaultCmd.Delete":
       _arguments.uiElement[command] = function () {
         remove(_arguments);
+      };
+      break;
+      case "DefaultCmd.Remove":
+      _arguments.uiElement[command] = function () {
+        remove(_arguments, true);
       };
       break;
   }
