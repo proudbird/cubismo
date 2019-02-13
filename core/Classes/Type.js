@@ -203,6 +203,7 @@ function _select(Application, model, options, callback) {
         if (inclusions.length) {
             optionsCopy.include = inclusions;
         }
+        optionsCopy.paranoid = false;
         model
             .findAll(optionsCopy)
             .then(result => {
