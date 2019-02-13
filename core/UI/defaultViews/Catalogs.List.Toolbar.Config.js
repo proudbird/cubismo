@@ -12,7 +12,7 @@ function Init(owner, customComposition) {
     edit:   { name: "Edit"  , title: "Edit"  , command: "edit"   },
     copy:   { name: "Copy"  , title: "Copy"  , command: "copy"   },
     delete: { name: "Delete", title: "Delete", command: "delete" },
-    delete: { name: "Remove", title: "Remove", command: "delete" }
+    remove: { name: "Remove", title: "Remove", command: "remove" }
   };
 
   const defaultComposition = [];
