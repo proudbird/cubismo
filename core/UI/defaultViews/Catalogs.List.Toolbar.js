@@ -2,6 +2,10 @@ async function create(_arguments) {
   _arguments.type.new().show();
 }
 
+async function folder(_arguments) {
+  _arguments.type.newFolder().show();
+}
+
 async function edit(_arguments) {
   const selected = await _arguments.view.List.getSelected();
   const item = selected[0];
@@ -27,6 +31,11 @@ function defineCommand(command, _arguments) {
     case "DefaultCmd.Create":
       _arguments.uiElement[command] = function () {
         create(_arguments);
+      };
+      break;
+    case "DefaultCmd.Folder":
+      _arguments.uiElement[command] = function () {
+        folder(_arguments);
       };
       break;
     case "DefaultCmd.Edit":

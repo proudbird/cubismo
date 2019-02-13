@@ -100,6 +100,11 @@ function Item(_arguments) {
         instance.setDataValue(fieldId, value);
         return this;
     }
+
+    this.__proto__.isFolder = function () {
+        const instance = this._private.instance;
+        return instance.getDataValue("isFolder");
+    }
 }
 
 function _show(Application, item, _arguments) {
@@ -124,7 +129,11 @@ function _show(Application, item, _arguments) {
     }
 
     if (!_arguments.name) {
-        _arguments.name = 'Item';
+        if(item.isFolder()) {
+            _arguments.name = 'Folder';
+        } else {
+            _arguments.name = 'Item';
+        }
     } else {
         _arguments.name = name;
     }

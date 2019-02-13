@@ -99,6 +99,11 @@ function show(view, _arguments, _private) {
             //_arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
         }
 
+        if(_arguments.name === "Folder" && !fs.existsSync(pathToFile)) {
+            pathToFile = path.join(__dirname, "./DefaultViews/" + _arguments.class + ".Views.Folder.js");
+            //_arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
+        }
+
         Require(pathToFile, { Application: _arguments.application, View: view });
 
         let pathToConfig = pathToFile.replace(".js",  ".Config.json");

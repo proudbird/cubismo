@@ -39,6 +39,14 @@ function Type(_arguments) {
         return _new(Application, this._private.model, predefinedValues);
     }
 
+    this.__proto__.newFolder = function (predefinedValues) {
+        if(!predefinedValues) {
+            predefinedValues = {}
+            predefinedValues.isFolder = true;
+        }
+        return _new(Application, this._private.model, predefinedValues);
+    }
+
     this.__proto__.show = function (_arguments) {
         if (!_arguments) {
             _arguments = {};
@@ -46,30 +54,6 @@ function Type(_arguments) {
         _arguments.type = this;
         _show(Application, this._private.model, _arguments);
     }
-
-    // this.__proto__.select = function(options, callback) {
-    //     var self = this;
-
-    //     function mainFunction(options, callback) {
-    //         _select(Application, self._private.model, options)
-    //             .then(result => {
-    //                 callback(null, result);
-    //             })
-    //             .catch(err => {
-    //                 callback(err);
-    //             })
-    //     }
-
-    //     if(callback) {
-    //         return mainFunction(options, callback);
-    //     }
-
-    //     return new Promise(function (resolve, reject) {
-    //         mainFunction(options, function (error, result) {
-    //             error ? reject(error) : resolve(result);
-    //         });
-    //     });
-    // }
 
     this.__proto__.select = async function(options, callback) {
         return await _select(Application, this._private.model, options);
