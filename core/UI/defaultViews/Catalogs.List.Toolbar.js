@@ -8,6 +8,12 @@ async function edit(_arguments) {
   item.show();
 }
 
+async function remove(_arguments) {
+  const selected = await _arguments.view.List.getSelected();
+  const item = selected[0];
+  return await item.delete();
+}
+
 function defineCommand(command, _arguments) {
   switch (command) {
     case "DefaultCmd.Create":
@@ -18,6 +24,11 @@ function defineCommand(command, _arguments) {
     case "DefaultCmd.Edit":
       _arguments.uiElement[command] = function () {
         edit(_arguments);
+      };
+      break;
+    case "DefaultCmd.Delete":
+      _arguments.uiElement[command] = function () {
+        remove(_arguments);
       };
       break;
   }

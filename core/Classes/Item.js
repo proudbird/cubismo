@@ -52,6 +52,10 @@ function Item(_arguments) {
             })
     }
 
+    this.__proto__.delete = async function (immediate) {
+        return await _delete(this, immediate);
+    }
+
     this.__proto__.get = function (param) {
         const instance = this._private.instance;
         return instance.get(param);
@@ -216,6 +220,27 @@ function _saveAssociations(item, result) {
             error ? reject(error) : resolve(result);
         });
     });
+};
+
+async function _delete(item, immediate) {
+    const model = item._private.model;
+    const instance = item._private.instance;
+    if (immediate) {
+        await instance.destroy({ force: true });
+        if (model.associations) {
+            for (let key in model.associations) {
+                const association = model.associations[key];
+                if (association.associationType === 'HasMany') {
+                    const setAccessor = association.accessors.set;
+                    instance[setAccessor]([]);
+                }
+            }
+        }
+    } else {
+        instance.dropped = true;
+        await instance.save();
+        await instance.destroy({ force: false });
+    }
 };
 
 module.exports = Item;
