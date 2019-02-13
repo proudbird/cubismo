@@ -8,6 +8,13 @@ async function edit(_arguments) {
   item.show();
 }
 
+async function copy(_arguments) {
+  const selected = await _arguments.view.List.getSelected();
+  const item = selected[0];
+  const newItem = _arguments.type.new(item);
+  newItem.show();
+}
+
 async function remove(_arguments, immediate) {
   const selected = await _arguments.view.List.getSelected();
   selected.forEach(async (item) => {
@@ -27,12 +34,17 @@ function defineCommand(command, _arguments) {
         edit(_arguments);
       };
       break;
+    case "DefaultCmd.Copy":
+      _arguments.uiElement[command] = function () {
+        copy(_arguments);
+      };
+      break;
     case "DefaultCmd.Delete":
       _arguments.uiElement[command] = function () {
         remove(_arguments);
       };
       break;
-      case "DefaultCmd.Remove":
+    case "DefaultCmd.Remove":
       _arguments.uiElement[command] = function () {
         remove(_arguments, true);
       };
