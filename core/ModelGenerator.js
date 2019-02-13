@@ -138,14 +138,14 @@ generator.define = function(application, db, appModelDefinition) {
     const belongsTo = [];
 
     const attributes = {
-      // field 'id' and 'droped' are must be
+      // field 'id' and 'dropped' are must be
       id: {
         type: DBTypes.UUID,
         defaultValue: DBTypes.UUIDV4,
         primaryKey: true,
         unique: true
       },
-      droped: {
+      dropped: {
         type: DBTypes.BOOLEAN,
         defaultValue: false
       }
@@ -194,14 +194,14 @@ generator.define = function(application, db, appModelDefinition) {
   function defineRecorderAttributes(model) {
 
     const attributes = {
-      // field 'id', 'droped' and 'Date' are must be
+      // field 'id', 'dropped' and 'Date' are must be
       id: {
         type: DBTypes.UUID,
         defaultValue: DBTypes.UUIDV4,
         primaryKey: true,
         unique: true
       },
-      droped: {
+      dropped: {
         type: DBTypes.BOOLEAN,
         defaultValue: false
       },
@@ -225,7 +225,7 @@ generator.define = function(application, db, appModelDefinition) {
   function defineCollectionAttributes(model) {
 
     const attributes = {
-      // field 'id', 'droped' and 'Date' are must be
+      // field 'id', 'dropped' and 'Date' are must be
       id: {
         type: DBTypes.UUID,
         defaultValue: DBTypes.UUIDV4,
