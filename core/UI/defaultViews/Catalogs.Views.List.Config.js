@@ -10,7 +10,7 @@ module.exports.Init = function (type) {
 
   const serviceAttributes = [
             "createdAt", "updatedAt", "deletedAt"];
-  const hiddenAttributes = ["id", "droped", "isFolder", 
+  const hiddenAttributes = ["id", "dropped", "isFolder", 
             "parentId", "ownerId"];
   
   hiddenAttributes.forEach(atr => {

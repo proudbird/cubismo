@@ -9,7 +9,7 @@ module.exports.Init = function (item) {
 
   const serviceAttributes = [
             "createdAt", "updatedAt", "deletedAt"];
-  const hiddenAttributes = ["droped", "isFolder", 
+  const hiddenAttributes = ["dropped", "isFolder", 
             "booked", "Date", "parentId", "ownerId", "order"];
 
   attributes.push({ id: "Code", header: "Code" });
