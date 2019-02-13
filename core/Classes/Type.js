@@ -78,7 +78,11 @@ function Type(_arguments) {
 
 function _new(Application, model, predefinedValues) {
 
-    var newInstance = predefinedValues;
+    let newInstance;
+    if(predefinedValues._private && predefinedValues._private.instance) {
+        predefinedValues = predefinedValues._private.instance.toJSON();
+        delete predefinedValues.id;
+    }
     if (predefinedValues && predefinedValues.isNewRecord !== false) {
         newInstance = model.build(predefinedValues);
     } else {
@@ -101,13 +105,6 @@ function _new(Application, model, predefinedValues) {
             }
         }
     }
-
-    // const _arguments = {
-    //     application: Application,
-    //     model: model,
-    //     instance: newInstance
-    // }
-    // const item = new Item(_arguments);
     return newInstance;
 }
 
