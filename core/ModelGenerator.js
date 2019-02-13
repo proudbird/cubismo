@@ -47,11 +47,12 @@ generator.define = function(application, db, appModelDefinition) {
           if (Array.isArray(type.lang) && type.lang.length > 0) {
             for (let i = 0; i < type.lang.length; i++) {
               const lang = type.lang[i];
-              attributes[attributeName + "_" + lang] = {
+              const attributeId = attributeName + "_" + lang;
+              attributes[attributeId] = {
                 type: dataType,
                 field: attribute.fieldId + "_" + lang,
                 set(value) {
-                  attributeSetter(this, attributeName, value);
+                  attributeSetter(this, attributeId, value);
                 }
               }
             }
