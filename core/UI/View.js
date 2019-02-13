@@ -16,9 +16,9 @@ function View(_arguments) {
     Object.defineProperty(this, "name", { value: _arguments.name, enumerable: false, writable: false });
     
     this.params = _arguments.params;
-    if(_arguments.instance) {
-        this.instance = _arguments.instance;
-        this.instance.view = this;
+    if(_arguments.item) {
+        this.item = _arguments.item;
+        this.item.view = this;
     }
 
     _arguments.application.views[this.id] = this;
@@ -91,12 +91,12 @@ function show(view, _arguments, _private) {
 
         if(_arguments.name === "List" && !fs.existsSync(pathToFile)) {
             pathToFile = path.join(__dirname, "./DefaultViews/" + _arguments.class + ".Views.List.js");
-            _arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
+            //_arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
         }
 
         if(_arguments.name === "Item" && !fs.existsSync(pathToFile)) {
             pathToFile = path.join(__dirname, "./DefaultViews/" + _arguments.class + ".Views.Item.js");
-            _arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
+            //_arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
         }
 
         Require(pathToFile, { Application: _arguments.application, View: view });
@@ -131,8 +131,13 @@ function close(view, _arguments, _private) {
     const self = this;
 
     const mainFunction = function(callback) {
-        const file = [];
-        
+        _arguments.application.window.Viewbar.removeView(view.config.tabId)
+        .then(result => {
+            delete _arguments.application.views[view.id]
+        })
+        .catch(err => {
+            Log.error(err);
+        })
     }
 
     if (_private.showCallback) {

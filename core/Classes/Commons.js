@@ -1,5 +1,4 @@
 /* globals Tools Log Application Model*/
-'use strict';
 const _      = require('lodash');
 const _async = require("async");
 
@@ -390,3 +389,15 @@ Model.lookUp = function(FormName, modal, Params, callbackOnShow, callbackOnClose
         Model.Name);
     Form.Show(Params, modal, undefined, callbackOnShow, callbackOnClose);
 };
+
+const _build = Model.build;
+
+// (function(originalModuleWrap) {
+//     Model.build = function(values, options) {
+//         if (Array.isArray(values)) {
+//             return this.bulkBuild(values, options);
+//         }
+      
+//         return { instance: new this(values, options) };
+//     };
+// }(Model.build));

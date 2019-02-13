@@ -43,20 +43,23 @@ server.on("directive", function (message, callback) {
   const elementId = message.elementId;
   const element = $$(elementId);
   if(!element) {
-    callback("No such element with ID <" + elementId + ">");
+    callback({ err: "No such element with ID <" + elementId + ">" });
   }
   const method = element[message.directive];
   if(!method) {
-    callback("No such method <" + message.directive + "> for element with ID <" + elementId + ">");
+    callback({ err: "No such method <" + message.directive + "> for element with ID <" + elementId + ">" });
   }
   const _arguments = message.arguments || [];
-  element[message.directive](_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
+  const result = element[message.directive](_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
+  callback({ result: result });
 })
 
-function callServer(action, message) {
+function callServer(action, message, callback) {
   message.applicationId = window.applicationId;
   message.windowId      = window.windowId;
-  server.emit(action, message, function(err) {
-    // @TODO something if error 
+  server.emit(action, message, function(err, result) {
+    if(callback) {
+      callback(err, result);
+    } 
   });   
 }

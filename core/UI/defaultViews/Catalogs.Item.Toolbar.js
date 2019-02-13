@@ -1,5 +1,5 @@
 function save(_arguments) {
-  _arguments.instance.save();
+  _arguments.item.save();
   _arguments.view.close();
 }
 

@@ -249,9 +249,9 @@ generator.define = function(application, db, appModelDefinition) {
     // check if the model is already defined, just return it from the list
     let modelName;
     if (model.class === "Collection") {
-      modelName = model.ownerModelName + model.name;
+      modelName = [model.ownerModelName, model.name].join(".");
     } else {
-      modelName = model.cube + model.class + model.name;
+      modelName = [model.cube, model.class, model.name].join(".");
     }
     if (db.models[modelName]) {
       return db.models[modelName];

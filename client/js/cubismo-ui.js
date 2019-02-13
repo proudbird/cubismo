@@ -128,14 +128,15 @@ webix.protoUI({
     this.getData();
   },
   getData: function() {
+    const self = this;
     callServer("getData", {
-        viewId: this.config.viewId,
+        viewId:  this.config.viewId,
         element: this.config.name
       }, function(err, data) {
         if(err) {
           return console.log("Error on getting data from server");
         }
-        this.parse(data);
+        self.parse(data);
     });
   }
 }, webix.ui.treetable);
@@ -146,7 +147,7 @@ webix.protoUI({
     on:{
     }
   },
-  addView: function(obj) {
+  addView: function(obj, callback) {
     const id = webix.ui.tabview.prototype.addView.call(this, obj);
     const tab = $$(id);
     tab.show();

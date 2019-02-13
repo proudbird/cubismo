@@ -1,7 +1,7 @@
 /* globals Tools Application ID ContainerID webix*/
-module.exports.Init = function (instance) {
+module.exports.Init = function (item) {
 
-  const definition = instance.model.definition;
+  const definition = item._private.model.definition;
   const formTitle = "Item " + definition.name;
   const viewName = "CatalogItem";
 
@@ -20,7 +20,7 @@ module.exports.Init = function (instance) {
     fieldId = fieldId + "_" + Application.lang;
     order = fieldId;
   }
-  attributes.push({ id: fieldId, header: "Name" });
+  attributes.push({ id: "Name", header: "Name" });
 
   for (let key in definition.attributes) {
     const element = definition.attributes[key];
@@ -30,7 +30,7 @@ module.exports.Init = function (instance) {
         fieldId = fieldId + "_" + Application.lang;
       }
       if(!hiddenAttributes.includes(key)) {
-        attributes.push({ id: fieldId, header: element.title });
+        attributes.push({ id: key, header: element.title });
       }
     }
   }
@@ -43,7 +43,7 @@ module.exports.Init = function (instance) {
         view: "Text", 
         name: row.id,
         label: row.header,
-        value: instance[row.id]
+        dataLink: "item." + row.id
       }
     );
   })

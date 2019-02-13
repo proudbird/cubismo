@@ -2,119 +2,185 @@
 
 const _ = require('lodash');
 
-UIElement.ClearAll = function(callback) {
+UIElement.ClearAll = function (callback) {
   var message = {};
   message.Directive = 'ClearAll';
-  message.ViewID    = UIElement.View.id;
-  Form.Client.emit('message', message, function(response) {
+  message.ViewID = UIElement.View.id;
+  Form.Client.emit('message', message, function (response) {
     callback(response);
   });
 }
 
-UIElement.Add = function(item, index, parentId, callback) {
+UIElement.Add = function (item, index, parentId, callback) {
   var message = {};
   message.Directive = 'TreeAdd';
-  message.viewID    = UIElement.View.id;
-  message.item      = item;
-  message.index     = index;
-  message.parentId  = parentId;
-  Form.Client.emit('message', message, function(response) {
+  message.viewID = UIElement.View.id;
+  message.item = item;
+  message.index = index;
+  message.parentId = parentId;
+  Form.Client.emit('message', message, function (response) {
     callback(response);
   });
 }
 
-UIElement.Select = function(itemId, callback) {
+UIElement.Select = function (itemId, callback) {
   var message = {};
   message.Directive = 'TreeSelect';
-  message.viewID    = UIElement.View.id;
-  message.itemId    = itemId;
-  Form.Client.emit('message', message, function(response) {
+  message.viewID = UIElement.View.id;
+  message.itemId = itemId;
+  Form.Client.emit('message', message, function (response) {
     callback(response);
   });
 }
 
-UIElement.Refresh = function(callback) {
-    var Message = {};
-    Message.Directive = 'Refresh';
-    Message.ViewID    = UIElement.View.id;
-    Form.Client.emit('message', Message, function(Response) {
-      if(callback) callback(Response);
-    });
+UIElement.Refresh = function (callback) {
+  var Message = {};
+  Message.Directive = 'Refresh';
+  Message.ViewID = UIElement.View.id;
+  Form.Client.emit('message', Message, function (Response) {
+    if (callback) callback(Response);
+  });
 }
 
-UIElement.GetSelectedItems = function(callback) {
-    var Message = {};
-    Message.Directive = 'GetSelectedItems';
-    Message.ViewID    = UIElement.View.id;
-    Form.Client.emit('message', Message, function(Response) {
-      var dataSchema  = UIElement.View.dataSchema;
-      var Data        = Response.Value;
-      var Application = Platform.Applications[Response.AppID];
-      
-      var Selectors = [];
-      for(var i = 0; i < Data.length; i++) {
-        Selectors.push(Data[i].id);
+// UIElement.getSelected = function (callback) {
+
+//   const mainFunction = function (callback) {
+
+//     const message = {
+//       directive: "getSelectedItem",
+//       elementId: UIElement.config.id,
+//       arguments: [true]
+//     }
+
+//     Application.window.directiveToClient("directive", message, function (response) {
+//       if (response.err) {
+//         callback(response.err);
+//       } else {
+//         const selectors = _.map(response.result, 'id');
+//         _getItems(UIElement, selectors)
+//           .then(result => {
+//             callback(null, result);
+//           })
+//           .catch(err => {
+//             Log.error(err);
+//           })
+//       }
+//     })
+//   }
+
+//   if (callback) {
+//     return mainFunction(callback);
+//   }
+
+//   return new Promise(function (resolve, reject) {
+//     mainFunction(function (error, result) {
+//       error ? reject(error) : resolve(result);
+//     });
+//   });
+
+// }
+
+UIElement.getSelected = async function () {
+
+  return new Promise(function (resolve, reject) {
+    const message = {
+      directive: "getSelectedItem",
+      elementId: UIElement.config.id,
+      arguments: [true]
+    }
+
+    Application.window.directiveToClient("directive", message, async function (response) {
+      if (response.err) {
+        reject(error);
+      } else {
+        const selectors = _.map(response.result, 'id');
+        resolve(await _getItems(UIElement, selectors))
       }
-      
-      const mainObject = dataSchema.mainObject;
-      const modelName  = Application.ApplicationTypes[mainObject.type].Prefix + mainObject.cube + '_' + mainObject.model;
-      const model      = Application.DBConnection.models[modelName];
-      
-      let queryOptions = _.cloneDeep(UIElement.View.dataSchema.queryOptions);
-      if(!queryOptions) {
-        queryOptions = {};
-        queryOptions.where = {};
+    })
+  });
+}
+
+// function _getItems(view, selectors) {
+
+//   const from = _.cloneDeep(view.config.query.FROM);
+//   const options = {
+//     where: {
+//       id: {
+//         [QO.in]: selectors
+//       }
+//     }
+//   };
+
+//   const type = Tools.getPropertyByTrack(Application, from);
+
+//   const mainFunction = function (callback) {
+//     type.select(options)
+//       .then(result => {
+//         callback(null, result);
+//       })
+//       .catch(err => {
+//         callback(err)
+//       })
+//   }
+
+//   return new Promise(function (resolve, reject) {
+//     mainFunction(function (error, result) {
+//       error ? reject(error) : resolve(result);
+//     });
+//   });
+// }
+
+async function _getItems(view, selectors) {
+
+  const from = _.cloneDeep(view.config.query.FROM);
+  const options = {
+    where: {
+      id: {
+        [QO.in]: selectors
       }
-      if(!queryOptions.where) {
-        queryOptions.where = {};
-      }
-      delete queryOptions.where.ParentId;
-      queryOptions.where.id = {[QO.in]: Selectors };
-      
-      model
-        .Select(queryOptions)
-          .then(Result => {
-            callback(Result);
-        });
-    });
+    }
+  };
+
+  const type = Tools.getPropertyByTrack(Application, from);
+  return await type.select(options);
 }
 
-UIElement.SetFilter = function(filters, callback) {
-    let queryOptions = UIElement.View.dataSchema.queryOptions;
-    if(!queryOptions) {
-      queryOptions = {};
-      queryOptions.where = {};
-    }
-    if(!queryOptions.where) {
-      queryOptions.where = {};
-    }
-    
-    filters.forEach(function(item, i, filters) {
-      queryOptions.where[item.attribute] = item.value;
-    });
-    
-    UIElement.Refresh();
+UIElement.SetFilter = function (filters, callback) {
+  let queryOptions = UIElement.View.dataSchema.queryOptions;
+  if (!queryOptions) {
+    queryOptions = {};
+    queryOptions.where = {};
+  }
+  if (!queryOptions.where) {
+    queryOptions.where = {};
+  }
+
+  filters.forEach(function (item, i, filters) {
+    queryOptions.where[item.attribute] = item.value;
+  });
+
+  UIElement.Refresh();
 }
 
-UIElement.Search = function(filters, callback) {
-    let queryOptions = UIElement.View.dataSchema.queryOptions;
-    if(!queryOptions) {
-      queryOptions = {};
-      queryOptions.where = {};
-    }
-    if(!queryOptions.where) {
-      queryOptions.where = {};
-    }
-    
-    filters.forEach(function(item, i, filters) {
-      queryOptions.where[item.attribute] = item.value;
-    });
-    
-    UIElement.Refresh();
+UIElement.Search = function (filters, callback) {
+  let queryOptions = UIElement.View.dataSchema.queryOptions;
+  if (!queryOptions) {
+    queryOptions = {};
+    queryOptions.where = {};
+  }
+  if (!queryOptions.where) {
+    queryOptions.where = {};
+  }
+
+  filters.forEach(function (item, i, filters) {
+    queryOptions.where[item.attribute] = item.value;
+  });
+
+  UIElement.Refresh();
 }
 
-UIElement.defineContextMenu = function(itemId, config, callback) {
-  
+UIElement.defineContextMenu = function (itemId, config, callback) {
+
   var menu = {
     view: "ContextMenu",
     formID: UIElement.View.formID,
@@ -124,10 +190,10 @@ UIElement.defineContextMenu = function(itemId, config, callback) {
 
   var Message = {};
   Message.Directive = 'defineContextMenu';
-  Message.ViewID    = UIElement.View.id;
-  Message.item     = itemId;
-  Message.Value     = menu;
-  Form.Client.emit('message', Message, function(Response) {
-    if(callback) callback(Response);
+  Message.ViewID = UIElement.View.id;
+  Message.item = itemId;
+  Message.Value = menu;
+  Form.Client.emit('message', Message, function (Response) {
+    if (callback) callback(Response);
   });
 }

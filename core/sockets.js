@@ -49,7 +49,10 @@ function listen(server) {
       const queryString = uiElement.config.query;
       application.Query.execute(queryString)
       .then(result => {
-        callback(result[0]);
+        callback(null, result[0]);
+      })
+      .catch(err => {
+        callback(err)
       })
     });
 

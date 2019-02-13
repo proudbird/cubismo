@@ -15,13 +15,23 @@ function Query(application, driver) {
       options = {};
     }
 
+    let raw = false;
+    if(!model) {
+      raw = true;
+    }
+
     if(!model && typeof options.FROM === "string") {
       model = _private.driver.models[options.FROM];
     }
 
+    let queryModel = model;
+    if(raw) {
+      queryModel = undefined;
+    }
+
     function mainFunction(callback) {
       _private.driver
-        .query(buildSQLQuery(_private.driver, options), model ? { model: model }: undefined)
+        .query(buildSQLQuery(_private.driver, options), queryModel)
         .then(result => {
           return callback(null, result);
         })
