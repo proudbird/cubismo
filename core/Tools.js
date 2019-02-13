@@ -353,7 +353,6 @@ Tools.makeHierarchical = function(arr, parent, child) {
     mappedArr[arrElem.id][child] = [];
   }
 
-
   for (var id in mappedArr) {
     if (mappedArr.hasOwnProperty(id)) {
       mappedElem = mappedArr[id];
@@ -368,4 +367,19 @@ Tools.makeHierarchical = function(arr, parent, child) {
     }
   }
   return tree;
+}
+
+function getNestedChildren(arr, parent) {
+  var out = []
+  for(var i in arr) {
+      if(arr[i].parent == parent) {
+          var children = getNestedChildren(arr, arr[i].id)
+
+          if(children.length) {
+              arr[i].children = children
+          }
+          out.push(arr[i])
+      }
+  }
+  return out
 }
