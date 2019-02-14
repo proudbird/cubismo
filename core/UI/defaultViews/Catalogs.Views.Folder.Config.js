@@ -12,14 +12,18 @@ module.exports.Init = function (item) {
   const hiddenAttributes = ["dropped", "isFolder", 
             "booked", "Date", "parentId", "ownerId", "order"];
 
-  attributes.push({ id: "Code", header: "Code" });
-
-  let fieldId = "Name";
-  let order = fieldId;
-  if(definition.nameLang && definition.nameLang.length) {
-    fieldId = fieldId + "_" + Application.lang;
-    order = fieldId;
+  if(definition.owners && definition.owners.length){
+    attributes.push({ id: "Owner", header: "Owner", type: "FK" });
   }
+
+  if(definition.multilevel){
+    attributes.push({ id: "Parent", header: "Parent", type: "FK" });
+  }
+
+  if(definition.codeLenght > 0){
+    attributes.push({ id: "Code", header: "Code" });
+  }
+
   attributes.push({ id: "Name", header: "Name" });
 
   for (let key in definition.attributes) {

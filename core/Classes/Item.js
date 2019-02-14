@@ -13,6 +13,32 @@ function Item(_arguments) {
 
     const Application = _arguments.application;
 
+    const definition = this._private.model.definition;
+
+    if (definition.owners && definition.owners.length) {
+        Object.defineProperty(this, "Owner", {
+            get: function () {
+                return this._private.instance.Owner;
+            },
+            set: function (value) {
+                this._private.instance.Owner = value;
+                return this;
+            }
+        })
+    }
+
+    if (definition.multilevel) {
+        Object.defineProperty(this, "Parent", {
+            get: function () {
+                return this._private.instance.Parent;
+            },
+            set: function (value) {
+                this._private.instance.Parent = value;
+                return this;
+            }
+        })
+    }
+
     Object.defineProperty(this, "Name", {
         get: function () {
             return this._private.instance.getDataValue("Name" + Application.lang);
@@ -23,7 +49,7 @@ function Item(_arguments) {
     })
 
     for (let key in this._private.model.definition.attributes) {
-        const attribute = this._private.model.definition.attributes[key];
+        const attribute = definition.attributes[key];
         if (attribute.type.lang && attribute.type.lang.length) {
             Object.defineProperty(this, key, {
                 get: function () {
@@ -63,21 +89,26 @@ function Item(_arguments) {
 
     this.__proto__.getValue = function (property) {
         const definition = this._private.model.definition;
+        const instance = this._private.instance;
+        let value;
         let fieldId = property;
         if (property === "Name") {
             if (definition.nameLang && definition.nameLang.length) {
                 fieldId = fieldId + "_" + Application.lang;
             }
-        } else if(property === "Code") {
-
+        } else if (property === "Code") {
+            return instance.Code;
+        } else if (property === "Parent") {
+            return instance.Parent;
+        } else if (property === "Owner") {
+            return instance.Owner;
         } else {
             const element = definition.attributes[property];
             if (element.type.lang && element.type.lang.length) {
                 fieldId = fieldId + "_" + Application.lang;
             }
         }
-        const instance = this._private.instance;
-        const value = instance.getDataValue(fieldId);
+        value = instance.getDataValue(fieldId);
         return value;
     }
 
@@ -88,7 +119,7 @@ function Item(_arguments) {
             if (definition.nameLang && definition.nameLang.length) {
                 fieldId = fieldId + "_" + Application.lang;
             }
-        } else if(property === "Code") {
+        } else if (property === "Code") {
 
         } else {
             const element = definition.attributes[property];
@@ -129,7 +160,7 @@ function _show(Application, item, _arguments) {
     }
 
     if (!_arguments.name) {
-        if(item.isFolder()) {
+        if (item.isFolder()) {
             _arguments.name = 'Folder';
         } else {
             _arguments.name = 'Item';
@@ -235,7 +266,9 @@ async function _delete(item, immediate) {
     const model = item._private.model;
     const instance = item._private.instance;
     if (immediate) {
-        await instance.destroy({ force: true });
+        await instance.destroy({
+            force: true
+        });
         if (model.associations) {
             for (let key in model.associations) {
                 const association = model.associations[key];
@@ -248,7 +281,9 @@ async function _delete(item, immediate) {
     } else {
         instance.dropped = true;
         await instance.save();
-        await instance.destroy({ force: false });
+        await instance.destroy({
+            force: false
+        });
     }
 };
 

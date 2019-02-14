@@ -15,6 +15,14 @@ function ConfigView(View, _arguments, pathToFile) {
     config = config.Init(_arguments.item ? _arguments.item : _arguments.type);
   }
 
+  function _getValue(item, property) {
+    let value = item.getValue(property);
+    if(typeof value === "object" && value) {
+      value = value.getValue("Name");
+    }
+    return value;
+  }
+
   Traverse(config).map(function (node) {
     if (node && typeof node != 'function') {
       const uiElement = node;
@@ -88,17 +96,18 @@ function ConfigView(View, _arguments, pathToFile) {
             element = View[node.name];
           }
           if (node.dataLink) {
+            const property = node.dataLink.replace("item.", "");
             Object.defineProperty(element, "value", {
               enumerable: true,
               get: function () {
-                return _arguments.item.getValue(node.dataLink.replace("item.", ""));
+                _getValue(_arguments.item, property);
               },
               set: function (value) {
-                _arguments.item.setValue(node.dataLink.replace("item.", ""), value);
+                _arguments.item.setValue(property, value);
                 return _arguments.item;
               }
             });
-            node.value = this.node_.value = _arguments.item.getValue(node.dataLink.replace("item.", ""));
+            node.value = this.node_.value = _getValue(_arguments.item, property);
           }
         }
 

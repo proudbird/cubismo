@@ -8,7 +8,7 @@
         "description": "Addresses of the componies and partners",
         "multilevel": "true",
         "multilevelType": "folders",
-        "numberOfLevels": 2,
+        "numberOfLevels": 3,
         "codeLenght": 5,
         "codeType": "INTEGER",
         "uniqueCode": true,

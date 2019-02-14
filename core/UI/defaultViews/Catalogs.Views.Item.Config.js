@@ -12,25 +12,29 @@ module.exports.Init = function (item) {
   const hiddenAttributes = ["dropped", "isFolder", 
             "booked", "Date", "parentId", "ownerId", "order"];
 
-  attributes.push({ id: "Code", header: "Code" });
-
-  let fieldId = "Name";
-  let order = fieldId;
-  if(definition.nameLang && definition.nameLang.length) {
-    fieldId = fieldId + "_" + Application.lang;
-    order = fieldId;
+  if(definition.owners && definition.owners.length){
+    attributes.push({ id: "Owner", header: "Owner", type: "FK" });
   }
+
+  if(definition.multilevel){
+    attributes.push({ id: "Parent", header: "Parent", type: "FK" });
+  }
+
+  if(definition.codeLenght > 0){
+    attributes.push({ id: "Code", header: "Code" });
+  }
+  
   attributes.push({ id: "Name", header: "Name" });
 
   for (let key in definition.attributes) {
     const element = definition.attributes[key];
-    if (!serviceAttributes.includes(key) && element.type.dataType != "FK") {
+    if (!serviceAttributes.includes(key) && element.belonging != "folder") {
       let fieldId = element.fieldId;
       if(element.type.lang && element.type.lang.length) {
         fieldId = fieldId + "_" + Application.lang;
       }
       if(!hiddenAttributes.includes(key)) {
-        attributes.push({ id: key, header: element.title });
+        attributes.push({ id: key, header: element.title, type: element.type.dataType });
       }
     }
   }
@@ -38,9 +42,15 @@ module.exports.Init = function (item) {
   const rows = [{ view: "Toolbar", name: "Toolbar", owner: viewName, composition: "default", elements: [] }];
 
   attributes.forEach(row => {
+    let viewType;
+    if(row.type === "FK") {
+      viewType = "Lookup";
+    } else {
+      viewType = "Text";
+    }
     rows.push(
       {
-        view: "Text", 
+        view: viewType, 
         name: row.id,
         label: row.header,
         dataLink: "item." + row.id

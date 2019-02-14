@@ -16,8 +16,8 @@ function Type(_arguments) {
     this._private.model = _arguments.model;
 
     //@TODO move it
-    (function(original) {
-        _arguments.model.build = function(values, options) {
+    (function (original) {
+        _arguments.model.build = function (values, options) {
             if (Array.isArray(values)) {
                 return this.bulkBuild(values, options);
             }
@@ -40,7 +40,7 @@ function Type(_arguments) {
     }
 
     this.__proto__.newFolder = function (predefinedValues) {
-        if(!predefinedValues) {
+        if (!predefinedValues) {
             predefinedValues = {}
             predefinedValues.isFolder = true;
         }
@@ -55,7 +55,7 @@ function Type(_arguments) {
         _show(Application, this._private.model, _arguments);
     }
 
-    this.__proto__.select = async function(options, callback) {
+    this.__proto__.select = async function (options, callback) {
         return await _select(Application, this._private.model, options);
     }
 }
@@ -63,7 +63,7 @@ function Type(_arguments) {
 function _new(Application, model, predefinedValues) {
 
     let newInstance;
-    if(predefinedValues._private && predefinedValues._private.instance) {
+    if (predefinedValues._private && predefinedValues._private.instance) {
         predefinedValues = predefinedValues._private.instance.toJSON();
         delete predefinedValues.id;
     }
@@ -141,14 +141,41 @@ function _select(Application, model, options, callback) {
 
         var _inclusions = new Array();
 
+        function include(parentInc, target, alias, end) {
+            const childInc = [];
+            const inc = {
+                model: target,
+                as: alias
+            };
+            if (!end) {
+                inc.include = childInc;
+            }
+            parentInc.push(inc);
+
+            return childInc;
+        }
+
+        const definition = model.definition;
+
         if (model.associations) {
             for (let key in model.associations) {
                 const association = model.associations[key];
                 if (association.associationType === 'BelongsTo') {
-                    _inclusions.push({
-                        model: association.target,
-                        as: association.as
-                    });
+                    if (association.as === "Parent") {
+                        let parentInc = _inclusions;
+                        let end = false;
+                        for (let i = 0; i < definition.numberOfLevels; i++) {
+                            if (i === definition.numberOfLevels - 1) {
+                                end = true;
+                            }
+                            parentInc = include(parentInc, association.target, association.as, end);
+                        }
+                    } else {
+                        _inclusions.push({
+                            model: association.target,
+                            as: association.as
+                        });
+                    }
                 } else if (association.associationType === 'HasMany') {
                     let inclusion = {
                         model: association.target,
@@ -195,7 +222,7 @@ function _select(Application, model, options, callback) {
             });
     }
 
-    if(callback) {
+    if (callback) {
         return mainFunction(options, callback);
     }
 

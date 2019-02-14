@@ -155,3 +155,95 @@ webix.protoUI({
     return id;
   }
 }, webix.ui.tabview);
+
+webix.protoUI({
+  name: "Lookup",
+  defaults: {
+    readonly: true,
+    on: {
+      onAfterRender: function() {
+        showLookup(this, undefined, undefined, this.$view.children[0], this.config.dataLink);
+      }
+    }
+  },
+  $init: function(config) {
+    this.$view.className += " webix_el_text";
+    this.$ready.push(this._Init);
+  },
+  _Init: function () {
+    if(this.config.instance) {
+      this.config.value = this.config.instance.Name;
+    }
+  },
+  setValue: function(value) {
+    this.config.instance = value;
+    this.config.value = value.name;
+    this.refresh();
+  }
+}, webix.ui.text);
+
+function showLookup(view, id, e, box, dataLink) {
+  function renderLookupButton() {
+    if(box.getElementsByClassName("input_buttons_box").length < 1) {
+      var inBox = document.createElement("div");
+      box.appendChild(inBox);
+      inBox.className = "input_buttons_box";
+      var height = box.clientHeight
+      inBox.style.height = height + "px";
+      inBox.style.backgroundColor = box.style.backgroundColor;
+      inBox.style.top = -1*(height - 8) + "px";
+      var inButton = document.createElement("div");
+      inButton.style.lineHeight = height + "px";
+      iButtonClass = "webix_view webix_icon input_button wxi-dots";
+      inButton.className = iButtonClass;
+      inButton.style.width = height + "px";
+      if(view.config.view == "Lookup") {
+        inBox.style.height = (height - 8) + "px";
+        inBox.style.width = (height - 8) + "px";
+        inBox.style.top = -1*(height - 8) + "px";
+        inBox.style.right = -1;
+        inButton.style.lineHeight = (height - 8) + "px";
+        inButton.style.width = (height - 8) + "px";
+      }
+      inBox.appendChild(inButton);
+      inButton.addEventListener("mouseenter", function() {
+        inButton.className = iButtonClass + " input_button_hover";
+      });
+      inButton.addEventListener("mouseleave", function() {
+        inButton.className = iButtonClass;
+      });
+      inButton.addEventListener("click", function() { 
+        if(view.config.view == "Lookup") {
+          dataLink.value = view.config.instance;
+          var message = {};
+          message.FormID    = view.config.formID;
+          message.Command   = "Lookup";
+          message.target    = { id: view.config.id, name: view.config.name }
+          message.value     = dataLink;
+          ServerCall(message);
+        } else { 
+          dataLink.value = view.getItem(id.row);
+          var message = {};
+          message.FormID    = view.config.formID;
+          message.Command   = "Lookup";
+          message.target    = { id: view.config.id, name: view.config.name, columnId: id.column, rowId: id.row, index:  view.getIndexById(id.row) }
+          message.value     = dataLink;
+          ServerCall(message);
+        }
+      }, true);
+    }
+  }
+
+  renderLookupButton();
+
+  box.addEventListener("mouseenter", function() {
+    renderLookupButton();
+  });
+
+  box.addEventListener("mouseleave", function(e) {
+    if(box.getElementsByClassName("input_buttons_box").length > 0) {
+      var inBox = box.getElementsByClassName("input_buttons_box")[0];
+      inBox.remove();
+    }
+  });
+}

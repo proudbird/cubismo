@@ -244,9 +244,10 @@
 
 .input_buttons_box {
     position: relative;
-    top: 2px;
+    /* top: 2px; */
     right: 2px;
     float: right;
+    border-radius: 2px;
   }
   
   .input_button {
@@ -259,6 +260,7 @@
     float: right;
     font-size: 15px;
     font-weight: normal;
+    border-radius: 2px;
   }
   
   .input_button_hover{
