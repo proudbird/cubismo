@@ -57,6 +57,42 @@ function listen(server) {
       })
     });
 
+    socket.on('lookup', async function (message, callback) {
+      const application = getApplication(message);
+      const view = getView(message, application);
+      const uiElement = getUIElement(message, view);
+      const instance = message.arguments[0];
+      const type = Tools.getPropertyByTrack(application, instance.type);
+      type.show({
+          options: {
+            purpose: "select",
+            caller: view,
+            onlyFolders: uiElement.config.onlyFolders
+          }
+        })
+        .then(value => {
+          const message = {
+            directive: "setValue",
+            elementId: uiElement.config.id,
+            arguments: [{
+              id: value.getValue("id"),
+              title: value.getValue("Name"),
+              type: value._private.model.name
+            }]
+          }
+          socket.emit("directive", message, function(response) {
+            if (response.err) {
+              Log.error("Unsuccessable atempt to change value of " + uiElement.name, response.err);
+            } else {
+              view.item.setValue(uiElement.config.dataLink.replace("item.", ""), value);
+            }
+          });
+        })
+        .catch(err => {
+          Log.error("Error on looking up for " + uiElement.name, err);
+        })
+    });
+
     function getApplication(message) {
       const application = Platform.applications[message.applicationId];
       if(!application) {
@@ -113,6 +149,11 @@ function listen(server) {
       const _arguments = message.arguments || [];
       if(uiElement[message.element]) {
         uiElement[message.element](_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
+        return;
+      }
+
+      if(uiElement[message.event]) {
+        uiElement[message.event](_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
         return;
       }
 

@@ -3,6 +3,8 @@
 const fs     = require("fs");
 const path   = require("path");
 
+const EventEmitter = require('events');
+
 const Require    = require("../Require.js");
 const ConfigView = require("./ConfigView.js");
 
@@ -11,11 +13,19 @@ function View(_arguments) {
     const _private = {};
     _private.showCallback   = _arguments.showCallback;
     _private.closeCallback  = _arguments.closeCallback;
+
+    class Generator extends EventEmitter {}
+    const generator = new Generator();
+    this.closeCallback = generator;
     
     Object.defineProperty(this, "id", { value: Tools.SID(), enumerable: false, writable: false });
     Object.defineProperty(this, "name", { value: _arguments.name, enumerable: false, writable: false });
     
     this.params = _arguments.params;
+    this.options = _arguments.options;
+    if(!this.options) {
+        this.options = {};
+    }
     if(_arguments.item) {
         this.item = _arguments.item;
         this.item.view = this;
@@ -28,7 +38,18 @@ function View(_arguments) {
         const mainFunction = function(callback) {
             show(self, _arguments, _private)
             .then((viewConfig) => {
-                return callback(null, viewConfig);
+                //return callback(null, viewConfig);
+                //_arguments.application.window.Viewbar.addView(config);
+                const result = {
+                    config: viewConfig,
+                    promise: new Promise(function (resolve, reject) {
+                        self.closeCallback.on("close", function (value) {
+                            resolve(value);
+                        })
+                    })
+                }
+
+                return callback(null, result);
             })
             .catch((err) => {
                 return callback(err);
@@ -45,12 +66,13 @@ function View(_arguments) {
         });   
     }
 
-    this.__proto__.close = function() {
+    this.__proto__.close = function(value) {
         const self = this;
         const mainFunction = function(callback) {
-            close(self, _arguments, _private)
+            close(self, _arguments, _private, value)
             .then((viewConfig) => {
-                return callback(null, viewConfig);
+                //return callback(null, value);
+                self.closeCallback.emit("close", value);
             })
             .catch((err) => {
                 return callback(err);
@@ -132,16 +154,17 @@ function show(view, _arguments, _private) {
     });
 }
 
-function close(view, _arguments, _private) {
+function close(view, _arguments, _private, value) {
     const self = this;
 
     const mainFunction = function(callback) {
         _arguments.application.window.Viewbar.removeView(view.config.tabId)
         .then(result => {
             delete _arguments.application.views[view.id]
+            callback(null);
         })
         .catch(err => {
-            Log.error(err);
+            callback(err);
         })
     }
 

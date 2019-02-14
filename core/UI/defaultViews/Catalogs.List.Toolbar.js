@@ -26,6 +26,13 @@ async function remove(_arguments, immediate) {
   });
 }
 
+async function enter(_arguments) {
+  const selected = await _arguments.view.List.getSelected();
+  if(_arguments.view.options.purpose === "select") {
+    _arguments.view.close(selected[0]);
+  }
+}
+
 function defineCommand(command, _arguments) {
   switch (command) {
     case "DefaultCmd.Create":
@@ -56,6 +63,11 @@ function defineCommand(command, _arguments) {
     case "DefaultCmd.Remove":
       _arguments.uiElement[command] = function () {
         remove(_arguments, true);
+      };
+      break;
+    case "DefaultCmd.Enter":
+      _arguments.uiElement[command] = function () {
+        enter(_arguments);
       };
       break;
   }

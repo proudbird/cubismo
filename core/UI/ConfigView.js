@@ -12,12 +12,12 @@ function ConfigView(View, _arguments, pathToFile) {
     Application: _arguments.application
   });
   if (config.Init) {
-    config = config.Init(_arguments.item ? _arguments.item : _arguments.type);
+    config = config.Init(_arguments.item ? _arguments.item : _arguments.type, _arguments.options);
   }
 
   function _getValue(item, property) {
     let value = item.getValue(property);
-    if(typeof value === "object" && value) {
+    if (typeof value === "object" && value) {
       value = value.getValue("Name");
     }
     return value;
@@ -97,6 +97,29 @@ function ConfigView(View, _arguments, pathToFile) {
           }
           if (node.dataLink) {
             const property = node.dataLink.replace("item.", "");
+            const definition = _arguments.item._private.model.definition;
+            if (property === "Parent" || property === "Owner") {
+              const item = _arguments.item.getValue(property);
+              node.instance = this.node_.instance = {};
+              if (item) {
+                node.instance.id = item.getValue("id");
+                node.instance.title = item.getValue("Name");
+                node.instance.type = item._private.model.name;
+              }
+            } else {
+              if (property != "id" && property != "Code" && property != "Name") {
+                const attribute = definition.attributes[property];
+                if (attribute.type.dataType === "FK") {
+                  const item = _arguments.item.getValue(property);
+                  node.instance = this.node_.instance = {};
+                  if (item) {
+                    node.instance.id = item.getValue("id");
+                    node.instance.title = item.getValue("Name");
+                    node.instance.type = item._private.model.name;
+                  }
+                }
+              }
+            }
             Object.defineProperty(element, "value", {
               enumerable: true,
               get: function () {
@@ -108,6 +131,17 @@ function ConfigView(View, _arguments, pathToFile) {
               }
             });
             node.value = this.node_.value = _getValue(_arguments.item, property);
+          }
+          if (node.select) {
+            let pathToDefaultCommandsFile = path.join(__dirname, "./DefaultViews/Catalogs.List.Toolbar.js");
+            let commands = require(pathToDefaultCommandsFile);
+            _arguments.view = View;
+            _arguments.uiElement = View[node.name];
+            if (_arguments.item) {
+              pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Item");
+              commands = require(pathToDefaultCommandsFile);
+            }
+            commands.defineCommand("DefaultCmd.Enter", _arguments);
           }
         }
 

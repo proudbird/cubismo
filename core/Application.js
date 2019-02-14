@@ -96,7 +96,7 @@ function Application(name, dirname, filename) {
         const mainFunction = function(callback) {
             view.show()
             .then((viewConfig) => {
-                return callback(null, viewConfig);
+                return callback(null, viewConfig.config);
             })
             .catch((err) => {
                 return callback(err);

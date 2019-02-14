@@ -47,12 +47,28 @@ function Type(_arguments) {
         return _new(Application, this._private.model, predefinedValues);
     }
 
-    this.__proto__.show = function (_arguments) {
+    this.__proto__.show = async function (_arguments) {
+        const self = this;
         if (!_arguments) {
             _arguments = {};
         }
         _arguments.type = this;
-        _show(Application, this._private.model, _arguments);
+        function mainFunction(callback) {
+            _show(Application, self._private.model, _arguments)
+            .then(view => {
+                callback(null, new Promise(function (resolve, reject) {
+                    view.closeCallback.on("close", function (value) {
+                        resolve(value);
+                    })
+                }))
+            })
+        }
+
+        return new Promise(function (resolve, reject) {
+            mainFunction(function (error, result) {
+                error ? reject(error) : resolve(result);
+            });
+        });
     }
 
     this.__proto__.select = async function (options, callback) {
@@ -101,10 +117,13 @@ function _show(Application, model, _arguments) {
         throw new Error("Arguments must be an object!");
     }
 
+    if (!_arguments.options) {
+        _arguments.options = {};
+    }
     if (_arguments.options && !_.isPlainObject(_arguments.options)) {
         throw new Error("Parametr 'options' must be an object!");
     } else {
-        _arguments.options = {};
+        //_arguments.options = {};
     }
 
     if (_arguments.params && !_.isPlainObject(_arguments.params)) {
@@ -126,13 +145,22 @@ function _show(Application, model, _arguments) {
     _arguments.modelName = model.modelName;
 
     const view = new View(_arguments);
-    view.show()
-        .then(config => {
-            Application.window.Viewbar.addView(config);
-        })
-        .catch(err => {
-            Log.error("Error on adding view", err);
-        })
+    function mainFunction(callback) {
+        view.show()
+            .then(viewConfig => {
+                Application.window.Viewbar.addView(viewConfig.config);
+                callback(null, view);
+            })
+            .catch(err => {
+                Log.error("Error on adding view", err);
+            })
+    }
+
+    return new Promise(function (resolve, reject) {
+        mainFunction(function (error, result) {
+            error ? reject(error) : resolve(result);
+        });
+    });
 };
 
 function _select(Application, model, options, callback) {

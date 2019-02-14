@@ -116,6 +116,20 @@ webix.protoUI({
   name:"Treetable",
   defaults:{
     scroll: true,
+    on:{
+      onItemDblClick: function(item, e) {
+        const id = item.row;
+        if (id) {
+          callServer("event", { 
+            viewId   : this.config.viewId, 
+            element  : this.config.name, 
+            event    : "DefaultCmd.Enter",
+            owner    : this.config.owner,
+            arguments: [id]
+          });
+        }
+      }
+    }
   },
   $init: function (config) {
     this.$ready.push(this._Init);
@@ -172,12 +186,12 @@ webix.protoUI({
   },
   _Init: function () {
     if(this.config.instance) {
-      this.config.value = this.config.instance.Name;
+      this.config.value = this.config.instance.title;
     }
   },
   setValue: function(value) {
     this.config.instance = value;
-    this.config.value = value.name;
+    this.config.value = value.title;
     this.refresh();
   }
 }, webix.ui.text);
@@ -214,21 +228,25 @@ function showLookup(view, id, e, box, dataLink) {
       });
       inButton.addEventListener("click", function() { 
         if(view.config.view == "Lookup") {
-          dataLink.value = view.config.instance;
-          var message = {};
-          message.FormID    = view.config.formID;
-          message.Command   = "Lookup";
-          message.target    = { id: view.config.id, name: view.config.name }
-          message.value     = dataLink;
-          ServerCall(message);
+          callServer("lookup", { 
+            viewId   : view.config.viewId, 
+            element  : view.config.name, 
+            arguments: [view.config.instance]
+          });
         } else { 
-          dataLink.value = view.getItem(id.row);
-          var message = {};
-          message.FormID    = view.config.formID;
-          message.Command   = "Lookup";
-          message.target    = { id: view.config.id, name: view.config.name, columnId: id.column, rowId: id.row, index:  view.getIndexById(id.row) }
-          message.value     = dataLink;
-          ServerCall(message);
+          // dataLink.value = view.getItem(id.row);
+          // var message = {};
+          // message.FormID    = view.config.formID;
+          // message.Command   = "Lookup";
+          // message.target    = { id: view.config.id, name: view.config.name, columnId: id.column, rowId: id.row, index:  view.getIndexById(id.row) }
+          // message.value     = dataLink;
+          // ServerCall(message);
+
+          // callServer("lookup", { 
+          //   viewId   : this.config.viewId, 
+          //   element  : this.config.name, 
+          //   arguments: [view.config.dataLink, view.config.instance]
+          // });
         }
       }, true);
     }

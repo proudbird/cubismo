@@ -96,6 +96,8 @@ function Item(_arguments) {
             if (definition.nameLang && definition.nameLang.length) {
                 fieldId = fieldId + "_" + Application.lang;
             }
+        } else if (property === "id") {
+            return instance.id;
         } else if (property === "Code") {
             return instance.Code;
         } else if (property === "Parent") {
@@ -114,20 +116,30 @@ function Item(_arguments) {
 
     this.__proto__.setValue = function (property, value) {
         const definition = this._private.model.definition;
+        const instance = this._private.instance;
         let fieldId = property;
         if (property === "Name") {
             if (definition.nameLang && definition.nameLang.length) {
                 fieldId = fieldId + "_" + Application.lang;
             }
+        } else if (property === "id") {
+            throw new Error("It is not allowed to change 'id' of an item");
         } else if (property === "Code") {
-
+            fieldId = "Code";
+        } else if (property === "Parent") {
+            instance.Parent = value;
+            instance.setDataValue("parentId", value.getValue("id"));
+            return this;
+        } else if (property === "Owner") {
+            instance.Parent = value;
+            instance.setDataValue("ownerId", value.getValue("id"));
+            return this;
         } else {
             const element = definition.attributes[property];
             if (element.type.lang && element.type.lang.length) {
                 fieldId = fieldId + "_" + Application.lang;
             }
         }
-        const instance = this._private.instance;
         instance.setDataValue(fieldId, value);
         return this;
     }
@@ -178,8 +190,8 @@ function _show(Application, item, _arguments) {
 
     const view = new View(_arguments);
     view.show()
-        .then(config => {
-            Application.window.Viewbar.addView(config);
+        .then(viewConfig => {
+            Application.window.Viewbar.addView(viewConfig.config);
         })
         .catch(err => {
             Log.error("Error on adding view", err);
@@ -192,10 +204,14 @@ function _saveAssociations(item, result) {
         _async.forEach(model.associations, function (association, Next) {
             if (association.associationType === 'BelongsTo') {
                 const setAccessor = association.accessors.set;
-                const value = result[association.as];
+                let value = result[association.as];
                 if (!value) {
                     return Next();
                 }
+                if (!value._private.instance) {
+                    return Next();
+                }
+                value = value._private.instance;
                 result[setAccessor](value)
                     //result[setAccessor](value.id)
                     .then(() => {

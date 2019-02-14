@@ -17,7 +17,7 @@ module.exports.Init = function (item) {
   }
 
   if(definition.multilevel){
-    attributes.push({ id: "Parent", header: "Parent", type: "FK" });
+    attributes.push({ id: "Parent", header: "Parent", type: "FK", onlyFolders: true });
   }
 
   if(definition.codeLenght > 0){
@@ -53,7 +53,8 @@ module.exports.Init = function (item) {
         view: viewType, 
         name: row.id,
         label: row.header,
-        dataLink: "item." + row.id
+        dataLink: "item." + row.id,
+        onlyFolders: row.onlyFolders
       }
     );
   })

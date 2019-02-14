@@ -1,5 +1,5 @@
 /* globals Tools Application ID ContainerID webix*/
-module.exports.Init = function (type) {
+module.exports.Init = function (type, options) {
 
   const definition = type._private.model.definition;
   const formTitle = "Catalog " + definition.name;
@@ -47,6 +47,10 @@ module.exports.Init = function (type) {
     SELECT: attributes,
     FROM:   type._private.model.name,
     ORDER:  [[order, "ASC"]]
+  }
+
+  if(options.onlyFolders) {
+    query.WHERE = [ { EQ: ["isFolder", true] }];
   }
 
   return {

@@ -85,7 +85,8 @@ function buildSQLQuery(driver, query) {
   if (Array.isArray(where) && where.length > 0) {
     let newWhere = [];
     for(let i = 0; i < where.length; i++) {
-      newWhere.push(buildOperation(query.FROM, where[i]));
+      const model = driver.models[query.FROM]
+      newWhere.push(buildOperation(model, where[i]));
     }
     result = result + ' WHERE ' + newWhere.join(' AND ');
   }
