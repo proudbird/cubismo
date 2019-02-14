@@ -31,7 +31,13 @@ process.on('unhandledRejection', function (err) {
   //}
   //newStack = newStack.join('\n');
   console.log('\n');
-  console.log('Caught promise exception: ' + err);
+  console.log('Caught promise exception:');
+  if(err.message) {
+    console.log(err.message);
+  }
+  if(err.stack) {
+    console.log(err.stack);
+  }
   //console.log(newStack);
   console.log('\n');
 });
