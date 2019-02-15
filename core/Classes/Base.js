@@ -5,8 +5,8 @@ const Require = require("../Require");
 
 function Base(application, cube, name, dirname, filename) {
 
-    const _private = {};
-    _private.modules = {};
+    const _ = {};
+    _.modules = {};
     
     Object.defineProperties(this, { 
         application: { value: application, enumerable: false, writable: false },
@@ -24,7 +24,7 @@ function Base(application, cube, name, dirname, filename) {
     }
     const id = require.resolve(moduleFileName);
     let load = true;
-    let storedModule = _private.modules[id];
+    let storedModule = _.modules[id];
     if(storedModule) {
         let lastUpdated = fs.statSync(moduleFileName).mtime;
         if (lastUpdated.getTime() === storedModule.lastUpdated.getTime()) {
@@ -38,7 +38,7 @@ function Base(application, cube, name, dirname, filename) {
         }
         Require(moduleFileName, { Application: application, Module: this, Cube: cube });
         storedModule = { lastUpdated: fs.statSync(moduleFileName).mtime }
-        _private.modules[id] = storedModule;
+        _.modules[id] = storedModule;
     }
 }
 module.exports = Base;

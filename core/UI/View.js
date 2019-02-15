@@ -10,9 +10,9 @@ const ConfigView = require("./ConfigView.js");
 
 function View(_arguments) {
     
-    const _private = {};
-    _private.showCallback   = _arguments.showCallback;
-    _private.closeCallback  = _arguments.closeCallback;
+    const _ = {};
+    _.showCallback   = _arguments.showCallback;
+    _.closeCallback  = _arguments.closeCallback;
 
     class Generator extends EventEmitter {}
     const generator = new Generator();
@@ -36,7 +36,7 @@ function View(_arguments) {
     this.__proto__.show = function() {
         const self = this;
         const mainFunction = function(callback) {
-            show(self, _arguments, _private)
+            show(self, _arguments, _)
             .then((viewConfig) => {
                 const result = {
                     config: viewConfig,
@@ -67,7 +67,7 @@ function View(_arguments) {
     this.__proto__.close = function(value) {
         const self = this;
         const mainFunction = function(callback) {
-            close(self, _arguments, _private, value)
+            close(self, _arguments, _, value)
             .then((viewConfig) => {
                 //return callback(null, value);
                 self.closeCallback.emit("close", value);
@@ -89,7 +89,7 @@ function View(_arguments) {
 }
 module.exports = View;
 
-function show(view, _arguments, _private) {
+function show(view, _arguments, _) {
     const self = this;
 
     const mainFunction = function(callback) {
@@ -142,8 +142,8 @@ function show(view, _arguments, _private) {
         }
     }
 
-    if (_private.showCallback) {
-        return mainFunction(_private.showCallback);
+    if (_.showCallback) {
+        return mainFunction(_.showCallback);
     }
     return new Promise(function(resolve, reject) {
         mainFunction(function(error, result) {
@@ -152,7 +152,7 @@ function show(view, _arguments, _private) {
     });
 }
 
-function close(view, _arguments, _private, value) {
+function close(view, _arguments, _, value) {
     const self = this;
 
     const mainFunction = function(callback) {
@@ -166,8 +166,8 @@ function close(view, _arguments, _private, value) {
         })
     }
 
-    if (_private.showCallback) {
-        return mainFunction(_private.showCallback);
+    if (_.showCallback) {
+        return mainFunction(_.showCallback);
     }
     return new Promise(function(resolve, reject) {
         mainFunction(function(error, result) {

@@ -12,8 +12,9 @@ const View = require("../UI/View.js");
 
 function Type(_arguments) {
 
-    this._private = {};
-    this._private.model = _arguments.model;
+    this._ = {};
+    this._.model = _arguments.model;
+    this._.application = _arguments.application;
 
     //@TODO move it
     (function (original) {
@@ -27,16 +28,14 @@ function Type(_arguments) {
         };
     }(_arguments.model.build));
 
-    var Application = _arguments.application;
-
     Object.defineProperty(this, "name", {
-        value: this._private.model.modelName,
+        value: this._.model.modelName,
         enumerable: false,
         writable: false
     });
 
     this.__proto__.new = function (predefinedValues) {
-        return _new(Application, this._private.model, predefinedValues);
+        return _new(this, this._.model, predefinedValues);
     }
 
     this.__proto__.newFolder = function (predefinedValues) {
@@ -44,7 +43,7 @@ function Type(_arguments) {
             predefinedValues = {}
             predefinedValues.isFolder = true;
         }
-        return _new(Application, this._private.model, predefinedValues);
+        return _new(this, this._.model, predefinedValues);
     }
 
     this.__proto__.show = async function (_arguments) {
@@ -52,9 +51,9 @@ function Type(_arguments) {
         if (!_arguments) {
             _arguments = {};
         }
-        _arguments.type = this;
+        _arguments.type = self;
         function mainFunction(callback) {
-            _show(Application, self._private.model, _arguments)
+            _show(self, self._.model, _arguments)
             .then(view => {
                 callback(null, new Promise(function (resolve, reject) {
                     view.closeCallback.on("close", function (value) {
@@ -72,15 +71,23 @@ function Type(_arguments) {
     }
 
     this.__proto__.select = async function (options, callback) {
-        return await _select(Application, this._private.model, options);
+        return await _select(this, this._.model, options);
+    }
+
+    this.__proto__.owner = function (options, callback) {
+        const ownerAssosiation = this._.model.associations["Owner"];
+        if(ownerAssosiation) {
+            return Tools.getPropertyByTrack(this._.application, ownerAssosiation.target.name);
+        }
+        return undefined;
     }
 }
 
-function _new(Application, model, predefinedValues) {
+function _new(self, model, predefinedValues) {
 
     let newInstance;
-    if (predefinedValues && predefinedValues._private && predefinedValues._private.instance) {
-        predefinedValues = predefinedValues._private.instance.toJSON();
+    if (predefinedValues && predefinedValues._ && predefinedValues._.instance) {
+        predefinedValues = predefinedValues._.instance.toJSON();
         delete predefinedValues.id;
     }
     if (predefinedValues && predefinedValues.isNewRecord !== false) {
@@ -108,7 +115,7 @@ function _new(Application, model, predefinedValues) {
     return newInstance;
 }
 
-function _show(Application, model, _arguments) {
+function _show(self, model, _arguments) {
 
     if (!_arguments) {
         _arguments = {};
@@ -138,7 +145,7 @@ function _show(Application, model, _arguments) {
         _arguments.name = name;
     }
 
-    _arguments.application = Application;
+    _arguments.application = self._.application;
     _arguments.cube = model.cube;
     _arguments.class = model.class;
     _arguments.model = model;
@@ -148,7 +155,7 @@ function _show(Application, model, _arguments) {
     function mainFunction(callback) {
         view.show()
             .then(viewConfig => {
-                Application.window.Viewbar.addView(viewConfig.config);
+                self._.application.window.Viewbar.addView(viewConfig.config);
                 callback(null, view);
             })
             .catch(err => {
@@ -163,7 +170,7 @@ function _show(Application, model, _arguments) {
     });
 };
 
-function _select(Application, model, options, callback) {
+function _select(self, model, options, callback) {
 
     function defineInclusions(model) {
 

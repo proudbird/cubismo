@@ -62,14 +62,16 @@ function listen(server) {
       const view = getView(message, application);
       const uiElement = getUIElement(message, view);
       const instance = message.arguments[0];
+      options = {
+        purpose: "select",
+        caller: view,
+        onlyFolders: uiElement.config.onlyFolders
+      }
       const type = Tools.getPropertyByTrack(application, instance.type);
-      type.show({
-          options: {
-            purpose: "select",
-            caller: view,
-            onlyFolders: uiElement.config.onlyFolders
-          }
-        })
+      if(type._.model.definition.owners && type._.model.definition.owners.length) {
+        options.owner = view.item;
+      }
+      type.show({options})
         .then(value => {
           const message = {
             directive: "setValue",
@@ -77,7 +79,7 @@ function listen(server) {
             arguments: [{
               id: value.getValue("id"),
               title: value.getValue("Name"),
-              type: value._private.model.name
+              type: value._.model.name
             }]
           }
           socket.emit("directive", message, function(response) {

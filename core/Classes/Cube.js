@@ -3,7 +3,7 @@ const Collection = require('./Collection.js');
 
 function Cube(application, cube, name, dirname, filename) {
     
-    const _private =  {};
+    const _ =  {};
     
     Collection.call(this, application, cube, name, dirname, filename);
 }

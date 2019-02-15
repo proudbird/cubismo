@@ -84,9 +84,9 @@ function buildSQLQuery(driver, query) {
       newWhere.push(buildOperation(model, where[i]));
     }
     result = result + ' WHERE ' + newWhere.join(' AND ');
-  } else if (typeof where === "object") {
+  } else if (typeof where === "object" && !Array.isArray(where)) {
     result = result + ' WHERE ' + buildOperation(model, where);
-  } else if(where) {
+  } else if(where && !Array.isArray(where)) {
     throw new Error("Wrong format of 'WHERE' statement.")
   }
 

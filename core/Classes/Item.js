@@ -7,21 +7,21 @@ const View = require("../UI/View.js");
 
 function Item(_arguments) {
 
-    this._private = {};
-    this._private.model = _arguments.model;
-    this._private.instance = _arguments.instance;
+    this._ = {};
+    this._.model = _arguments.model;
+    this._.instance = _arguments.instance;
 
     const Application = _arguments.application;
 
-    const definition = this._private.model.definition;
+    const definition = this._.model.definition;
 
     if (definition.owners && definition.owners.length) {
         Object.defineProperty(this, "Owner", {
             get: function () {
-                return this._private.instance.Owner;
+                return this._.instance.Owner;
             },
             set: function (value) {
-                this._private.instance.Owner = value;
+                this._.instance.Owner = value;
                 return this;
             }
         })
@@ -30,10 +30,10 @@ function Item(_arguments) {
     if (definition.multilevel) {
         Object.defineProperty(this, "Parent", {
             get: function () {
-                return this._private.instance.Parent;
+                return this._.instance.Parent;
             },
             set: function (value) {
-                this._private.instance.Parent = value;
+                this._.instance.Parent = value;
                 return this;
             }
         })
@@ -41,22 +41,22 @@ function Item(_arguments) {
 
     Object.defineProperty(this, "Name", {
         get: function () {
-            return this._private.instance.getDataValue("Name" + Application.lang);
+            return this._.instance.getDataValue("Name" + Application.lang);
         },
         set: function (value) {
-            return this._private.instance.setDataValue("Name" + Application.lang, value);
+            return this._.instance.setDataValue("Name" + Application.lang, value);
         }
     })
 
-    for (let key in this._private.model.definition.attributes) {
+    for (let key in this._.model.definition.attributes) {
         const attribute = definition.attributes[key];
         if (attribute.type.lang && attribute.type.lang.length) {
             Object.defineProperty(this, key, {
                 get: function () {
-                    return this._private.instance.getDataValue(attribute.fieldId + Application.lang);
+                    return this._.instance.getDataValue(attribute.fieldId + Application.lang);
                 },
                 set: function (value) {
-                    return this._private.instance.setDataValue(attribute.fieldId + Application.lang, value);
+                    return this._.instance.setDataValue(attribute.fieldId + Application.lang, value);
                 }
             })
         }
@@ -71,7 +71,7 @@ function Item(_arguments) {
     }
 
     this.__proto__.save = function () {
-        const instance = this._private.instance;
+        const instance = this._.instance;
         instance.save()
             .then(result => {
                 _saveAssociations(this, result);
@@ -83,13 +83,13 @@ function Item(_arguments) {
     }
 
     this.__proto__.get = function (param) {
-        const instance = this._private.instance;
+        const instance = this._.instance;
         return instance.get(param);
     }
 
     this.__proto__.getValue = function (property) {
-        const definition = this._private.model.definition;
-        const instance = this._private.instance;
+        const definition = this._.model.definition;
+        const instance = this._.instance;
         let value;
         let fieldId = property;
         if (property === "Name") {
@@ -115,9 +115,9 @@ function Item(_arguments) {
     }
 
     this.__proto__.setValue = function (property, value) {
-        const model = this._private.model;
-        const definition = this._private.model.definition;
-        const instance = this._private.instance;
+        const model = this._.model;
+        const definition = this._.model.definition;
+        const instance = this._.instance;
         let fieldId = property;
         if (property === "Name") {
             if (definition.nameLang && definition.nameLang.length) {
@@ -152,7 +152,7 @@ function Item(_arguments) {
     }
 
     this.__proto__.isFolder = function () {
-        const instance = this._private.instance;
+        const instance = this._.instance;
         return instance.getDataValue("isFolder");
     }
 }
@@ -189,10 +189,10 @@ function _show(Application, item, _arguments) {
     }
 
     _arguments.application = Application;
-    _arguments.cube = item._private.model.cube;
-    _arguments.class = item._private.model.class;
-    _arguments.model = item._private.model;
-    _arguments.modelName = item._private.model.modelName;
+    _arguments.cube = item._.model.cube;
+    _arguments.class = item._.model.class;
+    _arguments.model = item._.model;
+    _arguments.modelName = item._.model.modelName;
     _arguments.item = item;
 
     const view = new View(_arguments);
@@ -215,10 +215,10 @@ function _saveAssociations(item, result) {
                 if (!value) {
                     return Next();
                 }
-                if (!value._private.instance) {
+                if (!value._.instance) {
                     return Next();
                 }
-                value = value._private.instance;
+                value = value._.instance;
                 result[setAccessor](value)
                     //result[setAccessor](value.id)
                     .then(() => {
@@ -279,15 +279,15 @@ function _saveAssociations(item, result) {
     }
 
     return new Promise(function (resolve, reject) {
-        mainFunction(item._private.model, result, function (error, result) {
+        mainFunction(item._.model, result, function (error, result) {
             error ? reject(error) : resolve(result);
         });
     });
 };
 
 async function _delete(item, immediate) {
-    const model = item._private.model;
-    const instance = item._private.instance;
+    const model = item._.model;
+    const instance = item._.instance;
     if (immediate) {
         await instance.destroy({
             force: true

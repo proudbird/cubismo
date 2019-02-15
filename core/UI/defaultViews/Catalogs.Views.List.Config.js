@@ -1,7 +1,7 @@
 /* globals Tools Application ID ContainerID webix*/
 module.exports.Init = function (type, options) {
 
-  const definition = type._private.model.definition;
+  const definition = type._.model.definition;
   const formTitle = "Catalog " + definition.name;
   const listName = "List";
 
@@ -56,36 +56,59 @@ module.exports.Init = function (type, options) {
 
   const query = {
     SELECT: attributes,
-    FROM:   type._private.model.name,
+    FROM:   type._.model.name,
     ORDER:  [order, "ASC"]
   }
 
+  query.WHERE = [];
   if(options.onlyFolders) {
-    query.WHERE = { EQ: ["isFolder", true] };
+    query.WHERE.push({ EQ: ["isFolder", true] });
   }
+
+  if(options.owner) {
+    query.WHERE.push({ EQ: ["Owner", options.owner] });
+  }
+
+  const rows = [];
+  if (definition.owners && definition.owners.length) {
+    rows.push({
+      view: "Lookup",
+      name: "Owner",
+      label: "Owner",
+      dataLink: "item.Owner",
+      onlyFolders: false
+    });
+  }
+
+  rows.push({
+    view: "Toolbar",
+    name: "Toolbar",
+    owner: listName,
+    composition: "default",
+    elements: []
+  });
+
+  rows.push({
+    view: "Treetable",
+    name: listName,
+    autoConfig: true,
+    treeType: true,
+    select: true,
+    multiselect: true,
+    columns: columns,
+    dynamic: true,
+    autoUpdate: true,
+    updateInterval: 30,
+    query: query,
+    events: {
+      onItemDblClick: listName + "_onItemDblClick"
+    }
+  });
 
   return {
     view: "View",
     name: "CatalogList",
     header: formTitle,
-    rows: [
-      { view: "Toolbar", name: "Toolbar", owner: listName, composition: "default", elements: [] },
-      { 
-        view: "Treetable",
-        name: listName,
-        autoConfig: true,
-        treeType: true,
-        select: true,
-        multiselect: true,
-        columns: columns,
-        dynamic: true,
-        autoUpdate: true,
-        updateInterval: 30,
-        query: query,
-        events: {
-          onItemDblClick: listName + "_onItemDblClick"
-        }
-      }
-    ]
+    rows: rows
   }
 }

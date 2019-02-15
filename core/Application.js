@@ -29,39 +29,39 @@ const Query = require('./Query.js');
 
 function Application(name, dirname, filename) {
 
-    const _private = {};
+    const _ = {};
 
     constructors.Collection.call(this, undefined, undefined, name, dirname, filename);
 
-    _private.connection = new DBConnection(this);
+    _.connection = new DBConnection(this);
 
     const p = path.join(__dirname, "./Query.js");
     
-    this.Query = new Query(this, _private.connection.driver);
+    this.Query = new Query(this, _.connection.driver);
 
-    _private.modelDefinition = {};
+    _.modelDefinition = {};
     
     this.init = function() {
         const self = this;
 
         const mainFunction = function(callback) {
-            _private.connection.authenticate()
+            _.connection.authenticate()
             .then(() => {
                 try {
-                    defineApplicationStructure(self, _private.modelDefinition);
+                    defineApplicationStructure(self, _.modelDefinition);
                 } catch(err) {
                     Log.error("Unsuccessful attempt to define application structure");
                     callback(err);
                 }
     
                 try {
-                    defineModelStructure(self, _private.connection.driver, _private.modelDefinition);
+                    defineModelStructure(self, _.connection.driver, _.modelDefinition);
                 } catch(err) {
                     Log.error("Unsuccessful attempt to define application model structure");
                     callback(err);
                 }
                     
-                syncDBStructure(self, _private.connection)
+                syncDBStructure(self, _.connection)
                 .then(() => {
                     callback(null);
                 })

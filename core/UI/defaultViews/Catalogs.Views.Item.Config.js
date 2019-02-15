@@ -1,7 +1,7 @@
 /* globals Tools Application ID ContainerID webix*/
 module.exports.Init = function (item) {
 
-  const definition = item._private.model.definition;
+  const definition = item._.model.definition;
   const formTitle = "Item " + definition.name;
   const viewName = "CatalogItem";
 

@@ -97,25 +97,34 @@ function ConfigView(View, _arguments, pathToFile) {
           }
           if (node.dataLink) {
             const property = node.dataLink.replace("item.", "");
-            const definition = _arguments.item._private.model.definition;
+            let item = _arguments.item || _arguments.options.owner;
+            let modelType;
+            if(_arguments.item) {
+              item = _arguments.item;
+              modelType = item._.model.associations[property].target.name;
+            } else if(_arguments.options.owner) {
+
+            }
+            
+            const definition = item._.model.definition;
             if (property === "Parent" || property === "Owner") {
-              const item = _arguments.item.getValue(property);
-              node.instance = this.node_.instance = {};
-              if (item) {
-                node.instance.id = item.getValue("id");
-                node.instance.title = item.getValue("Name");
-                node.instance.type = item._private.model.name;
+              const link = item.getValue(property);
+              const modelType = item._.model.associations[property].target.name;
+              node.instance = this.node_.instance = { type: modelType };
+              if (link) {
+                node.instance.id = link.getValue("id");
+                node.instance.title = link.getValue("Name");
               }
             } else {
               if (property != "id" && property != "Code" && property != "Name") {
                 const attribute = definition.attributes[property];
                 if (attribute.type.dataType === "FK") {
-                  const item = _arguments.item.getValue(property);
-                  const modelType = _arguments.item._private.model.associations[property].target.name;
+                  const link = _arguments.item.getValue(property);
+                  const modelType = item._.model.associations[property].target.name;
                   node.instance = this.node_.instance = { type: modelType };
-                  if (item) {
-                    node.instance.id = item.getValue("id");
-                    node.instance.title = item.getValue("Name");
+                  if (link) {
+                    node.instance.id = link.getValue("id");
+                    node.instance.title = link.getValue("Name");
                   }
                 }
               }
@@ -123,14 +132,14 @@ function ConfigView(View, _arguments, pathToFile) {
             Object.defineProperty(element, "value", {
               enumerable: true,
               get: function () {
-                _getValue(_arguments.item, property);
+                _getValue(item, property);
               },
               set: function (value) {
-                _arguments.item.setValue(property, value);
+                item.setValue(property, value);
                 return _arguments.item;
               }
             });
-            node.value = this.node_.value = _getValue(_arguments.item, property);
+            node.value = this.node_.value = _getValue(item, property);
           }
           if (node.select) {
             let pathToDefaultCommandsFile = path.join(__dirname, "./DefaultViews/Catalogs.List.Toolbar.js");
