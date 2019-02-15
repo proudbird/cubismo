@@ -35,7 +35,7 @@ function Query(application, driver) {
         const result = await self._.driver.query(sql, queryModel);
         return callback(null, result);
       } catch(err) {
-        return callback(err);
+        throw new Error(err.message);
       };
     }
 

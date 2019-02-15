@@ -79,7 +79,7 @@ function Type(_arguments) {
 function _new(Application, model, predefinedValues) {
 
     let newInstance;
-    if (predefinedValues._private && predefinedValues._private.instance) {
+    if (predefinedValues && predefinedValues._private && predefinedValues._private.instance) {
         predefinedValues = predefinedValues._private.instance.toJSON();
         delete predefinedValues.id;
     }

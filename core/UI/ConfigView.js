@@ -111,11 +111,11 @@ function ConfigView(View, _arguments, pathToFile) {
                 const attribute = definition.attributes[property];
                 if (attribute.type.dataType === "FK") {
                   const item = _arguments.item.getValue(property);
-                  node.instance = this.node_.instance = {};
+                  const modelType = _arguments.item._private.model.associations[property].target.name;
+                  node.instance = this.node_.instance = { type: modelType };
                   if (item) {
                     node.instance.id = item.getValue("id");
                     node.instance.title = item.getValue("Name");
-                    node.instance.type = item._private.model.name;
                   }
                 }
               }

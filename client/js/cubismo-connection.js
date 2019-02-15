@@ -1,4 +1,5 @@
 /* globals $$ */
+
 let reconection;
 const server = io({
   query: {

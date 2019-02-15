@@ -115,6 +115,7 @@ function Item(_arguments) {
     }
 
     this.__proto__.setValue = function (property, value) {
+        const model = this._private.model;
         const definition = this._private.model.definition;
         const instance = this._private.instance;
         let fieldId = property;
@@ -138,6 +139,12 @@ function Item(_arguments) {
             const element = definition.attributes[property];
             if (element.type.lang && element.type.lang.length) {
                 fieldId = fieldId + "_" + Application.lang;
+            }
+            if (element.type.dataType === "FK") {
+                instance[property] = value;
+                fieldId = model.associations[property].identifier;
+                instance.setDataValue(fieldId, value.getValue("id"));
+                return this;
             }
         }
         instance.setDataValue(fieldId, value);

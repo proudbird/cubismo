@@ -43,7 +43,21 @@ webix.protoUI({
             arguments: [this.getItem(id)]
           });
         }
-      }
+      },
+      // onBeforeAdd: function(id, obj, index) {
+      //   let parentId;
+      //   if(obj.items && obj.items.length) {
+      //     //const items = clone(obj.items);
+      //     //delete obj.items;
+      //     parentId = webix.TreeStore.add.call(this, obj, index);
+      //     items.forEach(item => {
+      //       webix.TreeStore.add.call(this, item, 0, parentId)
+      //     });
+      //   } else {
+      //     parentId = webix.TreeStore.add.call(this, obj, index);
+      //   }
+      //   return false;
+      // }
     }
   }
 }, webix.ui.sidebar);
@@ -265,3 +279,33 @@ function showLookup(view, id, e, box, dataLink) {
     }
   });
 }
+
+webix.DataDriver.json = webix.extend({
+  parseDates:true,
+  toObject:function(data){
+		if (!data) return null;
+		if (typeof data == "string"){
+			try{
+				if (this.parseDates){
+					var isodate = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(.\d{3})?Z/;
+					data = JSON.parse(data, function(key, value){
+						if (typeof value == "string"){
+							if (isodate.test(value)) {
+                return new Date(value);
+              }
+						}
+						return value;
+					});
+				} else {
+					data =JSON.parse(data);
+				}
+			} catch(e){
+				webix.log(e);
+				webix.log(data);
+				webix.assert_error("Invalid JSON data for parsing");
+				return null;
+			}
+		}
+		return data;
+	}
+}, webix.DataDriver.json);

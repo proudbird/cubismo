@@ -10,12 +10,23 @@ module.exports.Init = function (type, options) {
 
   const serviceAttributes = [
             "createdAt", "updatedAt", "deletedAt"];
-  const hiddenAttributes = ["id", "dropped", "isFolder", 
-            "parentId", "ownerId"];
+  const hiddenAttributes = ["id", "dropped"];
   
   hiddenAttributes.forEach(atr => {
     attributes.push(atr);
   })
+
+  if (definition.multilevel) {
+    if(definition.multilevelType != "items") {
+      attributes.push("isFolder");
+    }
+    attributes.push("level");
+    attributes.push("parentId");
+  }
+
+  if (definition.owners && definition.owners.length) {
+    attributes.push("ownerId");
+  }
 
   columns.push({ id: "Code", header: "Code", fillspace:true, template:"{common.treetable()} #Code#"  });
   attributes.push("Code");
