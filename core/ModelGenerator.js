@@ -156,10 +156,16 @@ generator.define = function(application, db, appModelDefinition) {
     };
 
     // in case of multilevel type 'forlders' or 'foldersAndItems' adding field isFolder
-    if (model.multilevel && model.multilevelType != "items") {
-      attributes.isFolder = {
-        type: DBTypes.BOOLEAN,
-        defaultValue: false
+    if (model.multilevel) {
+      if(model.multilevelType != "items") {
+        attributes.isFolder = {
+          type: DBTypes.BOOLEAN,
+          defaultValue: false
+        }
+      }
+      attributes.level = {
+        type: DBTypes.INTEGER,
+        defaultValue: 0
       }
     }
 
