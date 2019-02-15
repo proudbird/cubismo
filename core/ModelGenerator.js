@@ -113,21 +113,24 @@ generator.define = function(application, db, appModelDefinition) {
         case "FK":
           // attribute type is Forein key - link to another model
           const fkId = type.reference.modelId;
-          const refference = defineModel(appModelDefinition[fkId].definition);
-          // attributes[attributeName] = {
-          //   type: DBTypes.UUID,
-          //   field: attribute.fieldId,
-          //   set(value) {
-          //     attributeSetter(this, attributeName, value);
-          //   },
-          //   references: {
-          //     model: refference,
-          //     key: 'id',
-          //     deferrable: DBTypes.Deferrable.NOT
-          //   }
-          // };
+          let modelDefinition = appModelDefinition[fkId];
+          let reference;
+          if(modelDefinition) {
+            if(type.reference.collection) {
+              modelDefinition = modelDefinition.definition.collections[type.reference.collection];
+              if(modelDefinition) {
+                reference = defineModel(modelDefinition);
+              } else {
+                throw new Error("Can't find model definition with ID {" + type.reference.collection + "}. Attribute <" + attributeName + ">; Model <" + model.name + ">");
+              }
+            } else {
+              reference = defineModel(modelDefinition.definition);
+            }
+          } else {
+            throw new Error("Can't find model definition with ID {" + fkId + "}. Attribute <" + attributeName + ">; Model <" + model.name + ">");
+          }
 
-          belongsTo.push({ to: refference, as: attributeName, foreignKey: attribute.fieldId });
+          belongsTo.push({ to: reference, as: attributeName, foreignKey: attribute.fieldId });
       }
     }
 

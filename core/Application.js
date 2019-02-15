@@ -209,7 +209,7 @@ function defineApplicationStructure(application, appModelDefinition) {
                                  * @todo There can be poblems on parsing object files
                                  * @todo Should change the algorithm
                                  */
-                                if (modelDefinition && modelDefinitionName && modelName === modelDefinitionName) {
+                                if (modelDefinition && modelDefinitionName) {
                                     for (let key in modelDefinition) {
                                         modelDefinition[key].id = key;
                                         appModelDefinition[key] = {
