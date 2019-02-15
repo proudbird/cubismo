@@ -1,38 +1,123 @@
 /* globals Tools Application View */
-const  path = require('path');
+const path = require('path');
 
-View.onInit = function(callback) {
+View.onInit = function (callback) {
 
   Log.debug("Window initialization");
   callback();
 }
 
-
-View.onLoad = function(params) {
-  View.Sidebar.add(
-    { 
-      id: Tools.SID(), 
-      value: "Addresses", 
-      command: "openForm", 
-      cube: "Enterprise", 
-      class: "Catalogs", 
-      type: "Addresses"  
-    }
-  );
-
-  const p =require.resolve("c:\\ITProjects\\cubismo\\core\\UI\\DefaultViews\\Catalogs.Views.List.Config.js");
-  if(require.cache[p]) {
-    delete require.cache[p];
-  }
-  
-  Application.Enterprise.Catalogs.Addresses.show({
-    options: {
-      purpose: "select",
-      onlyFolders: true
-    }
+View.onLoad = function (params) {
+  View.Sidebar.add({
+    id: Tools.SID(),
+    value: "Common",
+    data: [{
+        id: Tools.SID(),
+        value: "Countries",
+        command: "openForm",
+        cube: "Common",
+        class: "Catalogs",
+        type: "Countries"
+      },
+      {
+        id: Tools.SID(),
+        value: "Units",
+        command: "openForm",
+        cube: "Common",
+        class: "Catalogs",
+        type: "Units"
+      }
+    ]
   });
+
+  View.Sidebar.add({
+    id: Tools.SID(),
+    value: "Enterprise",
+    data: [{
+      id: Tools.SID(),
+      value: "Partners",
+      command: "openForm",
+      cube: "Enterprise",
+      class: "Catalogs",
+      type: "Partners"
+    }]
+  });
+
+  View.Sidebar.add({
+    id: Tools.SID(),
+    value: "Products",
+    data: [{
+        id: Tools.SID(),
+        value: "Products",
+        command: "openForm",
+        cube: "Products",
+        class: "Catalogs",
+        type: "Products"
+      },
+      {
+        id: Tools.SID(),
+        value: "Brands",
+        command: "openForm",
+        cube: "Products",
+        class: "Catalogs",
+        type: "Brands"
+      },
+      {
+        id: Tools.SID(),
+        value: "Producers",
+        command: "openForm",
+        cube: "Products",
+        class: "Catalogs",
+        type: "Producers"
+      },
+      {
+        id: Tools.SID(),
+        value: "Attributes",
+        command: "openForm",
+        cube: "Products",
+        class: "Catalogs",
+        type: "Attributes"
+      },
+      {
+        id: Tools.SID(),
+        value: "Variations",
+        command: "openForm",
+        cube: "Products",
+        class: "Catalogs",
+        type: "Variations"
+      },
+      {
+        id: Tools.SID(),
+        value: "HSCodes",
+        command: "openForm",
+        cube: "Products",
+        class: "Catalogs",
+        type: "HSCodes"
+      },
+      {
+        id: Tools.SID(),
+        value: "ProductSorts",
+        command: "openForm",
+        cube: "Products",
+        class: "Catalogs",
+        type: "ProductSorts"
+      }
+    ]
+  });
+
+  // const p = require.resolve("c:\\ITProjects\\cubismo\\core\\UI\\DefaultViews\\Catalogs.Views.List.Config.js");
+  // if (require.cache[p]) {
+  //   delete require.cache[p];
+  // }
+
+  // Application.Enterprise.Catalogs.Addresses.show({
+  //   options: {
+  //     purpose: "select",
+  //     onlyFolders: true
+  //   }
+  // });
 }
 
-View.Sidebar_onItemClick = function(item) {
+View.Sidebar_onItemClick = function (item) {
   Application[item.cube][item.class][item.type].show();
 }

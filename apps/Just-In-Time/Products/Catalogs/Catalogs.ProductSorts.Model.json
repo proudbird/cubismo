@@ -1,0 +1,22 @@
+{
+    "606b0a6f-bf85-4f56-92f0-5640c936fc93": {
+        "name": "ProductSorts",
+        "cube": "Products",
+        "class": "Catalogs",
+        "tableId": "CT_x7UgFb51",
+        "title": "Product sorts",
+        "description": "Product sorts",
+        "multilevel": false,
+        "multilevelType": "folders",
+        "numberOfLevels": 1,
+        "codeLenght": 3,
+        "codeType": "INTEGER",
+        "uniqueCode": true,
+        "autoIncrement": true,
+        "nameLenght": 50,
+        "nameLang": [],
+        "template": "#Name#",
+        "owners": [],
+        "attributes": {}
+    }
+}
