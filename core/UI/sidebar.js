@@ -1,19 +1,19 @@
 /* globals Tools UIElement */
 
-UIElement.add = function(value, callback) {
+UIElement.add = function(value, index, parentId, callback) {
 
   const mainFunction = function(callback) {
     const message = {
       directive: "add",
       elementId: UIElement.config.id,
-      arguments: [value]
+      arguments: [value, index, parentId]
     }
     
-    Application.window.directiveToClient("directive", message, function(err) {
-      if(err) {
-          callback(err);
+    Application.window.directiveToClient("directive", message, function(response) {
+      if(response.err) {
+          callback(response.err);
       } else {
-          callback(null);
+          callback(null, response.result);
       }
     })
   }
