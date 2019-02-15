@@ -46,11 +46,11 @@ module.exports.Init = function (type, options) {
   const query = {
     SELECT: attributes,
     FROM:   type._private.model.name,
-    ORDER:  [[order, "ASC"]]
+    ORDER:  [order, "ASC"]
   }
 
   if(options.onlyFolders) {
-    query.WHERE = [ { EQ: ["isFolder", true] }];
+    query.WHERE = { EQ: ["isFolder", true] };
   }
 
   return {

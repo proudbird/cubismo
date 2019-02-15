@@ -306,40 +306,6 @@ function formatDate(date, format, utc) {
   return format;
 };
 
-var arr = [{
-    'id': 1,
-    'parentid': 0
-  },
-  {
-    'id': 4,
-    'parentid': 2
-  },
-  {
-    'id': 3,
-    'parentid': 1
-  },
-  {
-    'id': 5,
-    'parentid': 0
-  },
-  {
-    'id': 6,
-    'parentid': 0
-  },
-  {
-    'id': 2,
-    'parentid': 1
-  },
-  {
-    'id': 7,
-    'parentid': 4
-  },
-  {
-    'id': 8,
-    'parentid': 1
-  }
-];
-
 Tools.makeHierarchical = function(arr, parent, child) {
   var tree = [],
     mappedArr = {},

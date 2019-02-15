@@ -38,8 +38,6 @@ function View(_arguments) {
         const mainFunction = function(callback) {
             show(self, _arguments, _private)
             .then((viewConfig) => {
-                //return callback(null, viewConfig);
-                //_arguments.application.window.Viewbar.addView(config);
                 const result = {
                     config: viewConfig,
                     promise: new Promise(function (resolve, reject) {

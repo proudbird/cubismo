@@ -3,12 +3,12 @@
 const _ = require('lodash');
 
 function Query(application, driver) {
-  
-  const _private = {};
-  _private.driver      = driver;
-  _private.application = application;
 
-  this.execute = function (options, model, callback) {
+  this._ = {};
+  this._.driver = driver;
+  this._.application = application;
+
+  this.execute = function (options, model) {
     const self = this;
 
     if (!options) {
@@ -16,35 +16,30 @@ function Query(application, driver) {
     }
 
     let raw = false;
-    if(!model) {
+    if (!model) {
       raw = true;
     }
 
-    if(!model && typeof options.FROM === "string") {
-      model = _private.driver.models[options.FROM];
+    if (!model && typeof options.FROM === "string") {
+      model = this._.driver.models[options.FROM];
     }
 
     let queryModel = model;
-    if(raw) {
+    if (raw) {
       queryModel = undefined;
     }
 
-    function mainFunction(callback) {
-      _private.driver
-        .query(buildSQLQuery(_private.driver, options), queryModel)
-        .then(result => {
-          return callback(null, result);
-        })
-        .catch((error) => {
-          return callback(error);
-        });
+    async function mainFunction(callback) {
+      try {
+        const sql = buildSQLQuery(self._.driver, options);
+        const result = await self._.driver.query(sql, queryModel);
+        return callback(null, result);
+      } catch(err) {
+        return callback(err);
+      };
     }
-      
-    if (callback) {
-      return mainFunction(callback);
-    }
-    
-    return new Promise(function(resolve, reject) {
+
+    return new Promise(function (resolve, reject) {
       mainFunction(function (error, result) {
         error ? reject(error) : resolve(result);
       });
@@ -53,15 +48,22 @@ function Query(application, driver) {
 }
 
 function buildSQLQuery(driver, query) {
+
+  let from = query.FROM || query.from;
+  const model = driver.models[from];
+  if (!model) {
+    throw new Error("Can't find DB model <" + from + ">");
+  }
+
   //SELECT
   var result = 'SELECT ';
-  const select = query.SELECT;
+  const select = query.SELECT || query.select;
   let fields = [];
   if (Array.isArray(select)) {
     for (let i = 0; i < select.length; i++) {
       const field = select[i];
       if (typeof field === 'object') {
-        fields.push(buildOperation(query.FROM, field));
+        fields.push(buildOperation(model, field));
       } else {
         fields.push('"' + field + '"');
       }
@@ -71,44 +73,46 @@ function buildSQLQuery(driver, query) {
   }
 
   //FROM
-  let from = query.FROM;
-  if(typeof from != "string") {
-    from = from.tableName;
-  } else {
-    from = driver.models[from].tableName;
-  }
   result = result + fields.join(', ');
-  result += ' FROM "' + from + '" T1';
+  result += ' FROM "' + model.tableName + '" T1';
 
   //WHERE
-  const where = query.WHERE;
+  const where = query.WHERE || query.where;
   if (Array.isArray(where) && where.length > 0) {
     let newWhere = [];
-    for(let i = 0; i < where.length; i++) {
-      const model = driver.models[query.FROM]
+    for (let i = 0; i < where.length; i++) {
       newWhere.push(buildOperation(model, where[i]));
     }
     result = result + ' WHERE ' + newWhere.join(' AND ');
+  } else if (typeof where === "object") {
+    result = result + ' WHERE ' + buildOperation(model, where);
+  } else if(where) {
+    throw new Error("Wrong format of 'WHERE' statement.")
   }
 
   //ORDER
-  const order = query.ORDER;
-  if (Array.isArray(order) && order.length > 0) {
+  const order = query.ORDER || query.order;
+  const inside = order[0];
+  if (Array.isArray(inside) && inside.length) {
     let newOrder = [];
-    for(let i = 0; i < order.length; i++) {
+    for (let i = 0; i < order.length; i++) {
       newOrder.push("\"" + order[i][0] + "\" " + order[i][1]);
     }
     result = result + ' ORDER BY ' + newOrder.join(', ');
+  } else if (Array.isArray(order)) {
+    result = result + ' ORDER BY ' + "\"" + order[0] + "\" " + order[1];
+  } else {
+    throw new Error("Wrong format of 'ORDER' statement.")
   }
 
   //LIMIT
-  const limit = query.LIMIT;
+  const limit = query.LIMIT || query.limit;
   if (limit) {
     result = result + ' LIMIT ' + limit;
   }
 
   //OFFSET
-  const offset = query.OFFSET;
+  const offset = query.OFFSET || query.offset;
   if (offset) {
     result = result + ' OFFSET ' + offset;
   }
@@ -117,81 +121,58 @@ function buildSQLQuery(driver, query) {
 }
 
 function buildOperation(model, operation) {
-  let params = operation.params;
-  let param  = operation.param;
-  let value  = operation.value;
 
-  const association = model.associations[param];
-  if(association) {
-    param = association.identifierField;
-    value = value[association.targetIdentifier];
-  }
-
-  var buildOperations = function(operations, newOperations) {
-    for(let i = 0; i < operations.length; i++) {
+  var buildOperations = function (operations, newOperations) {
+    for (let i = 0; i < operations.length; i++) {
       let operation = operations[i];
-      if(operation && Array.isArray(operation)) {
+      if (operation && Array.isArray(operation)) {
         buildOperations(operation);
       }
-      const association = model.associations[operation.param];
       newOperations.push(buildOperation(model, operation));
     }
   }
 
-  if(params && Array.isArray(params)) {
-    let newOperations = [];
-    buildOperations(params, newOperations);
-    operation.params = params = newOperations;
-  } 
+  let operator;
+  for (operator in operation) {
+    let param = operation[operator][0];
+    let value = operation[operator][1];
 
-  switch (operation.operator) {
-    case "EQ": 
-      if(value === null || value === undefined) {
-        return "\"" + param + "\" IS NULL";
-      } else if(value === true) {
-        return "\"" + param + "\" IS TRUE";
-      } else if(value === false) {
-        return "\"" + param + "\" IS FALSE";
-      } else {
-        return "\"" + param + "\" = '" + value + "'";
-      }
-    case "LIKE":
-      return "\"" + param + "\" LIKE '" + value + "'";
-    case "iLIKE":
-      return "\"" + param + "\" iLIKE '" + value + "'";
-    case "AND":
-      return "(" + params.join(" AND ") + ")";
-    case "OR":
-      return "(" + params.join(" OR ") + ")";
-    case "AS":
-      return "\"" + param + "\" AS \"" + value + "\"";
-    case "EXISTSAS":
-      return "EXISTS (" + param + ") AS \"" + value + "\"";
+    const association = model.associations[param];
+    if (association) {
+      param = association.identifierField;
+      value = value[association.targetIdentifier];
+    }
+
+    if (Array.isArray(param)) {
+      let newOperations = [];
+      buildOperations(param, newOperations);
+      param = newOperations;
+    }
+
+    switch (operator) {
+      case "EQ":
+        if (value === null || value === undefined) {
+          return "\"" + param + "\" IS NULL";
+        } else if (value === true) {
+          return "\"" + param + "\" IS TRUE";
+        } else if (value === false) {
+          return "\"" + param + "\" IS FALSE";
+        } else {
+          return "\"" + param + "\" = '" + value + "'";
+        }
+      case "LIKE":
+        return "\"" + param + "\" LIKE '" + value + "'";
+      case "iLIKE":
+        return "\"" + param + "\" iLIKE '" + value + "'";
+      case "AND":
+        return "(" + params.join(" AND ") + ")";
+      case "OR":
+        return "(" + params.join(" OR ") + ")";
+      case "AS":
+        return "\"" + param + "\" AS \"" + value + "\"";
+      case "EXISTSAS":
+        return "EXISTS (" + param + ") AS \"" + value + "\"";
+    }
   }
 }
-
-module.exports.Operations = {
-  EQ: function(param, value) {
-    return { operator: "EQ", param: param, value: value };
-  },
-  LIKE: function(param, value) {
-    return { operator: "LIKE", param: param, value: value };
-  },
-  iLIKE: function(param, value) {
-    return { operator: "iLIKE", param: param, value: value };
-  },
-  AND: function(params) {
-    return { operator: "AND", params: params };
-  },
-  OR: function(params) {
-    return { operator: "OR", params: params };
-  },
-  AS: function(param, value) {
-    return { operator: "AS", param: param, value: value };
-  },
-  EXISTSAS: function(param, value) {
-    return { operator: "EXISTSAS", param: param, value: value };
-  }
-};
-
 module.exports = Query;

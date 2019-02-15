@@ -1,4 +1,6 @@
 /* globals Tools Application View */
+const  path = require('path');
+
 View.onInit = function(callback) {
 
   Log.debug("Window initialization");
@@ -17,6 +19,18 @@ View.onLoad = function(params) {
       type: "Addresses"  
     }
   );
+
+  const p =require.resolve("c:\\ITProjects\\cubismo\\core\\UI\\DefaultViews\\Catalogs.Views.List.Config.js");
+  if(require.cache[p]) {
+    delete require.cache[p];
+  }
+  
+  Application.Enterprise.Catalogs.Addresses.show({
+    options: {
+      purpose: "select",
+      onlyFolders: true
+    }
+  });
 }
 
 View.Sidebar_onItemClick = function(item) {
