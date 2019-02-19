@@ -47,7 +47,7 @@ function listen(server) {
       const uiElement   = getUIElement(message, view);
 
       const queryString = uiElement.config.query;
-      application.Query.execute(queryString)
+      application.Query.execute(queryString, undefined, uiElement)
       .then(result => {
         const data = Tools.makeHierarchical(result[0], "parentId", "data");
         callback(null, data);
@@ -62,6 +62,13 @@ function listen(server) {
       const view = getView(message, application);
       const uiElement = getUIElement(message, view);
       const instance = message.arguments[0];
+      const action = message.action;
+
+      if(action === "clear") {
+        uiElement.value = undefined;
+        return;
+      } 
+
       options = {
         purpose: "select",
         caller: view,

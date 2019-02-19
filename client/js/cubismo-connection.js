@@ -55,6 +55,29 @@ server.on("directive", function (message, callback) {
   callback({ result: result });
 })
 
+server.on("dataUpdate", function (message, callback) {
+  const elementId = message.elementId;
+  const element = $$(elementId);
+  if(!element) {
+    callback({ err: "No such element with ID <" + elementId + ">" });
+  }
+  const _arguments = message.arguments || [];
+  let result;
+  if(message.directive === "create") {
+    result = element.add(_arguments[0]);
+  } else if(message.directive === "update") {
+    const item = _arguments[0];
+    result = element.updateItem(item.id, item);
+    const dataItem = element.getItem(item.id);
+    const parent = element.getItem(item.parentId);
+  } else if(message.directive === "delete") {
+    const item = _arguments[0];
+    result = element.remove(item.id);
+  }
+
+  callback({ result: result });
+})
+
 function callServer(action, message, callback) {
   message.applicationId = window.applicationId;
   message.windowId      = window.windowId;

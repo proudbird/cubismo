@@ -66,7 +66,7 @@ module.exports.Init = function (type, options) {
   }
 
   if(options.owner) {
-    query.WHERE.push({ EQ: ["Owner", options.owner] });
+    query.WHERE.push({ EQ: ["ownerId", options.owner.getValue("id")] });
   }
 
   const rows = [];
@@ -75,7 +75,7 @@ module.exports.Init = function (type, options) {
       view: "Lookup",
       name: "Owner",
       label: "Owner",
-      dataLink: "item.Owner",
+      dataLink: "owner",
       onlyFolders: false
     });
   }

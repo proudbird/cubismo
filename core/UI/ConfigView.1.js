@@ -8,25 +8,28 @@ const Traverse = require('traverse');
 
 function ConfigView(View, _arguments, pathToFile) {
 
-  var config = Require(pathToFile, {
+  let config = Require(pathToFile, {
     Application: _arguments.application
   });
   if (config.Init) {
     config = config.Init(_arguments.item ? _arguments.item : _arguments.type, _arguments.options);
   }
 
-  Tools.traverse(config, function (node, key) {
-    console
+  Traverse(config).map(function (node) {
+    if(Tools.isObjectLike(node)) {
+      console.log(node)
+    }
     if (node && typeof node != 'function') {
       const uiElement = node;
       if (node.view && node.name && node.name !== 'data') {
         if (!node.id) {
           if (node.main) {
-            node.id = View.id;
+            node.id = this.node_.id = View.id;
           } else {
-            node.id = Tools.SID();
-            node.viewId = View.id;
+            node.id = this.node_.id = Tools.SID();
+            node.viewId = this.node_.viewId = View.id;
           }
+          this.update(node);
         }
 
         if (node.owner && node.composition === "default") {
@@ -34,8 +37,8 @@ function ConfigView(View, _arguments, pathToFile) {
           if (_arguments.item) {
             pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Item");
           }
-          const toolbar = require(pathToDefaultCommandsFile).Init(node.owner, View.id);
-          node.elements = toolbar;
+          const toolbar = require(pathToDefaultCommandsFile).Init(node.owner);
+          node.elements = this.node_.elements = toolbar;
           let owner = View[node.owner];
           if (!owner) {
             Object.defineProperty(View, node.owner, {
@@ -51,10 +54,16 @@ function ConfigView(View, _arguments, pathToFile) {
             enumerable: true,
             writable: false
           });
-          
-          let target = View[node.owner].Toolbar;
-
-          pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace(".Config", "");
+        } else if (node.owner) {
+          const ownerPath = node.owner.split(".");
+          let target = View[node.owner];
+          if (ownerPath.length = 2) {
+            target = View[ownerPath[0]][ownerPath[1]];
+          }
+          //Object.defineProperty(target, node.name, { 
+          //value: { config: uiElement }, enumerable: true, writable: false 
+          //});
+          let pathToDefaultCommandsFile = path.join(__dirname, "./DefaultViews/Catalogs.List.Toolbar.js");
           let commands = require(pathToDefaultCommandsFile);
           _arguments.view = View;
           _arguments.uiElement = target;
@@ -62,9 +71,7 @@ function ConfigView(View, _arguments, pathToFile) {
             pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Item");
             commands = require(pathToDefaultCommandsFile);
           }
-          node.elements.forEach(command => {
-            commands.defineCommand(command.name, _arguments);
-          })
+          commands.defineCommand(node.name, _arguments);
         } else {
           let element = View[node.name];
           if (element) {
@@ -85,7 +92,7 @@ function ConfigView(View, _arguments, pathToFile) {
           }
           if (node.dataLink) {
             // UI element has value rpoperty and must be populated with data
-            _populateDataView(View, View[node.name], node, _arguments);
+            _populateDataView(View, node, this,_arguments);
           }
           if (node.select) {
             let pathToDefaultCommandsFile = path.join(__dirname, "./DefaultViews/Catalogs.List.Toolbar.js");
@@ -99,6 +106,23 @@ function ConfigView(View, _arguments, pathToFile) {
             commands.defineCommand("DefaultCmd.Enter", _arguments);
           }
         }
+
+        // const dataValue = Tools.getPropertyByTrack(View, node.dataBind);
+        // if (dataValue) {
+        //   Object.defineProperty(View[node.name], "data", {
+        //     value: dataValue,
+        //     enumerable: true
+        //   });
+        // }
+
+        // const item = View.item;
+        // if (dataValue && item) {
+        //   const data = {
+        //     id: item.id,
+        //     name: item.Name
+        //   };
+        //   View.item = data;
+        // }
 
         const pathToUIFile = path.join(__dirname, uiElement.view + ".js");
         if (fs.existsSync(pathToUIFile)) {
@@ -115,14 +139,14 @@ function ConfigView(View, _arguments, pathToFile) {
   View.config = config;
 }
 
-function _populateDataView(View, element, node) {
+function _populateDataView(View, element, node, _arguments) {
 
   let item = undefined;
   let modelName = undefined;
   let definition = undefined;
   let attribute = undefined;
   let dataValue = undefined;
-  const linkPath = node.dataLink.split(".");
+  const linkPath = element.dataLink.split(".");
   const source = linkPath[0];
   const valueProperty = linkPath[1];
 
@@ -135,7 +159,7 @@ function _populateDataView(View, element, node) {
   }
   
   // UI element can be single value (text, lookup, etc.) and multy-value (all lists)
-  if(Tools.has(node, "select")) { // only multi-value elements have 'select' option 
+  if(Tools.has(element, "select")) { // only multi-value elements have 'select' option 
 
   } else { // single value element
     item = View[source];
@@ -154,36 +178,20 @@ function _populateDataView(View, element, node) {
       dataValue = item;
     }
 
-    Object.defineProperty(element, "value", {
-      enumerable: true,
-      get: function () {
-        if(valueProperty) {
-          return __getValue(item, valueProperty);
-        } else {
-          return item.getValue("Name");
-        }
-      },
-      set: function (value) {
-        item.setValue(valueProperty, value);
-        return item;
-      }
-    });
-
     // if model name is determed, so it is a reference type and we need 'instance' property
     if(modelName) {
-      node.instance = {
+      element.instance = node.node_.instance = {
         type: modelName
       };
       if (Tools.isObjectLike(dataValue)) {
-        node.instance.id = dataValue.getValue("id");
-        node.instance.title = dataValue.getValue("Name");
+        element.instance.id = dataValue.getValue("id");
+        element.instance.title = dataValue.getValue("Name");
+        node.node_.value = element.instance.title;
+      } else {
+        node.node_.value = dataValue;
       }
-    }
-    
-    if(valueProperty) {
-      node.value = __getValue(item, valueProperty);
-    } else {
-      node.value = item.getValue("Name");
+    } else{
+      node.node_.value = __getValue(item, valueProperty);
     }
   }
 }

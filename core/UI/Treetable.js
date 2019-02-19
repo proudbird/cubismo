@@ -80,6 +80,25 @@ UIElement.Refresh = function (callback) {
 
 // }
 
+UIElement.update = async function (item, directive) {
+
+  return new Promise(function (resolve, reject) {
+    const message = {
+      directive: directive,
+      elementId: UIElement.config.id,
+      arguments: [item._.instance]
+    }
+
+    Application.window.directiveToClient("dataUpdate", message, async function (response) {
+      if (response.err) {
+        reject(response.err);
+      } else {
+        resolve(response.result);
+      }
+    })
+  });
+}
+
 UIElement.getSelected = async function () {
 
   return new Promise(function (resolve, reject) {

@@ -30,6 +30,14 @@ function View(_arguments) {
         this.item = _arguments.item;
         this.item.view = this;
     }
+    if(this.options.owner) {
+        this.owner = _arguments.options.owner;
+        this.owner.view = this;
+    }
+    if(this.options.parent) {
+        this.parent = _arguments.options.owner;
+        this.parent.view = this;
+    }
 
     _arguments.application.views[this.id] = this;
 
@@ -124,7 +132,7 @@ function show(view, _arguments, _) {
             //_arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
         }
 
-        Require(pathToFile, { Application: _arguments.application, View: view });
+        Require(pathToFile, { Application: _arguments.application, View: view, Item: view.Item, Owner: view.Owner, Parent: view.Parent });
 
         let pathToConfig = pathToFile.replace(".js",  ".Config.json");
         if(!fs.existsSync(pathToConfig)) {

@@ -204,13 +204,67 @@ webix.protoUI({
     }
   },
   setValue: function(value) {
-    this.config.instance = value;
-    this.config.value = value.title;
+    if(value) {
+      this.config.instance = value;
+      this.config.value = value.title;
+    } else {
+      delete this.config.instance.title;
+      delete this.config.instance.id;
+      this.config.value = "";
+    }
     this.refresh();
   }
 }, webix.ui.text);
 
 function showLookup(view, id, e, box, dataLink) {
+  function addButton(inBox, inButtonClass, height, right, action) {
+    var inButton = document.createElement("div");
+    inButton.style.lineHeight = height + "px";
+    inButton.className = inButtonClass;
+    inButton.style.width = height + "px";
+    if(view.config.view == "Lookup") {
+      inBox.style.height = (height - 8) + "px";
+      //inBox.style.width = (height - 8) + "px";
+      inBox.style.top = -1*(height - 8) + "px";
+      inBox.style.right = right;
+      inButton.style.lineHeight = (height - 8) + "px";
+      inButton.style.width = (height - 8) + "px";
+    }
+    inBox.appendChild(inButton);
+    inButton.addEventListener("mouseenter", function() {
+      inButton.className = inButtonClass + " input_button_hover";
+    });
+    inButton.addEventListener("mouseleave", function() {
+      inButton.className = inButtonClass;
+    });
+    inButton.addEventListener("click", function() { 
+      if(view.config.view == "Lookup") {
+        callServer("lookup", { 
+          action   : action,
+          viewId   : view.config.viewId, 
+          element  : view.config.name, 
+          arguments: [view.config.instance]
+        });
+        if(action === "clear") {
+          view.setValue(null);
+        }
+      } else { 
+        // dataLink.value = view.getItem(id.row);
+        // var message = {};
+        // message.FormID    = view.config.formID;
+        // message.Command   = "Lookup";
+        // message.target    = { id: view.config.id, name: view.config.name, columnId: id.column, rowId: id.row, index:  view.getIndexById(id.row) }
+        // message.value     = dataLink;
+        // ServerCall(message);
+
+        // callServer("lookup", { 
+        //   viewId   : this.config.viewId, 
+        //   element  : this.config.name, 
+        //   arguments: [view.config.dataLink, view.config.instance]
+        // });
+      }
+    }, true);
+  }
   function renderLookupButton() {
     if(box.getElementsByClassName("input_buttons_box").length < 1) {
       var inBox = document.createElement("div");
@@ -220,49 +274,10 @@ function showLookup(view, id, e, box, dataLink) {
       inBox.style.height = height + "px";
       inBox.style.backgroundColor = box.style.backgroundColor;
       inBox.style.top = -1*(height - 8) + "px";
-      var inButton = document.createElement("div");
-      inButton.style.lineHeight = height + "px";
-      iButtonClass = "webix_view webix_icon input_button wxi-dots";
-      inButton.className = iButtonClass;
-      inButton.style.width = height + "px";
-      if(view.config.view == "Lookup") {
-        inBox.style.height = (height - 8) + "px";
-        inBox.style.width = (height - 8) + "px";
-        inBox.style.top = -1*(height - 8) + "px";
-        inBox.style.right = -1;
-        inButton.style.lineHeight = (height - 8) + "px";
-        inButton.style.width = (height - 8) + "px";
-      }
-      inBox.appendChild(inButton);
-      inButton.addEventListener("mouseenter", function() {
-        inButton.className = iButtonClass + " input_button_hover";
-      });
-      inButton.addEventListener("mouseleave", function() {
-        inButton.className = iButtonClass;
-      });
-      inButton.addEventListener("click", function() { 
-        if(view.config.view == "Lookup") {
-          callServer("lookup", { 
-            viewId   : view.config.viewId, 
-            element  : view.config.name, 
-            arguments: [view.config.instance]
-          });
-        } else { 
-          // dataLink.value = view.getItem(id.row);
-          // var message = {};
-          // message.FormID    = view.config.formID;
-          // message.Command   = "Lookup";
-          // message.target    = { id: view.config.id, name: view.config.name, columnId: id.column, rowId: id.row, index:  view.getIndexById(id.row) }
-          // message.value     = dataLink;
-          // ServerCall(message);
-
-          // callServer("lookup", { 
-          //   viewId   : this.config.viewId, 
-          //   element  : this.config.name, 
-          //   arguments: [view.config.dataLink, view.config.instance]
-          // });
-        }
-      }, true);
+      inButtonClass = "webix_view webix_icon input_button wxi-dots";
+      addButton(inBox, inButtonClass, height, -1, "select");
+      inButtonClass = "webix_view webix_icon input_button wxi-close";
+      addButton(inBox, inButtonClass, height, -2 - (height - 8), "clear");
     }
   }
 

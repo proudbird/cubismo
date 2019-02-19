@@ -8,7 +8,7 @@ function Query(application, driver) {
   this._.driver = driver;
   this._.application = application;
 
-  this.execute = function (options, model) {
+  this.execute = function (options, model, subscriber) {
     const self = this;
 
     if (!options) {
@@ -31,7 +31,7 @@ function Query(application, driver) {
 
     async function mainFunction(callback) {
       try {
-        const sql = buildSQLQuery(self._.driver, options);
+        const sql = buildSQLQuery(self._.driver, options, subscriber);
         const result = await self._.driver.query(sql, queryModel);
         return callback(null, result);
       } catch(err) {
@@ -47,12 +47,17 @@ function Query(application, driver) {
   }
 }
 
-function buildSQLQuery(driver, query) {
+function buildSQLQuery(driver, query, subscriber) {
 
   let from = query.FROM || query.from;
   const model = driver.models[from];
   if (!model) {
     throw new Error("Can't find DB model <" + from + ">");
+  } else {
+    if(!Tools.has(model, "subscribers")) {
+      model.subscribers = {};
+    }
+    model.subscribers[subscriber.config.id] = subscriber;
   }
 
   //SELECT

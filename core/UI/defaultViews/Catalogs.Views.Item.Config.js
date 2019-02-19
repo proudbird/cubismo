@@ -13,11 +13,11 @@ module.exports.Init = function (item) {
             "booked", "Date", "parentId", "ownerId", "order"];
 
   if(definition.owners && definition.owners.length){
-    attributes.push({ id: "Owner", header: "Owner", type: "FK" });
+    attributes.push({ id: "Owner", header: "Owner", type: "FK", link: "Owner" });
   }
 
   if(definition.multilevel){
-    attributes.push({ id: "Parent", header: "Parent", type: "FK", onlyFolders: true });
+    attributes.push({ id: "Parent", header: "Parent", type: "FK", link: "Parent", onlyFolders: true });
   }
 
   if(definition.codeLenght > 0){

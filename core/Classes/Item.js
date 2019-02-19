@@ -71,15 +71,28 @@ function Item(_arguments) {
     }
 
     this.__proto__.save = function () {
+        const self = this;
         const instance = this._.instance;
+        const isNewRecord = instance.isNewRecord;
         instance.save()
             .then(result => {
                 _saveAssociations(this, result);
+                if(Tools.has(self, "_.model.subscribers")) {
+                    Tools.forOwn(self._.model.subscribers, subscriber => {
+                        subscriber.update(self, isNewRecord ? "create" : "update");
+                    }) 
+                }
             })
     }
 
     this.__proto__.delete = async function (immediate) {
-        return await _delete(this, immediate);
+        const self = this;
+        await _delete(this, immediate);
+        if(Tools.has(self, "_.model.subscribers")) {
+            Tools.forOwn(self._.model.subscribers, subscriber => {
+                subscriber.update(self, "delete");
+            }) 
+        } 
     }
 
     this.__proto__.get = function (param) {
@@ -129,11 +142,19 @@ function Item(_arguments) {
             fieldId = "Code";
         } else if (property === "Parent") {
             instance.Parent = value;
-            instance.setDataValue("parentId", value.getValue("id"));
+            if(value) {
+                instance.setDataValue("parentId", value.getValue("id"));
+            } else {
+                instance.setDataValue("parentId", null);
+            }
             return this;
         } else if (property === "Owner") {
             instance.Parent = value;
-            instance.setDataValue("ownerId", value.getValue("id"));
+            if(value) {
+                instance.setDataValue("ownerId", value.getValue("id"));
+            } else {
+                instance.setDataValue("ownerId", null);
+            }
             return this;
         } else {
             const element = definition.attributes[property];
@@ -143,7 +164,11 @@ function Item(_arguments) {
             if (element.type.dataType === "FK") {
                 instance[property] = value;
                 fieldId = model.associations[property].identifier;
-                instance.setDataValue(fieldId, value.getValue("id"));
+                if(value) {
+                    instance.setDataValue(fieldId, value.getValue("id"));
+                } else {
+                    instance.setDataValue(fieldId, null);
+                }
                 return this;
             }
         }

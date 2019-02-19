@@ -1,4 +1,4 @@
-function Init(owner, customComposition) {
+function Init(owner, viewId, customComposition) {
 
   if(customComposition && !Array.isArray(customComposition)) {
     throw new Error("Only 'Array' type is acceptable!");
@@ -23,6 +23,8 @@ function Init(owner, customComposition) {
     toolbarElements.push(
       { 
         view: "Button", 
+        id: Tools.SID(), 
+        viewId: viewId,
         name: "DefaultCmd." + element.name, 
         value: element.title, 
         owner: owner + ".Toolbar",

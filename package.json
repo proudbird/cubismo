@@ -9,6 +9,7 @@
     "async": "^2.6.0",
     "body-parser": "^1.18.2",
     "debug": "^4.1.1",
+    "deepdash": "^1.9.5",
     "express": "^4.16.2",
     "express-fileupload": "^1.1.1-alpha.1",
     "mkdirp": "^0.5.1",
