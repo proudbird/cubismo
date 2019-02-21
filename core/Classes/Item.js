@@ -100,6 +100,11 @@ function Item(_arguments) {
         return instance.get(param);
     }
 
+    this.__proto__.set = function (param1, param2, param3) {
+        const instance = this._.instance;
+        return instance.set(param1, param2, param3);
+    }
+
     this.__proto__.getValue = function (property) {
         const definition = this._.model.definition;
         const instance = this._.instance;
