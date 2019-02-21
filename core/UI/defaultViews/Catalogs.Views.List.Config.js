@@ -37,7 +37,7 @@ module.exports.Init = function (type, options) {
     NameField = NameField + "_" + Application.lang;
     order = NameField;
   }
-  columns.push({ id: NameField, header: "Name", fillspace:true });
+  columns.push({ id: NameField, header: "Name", fillspace:true, sort: "string" });
   attributes.push(NameField);
 
   for (let key in definition.attributes) {

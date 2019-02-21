@@ -22,8 +22,6 @@ webix.protoUI({
     this.$ready.push(this._Init);
   },
   _Init: function () {
-    console.log("id: " + this.config.id)
-    console.log("view id: " + this.config.viewId)
     callServer("event",
       { viewId: this.config.viewId, element: this.config.name, event: "onLoad" }
     );

@@ -65,11 +65,15 @@ server.on("dataUpdate", function (message, callback) {
   let result;
   if(message.directive === "create") {
     result = element.add(_arguments[0]);
+    // sort
   } else if(message.directive === "update") {
     const item = _arguments[0];
     result = element.updateItem(item.id, item);
     const dataItem = element.getItem(item.id);
-    const parent = element.getItem(item.parentId);
+    if(dataItem.$parent != item.parentId) {
+      element.move(item.id, undefined, undefined, { parent: item.parentId });
+    }
+    // sort
   } else if(message.directive === "delete") {
     const item = _arguments[0];
     result = element.remove(item.id);
