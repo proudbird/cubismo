@@ -408,6 +408,6 @@ Tools.traverse = function (original, fn) {
   Tools.eachDeep(copy, (value, key, path, depth, parent, parentKey, parentPath) => {
     const node = Tools.get(original, path);
     //console.log("path: " + path)
-    fn(node, key);
+    fn(node, key, parentKey);
   });
 }

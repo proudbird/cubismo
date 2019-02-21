@@ -7,7 +7,7 @@ async function folder(_arguments) {
 }
 
 async function edit(_arguments) {
-  const selected = await _arguments.view.List.getSelected();
+  const selected = await _arguments.uiElement.getSelected();
   const item = selected[0];
   item.show();
 }

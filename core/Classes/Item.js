@@ -5,13 +5,16 @@ const _async = require("async");
 
 const View = require("../UI/View.js");
 
+let Application;
+
 function Item(_arguments) {
 
     this._ = {};
     this._.model = _arguments.model;
     this._.instance = _arguments.instance;
+    this._.application = _arguments.application;
 
-    const Application = _arguments.application;
+    Application = _arguments.application;
 
     const definition = this._.model.definition;
 
@@ -41,10 +44,10 @@ function Item(_arguments) {
 
     Object.defineProperty(this, "Name", {
         get: function () {
-            return this._.instance.getDataValue("Name" + Application.lang);
+            return this._.instance.getDataValue("Name" + this._.application.lang);
         },
         set: function (value) {
-            return this._.instance.setDataValue("Name" + Application.lang, value);
+            return this._.instance.setDataValue("Name" + this._.application.lang, value);
         }
     })
 
@@ -53,12 +56,72 @@ function Item(_arguments) {
         if (attribute.type.lang && attribute.type.lang.length) {
             Object.defineProperty(this, key, {
                 get: function () {
-                    return this._.instance.getDataValue(attribute.fieldId + Application.lang);
+                    return this._.instance.getDataValue(attribute.fieldId + this._.application.lang);
                 },
                 set: function (value) {
-                    return this._.instance.setDataValue(attribute.fieldId + Application.lang, value);
+                    return this._.instance.setDataValue(attribute.fieldId + this._.application.lang, value);
                 }
             })
+        }
+    }
+
+    for (let key in this._.model.definition.collections) {
+        const collection = definition.collections[key];
+        Object.defineProperty(this, collection.name, { 
+            enumerable: true,
+            get: function () {
+                const items = [];
+                const values = this._.instance[collection.name] || [];
+                values.forEach(item => {
+                    const _arg = {};
+                    _arg.application = this._.application;
+                    _arg.instance = item;
+                    _arg.model    = this._.model.associations[collection.name].target;
+                    const newItem = new Item(_arg);
+                    items.push(newItem);
+                })
+                return items;
+            },
+            set: async function (values) {
+                await this._.instance[this._.model.associations[collection.name].accessors.set](values);
+                return this;
+            }
+        });
+        const self = this;
+        this[collection.name].__proto__.add = function(value) {
+            if(!value) {
+                value = { 
+                    order: this.length + 1,
+                    ownerId: self._.instance.id
+                };
+                for (let key in collection.attributes) {
+                    const element = collection.attributes[key];
+                    let fieldId = element.fieldId;
+                    if(element.type.lang && element.type.lang.length) {
+                        fieldId = fieldId + "_" + self._.application.lang;
+                    }
+                    value[fieldId] = null;
+                }
+            }
+            const _arg = {};
+            _arg.instance = self._.model.associations[collection.name].target.build(value);
+            _arg.model    = self._.model.associations[collection.name].target;
+            const newItem = new Item(_arg);
+            //const newItem = self._.model.associations[collection.name].target.build(value);
+            const values = self._.instance[collection.name] || [];
+            values.push(_arg.instance);
+            return newItem;
+        }
+        this[collection.name].__proto__.addMultiple = async function(values) {
+            await self._.instance[self._.model.associations[collection.name].accessors.addMultiple](values);
+            return self;
+        }
+        this[collection.name].__proto__.count = function() {
+            return self._.instance[collection.name].length;
+        }
+        this[collection.name].__proto__.remove = async function() {
+            await self._.instance[self._.model.associations[collection.name].accessors.remove]();
+            return self;
         }
     }
 
@@ -67,7 +130,7 @@ function Item(_arguments) {
             _arguments = {};
         }
         _arguments.type = this;
-        _show(Application, this, _arguments);
+        _show(this._.application, this, _arguments);
     }
 
     this.__proto__.save = function () {
@@ -112,7 +175,7 @@ function Item(_arguments) {
         let fieldId = property;
         if (property === "Name") {
             if (definition.nameLang && definition.nameLang.length) {
-                fieldId = fieldId + "_" + Application.lang;
+                fieldId = fieldId + "_" + this._.application.lang;
             }
         } else if (property === "id") {
             return instance.id;
@@ -125,7 +188,7 @@ function Item(_arguments) {
         } else {
             const element = definition.attributes[property];
             if (element.type.lang && element.type.lang.length) {
-                fieldId = fieldId + "_" + Application.lang;
+                fieldId = fieldId + "_" + this._.application.lang;
             }
         }
         value = instance.getDataValue(fieldId);
@@ -139,7 +202,7 @@ function Item(_arguments) {
         let fieldId = property;
         if (property === "Name") {
             if (definition.nameLang && definition.nameLang.length) {
-                fieldId = fieldId + "_" + Application.lang;
+                fieldId = fieldId + "_" + this._.application.lang;
             }
         } else if (property === "id") {
             throw new Error("It is not allowed to change 'id' of an item");
@@ -164,7 +227,7 @@ function Item(_arguments) {
         } else {
             const element = definition.attributes[property];
             if (element.type.lang && element.type.lang.length) {
-                fieldId = fieldId + "_" + Application.lang;
+                fieldId = element.fieldId + "_" + this._.application.lang;
             }
             if (element.type.dataType === "FK") {
                 instance[property] = value;

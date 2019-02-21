@@ -59,6 +59,50 @@ module.exports.Init = function (item) {
     );
   })
 
+  if(definition.collections) {
+    Tools.forOwn(definition.collections, collection => {
+      const subRows = { rows: [{ view: "Toolbar", name: "Toolbar", owner: collection.name, composition: "default", elements: [] }] };
+      const columns = [];
+
+      const column = {
+        id: "order", 
+        header: "Lp.", 
+        width: 30
+      }
+      columns.push(column);
+
+      for (let key in collection.attributes) {
+        const element = collection.attributes[key];
+        if (!serviceAttributes.includes(key)) {
+          const column = {
+            id: key, 
+            header: element.title, 
+            editor: "text",
+            fillspace: true
+          }
+          columns.push(column);
+        }
+      }
+
+      const table = {
+        view: 'Datatable',
+        name: collection.name,
+        label: collection.name,
+        dataLink: "item.Values",
+        editable: true,
+        editaction: "dblclick",
+        select: true,
+        multiselect:true,
+        scroll: "x",
+        header: true,
+        columns: columns
+      }
+      subRows.rows.push(table);
+      rows.push(subRows);
+    }); 
+  }
+
+  rows.push({});
   return {
     view: "View",
     name: viewName,

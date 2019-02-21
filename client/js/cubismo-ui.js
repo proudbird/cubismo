@@ -322,3 +322,67 @@ webix.DataDriver.json = webix.extend({
 		return data;
 	}
 }, webix.DataDriver.json);
+
+webix.protoUI({
+  name:"Datatable",
+  defaults:{
+    scroll: true,
+    on:{
+      onSelectChange: function() {
+
+      },
+      onItemDblClick: function(item) {
+
+      },
+      onItemClick: function(id, e, node) {
+
+      },
+      onBeforeEditStart: function(item) {
+
+      },
+      onAfterEditStart: function(item) {
+        const value = this.getText(item.row, item.column);
+        const editor = this.getEditor(item.row, item.column);
+        editor.setValue(value);
+      },
+      onAfterEditStop: function(state, editor, changed) {
+        const item = this.getItem(editor.row);
+        // TODO: there may be errors
+        item.value[editor.column] = state.value;
+        callServer("event", { 
+          viewId   : this.config.viewId, 
+          element  : this.config.name, 
+          event    : "onItemChange",
+          arguments: [editor.column, this.getIndexById(editor.row), this.getItem(editor.row), state.value, state.old]
+        });
+      },
+      onBeforeLoad: function() {
+      },
+      onAfterLoad: function() {
+      }
+    }
+  },
+  $init: function (config) {
+    config.columns.forEach(column => {
+      column.template = function(row) {
+        const value = row.value[column.id];
+        if(value && typeof value === "object") {
+          return  value.title;
+        } else {
+          return  value || "";
+        }
+      }
+    })
+    this.$ready.push(this._Init);
+    this.$ready.unshift(this._after_init_call);
+  },
+  _after_init_call: function () {
+
+  },
+  _Init: function () {
+
+  },
+  focus: function(){
+		webix.UIManager.setFocus(this);
+	}
+}, webix.ui.datatable);

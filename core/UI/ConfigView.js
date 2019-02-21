@@ -6,7 +6,11 @@ const path = require("path");
 const Require = require("../Require.js");
 const Traverse = require('traverse');
 
+let Application = undefined;
+
 function ConfigView(View, _arguments, pathToFile) {
+
+  Application = _arguments.application;
 
   var config = Require(pathToFile, {
     Application: _arguments.application
@@ -15,8 +19,8 @@ function ConfigView(View, _arguments, pathToFile) {
     config = config.Init(_arguments.item ? _arguments.item : _arguments.type, _arguments.options);
   }
 
-  Tools.traverse(config, function (node, key) {
-    console
+  Tools.traverse(config, function (node, key, parentKey) {
+    //console.log(parentKey);
     if (node && typeof node != 'function') {
       const uiElement = node;
       if (node.view && node.name && node.name !== 'data') {
@@ -32,7 +36,11 @@ function ConfigView(View, _arguments, pathToFile) {
         if (node.owner && node.composition === "default") {
           let pathToDefaultCommandsFile = path.join(__dirname, "./DefaultViews/Catalogs.List.Toolbar.Config.js");
           if (_arguments.item) {
-            pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Item");
+            if(Tools.has(_arguments.item, node.owner)) {
+              pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Collection");
+            } else {
+              pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Item");
+            }
           }
           const toolbar = require(pathToDefaultCommandsFile).Init(node.owner, View.id);
           node.elements = toolbar;
@@ -53,6 +61,7 @@ function ConfigView(View, _arguments, pathToFile) {
           });
           
           let target = View[node.owner].Toolbar;
+          _arguments.uiElement = View[node.name];
 
           pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace(".Config", "");
           let commands = require(pathToDefaultCommandsFile);
@@ -96,7 +105,7 @@ function ConfigView(View, _arguments, pathToFile) {
               pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Item");
               commands = require(pathToDefaultCommandsFile);
             }
-            commands.defineCommand("DefaultCmd.Enter", _arguments);
+            commands.defineCommand("DefaultCmd.Add", _arguments);
           }
         }
 
@@ -125,6 +134,7 @@ function _populateDataView(View, element, node) {
   const linkPath = node.dataLink.split(".");
   const source = linkPath[0];
   const valueProperty = linkPath[1];
+  let colDefinition;
 
   function __getValue(item, property) {
     let value = item.getValue(property);
@@ -133,13 +143,58 @@ function _populateDataView(View, element, node) {
     }
     return value;
   }
-  
-  // UI element can be single value (text, lookup, etc.) and multy-value (all lists)
-  if(Tools.has(node, "select")) { // only multi-value elements have 'select' option 
 
+  function __getDataForCollection(item) {
+
+    const data = { id: item._.instance.id, order: item._.instance.order};
+    const definition = item._.model.definition;
+    for (let key in definition.attributes) {
+      const element = definition.attributes[key];
+      let fieldId = element.fieldId;
+      if(element.type.lang && element.type.lang.length) {
+        fieldId = fieldId + "_" + Application.lang;
+      }
+      const value = item._.instance[fieldId];
+      const instance = Tools.get(value, "_.instance");
+      if(instance) {
+        data[key] = {
+          id: instance.id,
+          title: instance.name
+        }
+      } else {
+        data[key] = value;
+      }
+    }
+    return data;
+  }
+
+  item = View[source];
+  definition = item._.model.definition;
+  if(definition.collections) {
+    Tools.forOwn(definition.collections, collection => {
+      if(collection.name === valueProperty) {
+        colDefinition = collection;
+        return false;
+      }
+    })
+  }
+  // UI element can be single value (text, lookup, etc.) and multy-value (all lists)
+  if(colDefinition) { // only multi-value elements have 'select' option 
+    const data = [];
+    const collection = item[valueProperty] || [];
+    for(let i=0; i < collection.length; i++) {
+      const value = __getDataForCollection(collection[i]);
+      const row = { 
+        id: node.id + "_" + i,
+        rowNumer: i, 
+        value: value 
+      };
+      data.push(row);
+    }
+     
+    node.data = data;
   } else { // single value element
-    item = View[source];
-    definition = item._.model.definition;
+    
     attribute = definition.attributes[valueProperty] || { type: { dataType: undefined}};
     // chack if source is a reference type
     if(valueProperty === "Owner" || valueProperty === "Parent" || attribute.type.dataType === "FK") {

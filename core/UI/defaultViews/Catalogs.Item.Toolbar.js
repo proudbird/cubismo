@@ -7,6 +7,10 @@ function close(_arguments) {
   _arguments.view.close();
 }
 
+function add(_arguments) {
+  _arguments.item[uiElement.name].add();
+}
+
 function defineCommand(command, _arguments) {
   switch (command) {
     case "DefaultCmd.Save":
@@ -17,6 +21,11 @@ function defineCommand(command, _arguments) {
     case "DefaultCmd.Close":
     _arguments.uiElement[command] = function() {
         close(_arguments);
+      };
+      break;
+    case "DefaultCmd.Add":
+      _arguments.uiElement[command] = function () {
+        add(_arguments);
       };
       break;
   }

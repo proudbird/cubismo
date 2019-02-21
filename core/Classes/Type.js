@@ -16,6 +16,8 @@ function Type(_arguments) {
     this._.model = _arguments.model;
     this._.application = _arguments.application;
 
+    const self = this;
+
     //@TODO move it
     (function (original) {
         _arguments.model.build = function (values, options) {
@@ -23,6 +25,7 @@ function Type(_arguments) {
                 return this.bulkBuild(values, options);
             }
             _arguments.instance = new this(values, options);
+            //_arguments.type = self;
             const item = new Item(_arguments);
             return item;
         };

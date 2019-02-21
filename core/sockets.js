@@ -170,6 +170,15 @@ function listen(server) {
         uiElement.value = _arguments[0];
       }
 
+      if(message.event === "onItemChange") {
+        var target = Tools.get(view, uiElement.config.dataLink);
+        if(target) {
+          var item = target[_arguments[1]];
+          const fieldId = _arguments[0];
+          item.setValue(fieldId, _arguments[3]);
+        }
+      }
+
       if(!uiElement.config.events) {
         // there is no events handlers at all
         return;

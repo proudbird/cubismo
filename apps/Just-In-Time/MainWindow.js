@@ -120,12 +120,15 @@ View.onLoad = async function (params) {
     })
   })
 
-  const p = require.resolve("c:\\ITProjects\\cubismo\\core\\UI\\DefaultViews\\Catalogs.Views.List.Config.js");
-  if (require.cache[p]) {
-    delete require.cache[p];
-  }
+  // const p = require.resolve("c:\\ITProjects\\cubismo\\core\\UI\\DefaultViews\\Catalogs.Views.List.Config.js");
+  // if (require.cache[p]) {
+  //   delete require.cache[p];
+  // }
 
-  Application.Enterprise.Catalogs.Partners.show({
+  // Application.Enterprise.Catalogs.Partners.show({
+  // });
+
+  Application.Products.Catalogs.Attributes.show({
   });
 }
 

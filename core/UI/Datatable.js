@@ -140,3 +140,75 @@ UIElement.Search = function(filters, callback) {
     
     UIElement.Refresh();
 }
+
+UIElement.getSelected = function(callback) {
+
+  return new Promise(function (resolve, reject) {
+    const message = {
+      directive: "getSelectedItem",
+      elementId: UIElement.config.id,
+      arguments: [true]
+    }
+
+    Application.window.directiveToClient("directive", message, async function (response) {
+      if (response.err) {
+        reject(error);
+      } else {
+        const indexies = response.result.map(function callback(value) {
+          return value.rowNumber - 1;
+        });
+        const data = UIElement.data.map(function callback(value, index) {
+          if(indexies.includes(index)) {
+            return value;
+          }
+        });
+        resolve(data);
+      }
+    })
+  });
+}
+
+UIElement.add = function(item, callback) {
+  
+  const data = { id: item._.instance.id, order: item._.instance.order }
+  const definition = item._.model.definition;
+  for (let key in definition.attributes) {
+    const element = definition.attributes[key];
+    let fieldId = element.fieldId;
+    if(element.type.lang && element.type.lang.length) {
+      fieldId = fieldId + "_" + Application.lang;
+    }
+    const value = item._.instance[fieldId];
+    const instance = Tools.get(value, "_.instance");
+    if(instance) {
+      data[key] = {
+        id: instance.id,
+        title: instance.name
+      }
+    } else {
+      data[key] = value;
+    }
+  }
+
+  const row = { 
+    id: UIElement.config.id + "_" + item._.instance.order,
+    rowNumer: item._.instance.order, 
+    value: data 
+  };
+
+  return new Promise(function (resolve, reject) {
+    const message = {
+      directive: "add",
+      elementId: UIElement.config.id,
+      arguments: [row]
+    }
+
+    Application.window.directiveToClient("directive", message, async function (response) {
+      if (response.err) {
+        reject(error);
+      } else {
+        resolve(response.result);
+      }
+    })
+  });
+}

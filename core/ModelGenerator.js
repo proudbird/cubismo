@@ -44,13 +44,14 @@ generator.define = function(application, db, appModelDefinition) {
           else {
             dataType = DBTypes.TEXT;
           };
+          //let attributeId = attribute.fieldId;
           if (Array.isArray(type.lang) && type.lang.length > 0) {
             for (let i = 0; i < type.lang.length; i++) {
               const lang = type.lang[i];
-              const attributeId = attributeName + "_" + lang;
+              const attributeId = attribute.fieldId + "_" + lang;
               attributes[attributeId] = {
                 type: dataType,
-                field: attribute.fieldId + "_" + lang,
+                field: attributeId,
                 set(value) {
                   attributeSetter(this, attributeId, value);
                 }
@@ -58,11 +59,12 @@ generator.define = function(application, db, appModelDefinition) {
             }
           }
           else {
+            const attributeId = attribute.fieldId;
             attributes[attributeName] = {
               type: dataType,
-              field: attribute.fieldId,
+              field: attributeId,
               set(value) {
-                attributeSetter(this, attributeName, value);
+                attributeSetter(this, attributeId, value);
               }
             }
           };
