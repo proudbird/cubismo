@@ -281,7 +281,7 @@ generator.define = function(application, db, appModelDefinition) {
 
     const config = {
       timestamps: model.class === "Collection" ? false: true,
-      paranoid: true,
+      //paranoid: true,
       freezeTableName: true,
       tableName: model.tableId,
     };
@@ -320,7 +320,7 @@ generator.define = function(application, db, appModelDefinition) {
         const colModel = model.collections[id];
         colModel.ownerModelName = modelName;
         const _collection = defineModel(colModel);
-        _model.hasMany(_collection, { as: "Owner", foreignKey: "ownerId", constraints: false });
+        _model.hasMany(_collection, { as: colModel.name, foreignKey: "ownerId", constraints: false });
         if (Array.isArray(attributeOptions.belongsTo) && attributeOptions.belongsTo.length) {
           for (let i = 0; i < attributeOptions.belongsTo.length; i++) {
             const _belongs = attributeOptions.belongsTo[i];
