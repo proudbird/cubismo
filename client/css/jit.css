@@ -249,6 +249,14 @@
     float: right;
     border-radius: 2px;
   }
+.input_buttons_box_cell {
+    /* position: relative; */
+    /* top: 2px; */
+    right: 2px;
+    float: right;
+    border-radius: 2px;
+    margin-right: -10px;
+  }
   
   .input_button {
     color:rgb(75, 75, 75);
@@ -296,4 +304,43 @@
 
   .webix_inp_label {
       padding-left: 10px;
+  }
+
+  .mdi-language:before {
+    content: "\F001";
+  }
+
+  @font-face {
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    src: url('/fonts/MaterialIcons-Regular.eot');
+    src: url('/fonts/MaterialIcons-Regular.eot?#iefix') format('embedded-opentype'), 
+        url('/fonts/MaterialIcons-Regular.woff2') format('woff2'), 
+        url('/fonts/MaterialIcons-Regular.woff') format('woff'), 
+        url('/fonts/MaterialIcons-Regular.ttf') format('truetype'), 
+        url('/fonts/MaterialIcons-Regular.svg') format('svg');
+  }
+
+  .mi_icon {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;  /* Preferred icon size */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+  
+    /* Support for all WebKit browsers. */
+    -webkit-font-smoothing: antialiased;
+    /* Support for Safari and Chrome. */
+    text-rendering: optimizeLegibility;
+    /* Support for Firefox. */
+    -moz-osx-font-smoothing: grayscale;
+    /* Support for IE. */
+    font-feature-settings: 'liga';
   }

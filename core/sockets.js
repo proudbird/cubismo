@@ -42,6 +42,9 @@ function listen(server) {
     });
 
     socket.on('getData', function (message, callback) {
+      process.env.WINDOW = message.windowId;
+      process.env.LANG   = message.lang;
+
       const application = getApplication(message);
       const view        = getView(message, application);
       const uiElement   = getUIElement(message, view);
@@ -57,7 +60,48 @@ function listen(server) {
       })
     });
 
+    socket.on('localaze', function (message, callback) {
+      process.env.WINDOW = message.windowId;
+      process.env.LANG   = message.lang;
+
+      const application = getApplication(message);
+      const view        = getView(message, application);
+      const uiElement   = getUIElement(message, view);
+      let item          = view.item;
+
+      if(message.collection) {
+        const collection = Tools.get(view, message.collection);
+        item = collection[message.index]
+      }
+
+      const translations = message.translations;
+      if(translations && translations.length) {
+        translations.forEach(translation => {
+          item.setValue(translation.attribute, translation.value, translation.lang);
+        })
+      }
+    });
+
+    socket.on('getLocal', function (message, callback) {
+      process.env.WINDOW = message.windowId;
+      process.env.LANG   = message.lang;
+
+      const application = getApplication(message);
+      const view        = getView(message, application);
+      let item          = view.item;
+
+      if(message.collection) {
+        const collection = Tools.get(view, message.collection);
+        item = collection[message.index]
+      }
+    
+      callback(null, item.getValue(message.attribute, message.lang));
+    });
+
     socket.on('lookup', async function (message, callback) {
+      process.env.WINDOW = message.windowId;
+      process.env.LANG   = message.lang;
+
       const application = getApplication(message);
       const view = getView(message, application);
       const uiElement = getUIElement(message, view);
@@ -150,6 +194,7 @@ function listen(server) {
 
     socket.on('event', function (message, callback) {
       process.env.WINDOW = message.windowId;
+      process.env.LANG   = message.lang;
 
       const application = getApplication(message);
       const view        = getView(message, application);

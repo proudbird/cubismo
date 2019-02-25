@@ -624,6 +624,7 @@ label.webix_required:after{padding-left:4px;content:"*";color:red}
 .fa-stack-1x{line-height:inherit}
 .fa-stack-2x{font-size:2em}
 .fa-inverse{color:#fff}
+
 .fa-glass:before{content:"\f000"}
 .fa-music:before{content:"\f001"}
 .fa-search:before{content:"\f002"}

@@ -168,14 +168,15 @@ function Item(_arguments) {
         return instance.set(param1, param2, param3);
     }
 
-    this.__proto__.getValue = function (property) {
+    this.__proto__.getValue = function (property, lang) {
+        lang = lang || this._.application.lang;
         const definition = this._.model.definition;
         const instance = this._.instance;
         let value;
         let fieldId = property;
         if (property === "Name") {
             if (definition.nameLang && definition.nameLang.length) {
-                fieldId = fieldId + "_" + this._.application.lang;
+                fieldId = fieldId + "_" + lang;
             }
         } else if (property === "id") {
             return instance.id;
@@ -188,21 +189,22 @@ function Item(_arguments) {
         } else {
             const element = definition.attributes[property];
             if (element.type.lang && element.type.lang.length) {
-                fieldId = fieldId + "_" + this._.application.lang;
+                fieldId = element.fieldId + "_" + lang;
             }
         }
         value = instance.getDataValue(fieldId);
         return value;
     }
 
-    this.__proto__.setValue = function (property, value) {
+    this.__proto__.setValue = function (property, value, lang) {
+        lang = lang || this._.application.lang;
         const model = this._.model;
         const definition = this._.model.definition;
         const instance = this._.instance;
         let fieldId = property;
         if (property === "Name") {
             if (definition.nameLang && definition.nameLang.length) {
-                fieldId = fieldId + "_" + this._.application.lang;
+                fieldId = fieldId + "_" + lang;
             }
         } else if (property === "id") {
             throw new Error("It is not allowed to change 'id' of an item");
@@ -227,7 +229,7 @@ function Item(_arguments) {
         } else {
             const element = definition.attributes[property];
             if (element.type.lang && element.type.lang.length) {
-                fieldId = element.fieldId + "_" + this._.application.lang;
+                fieldId = element.fieldId + "_" + lang;
             }
             if (element.type.dataType === "FK") {
                 instance[property] = value;

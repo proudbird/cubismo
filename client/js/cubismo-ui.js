@@ -1,7 +1,189 @@
 /* globals webix $$ */
 window.applicationId = window.location.pathname.replace("/","");
+let lang = navigator.language || navigator.userLanguage; 
+window.lang = lang.slice(0, lang.search("-"));
 
 webix.Date.startOnMonday = true;
+
+function showModalWindow(options, onClose) {
+  const id = webix.uid();
+  webix.ui({
+    view: "window",
+    id: id,
+    head: 
+      {
+        view:"toolbar", 
+        margin: -4, 
+        cols:[
+          {
+            view: "label", 
+            label: options.title},
+          {},
+          {
+            view: "icon", 
+            icon: "wxi-close", 
+            click: function() {
+              if(onClose) {
+                onClose(null);
+              }
+              $$(id).close();
+            }
+          }
+        ]
+      },
+    modal: true,
+    move: true,
+    position: "center",
+    width: options.width,
+    height: options.height, 
+    body: options.body
+  }).show();
+
+  return id;
+}
+
+function initInputButtons(box, boxClass, difference, buttons) {
+
+  //const box = node;
+
+  function addInputButton(inBox, inButtonClass, height, right, action) {
+    var inButton = document.createElement("div");
+    inButton.style.lineHeight = height + "px";
+    inButton.className = inButtonClass;
+    inButton.style.width = height + "px";
+    inBox.style.height = (height - (difference + 1)) + "px";
+    inBox.style.top = -1*(height - difference) + "px";
+    inBox.style.right = right;
+    inButton.style.lineHeight = (height - difference) + "px";
+    inButton.style.width = (height - difference) + "px";
+    inBox.appendChild(inButton);
+    inButton.addEventListener("mouseenter", function() {
+      inButton.className = inButtonClass + " input_button_hover";
+    });
+    inButton.addEventListener("mouseleave", function() {
+      inButton.className = inButtonClass;
+    });
+    inButton.addEventListener("click", function() { 
+      action();
+    }, true);
+  }
+  
+  function renderInputButtonsBox(buttons) {
+    if(box.getElementsByClassName(boxClass).length < 1) {
+      var inBox = document.createElement("div");
+      box.appendChild(inBox);
+      inBox.className = boxClass;
+      var height = box.clientHeight;
+      inBox.style.height = height + "px";
+      inBox.style.backgroundColor = box.style.backgroundColor;
+      inBox.style.top = -1*(height - difference) + "px";
+      let right = -1;
+      buttons.forEach(button => {
+        addInputButton(inBox, button.class, height, right, button.action);
+        right = right - 1 - (height - difference);
+      });
+    }
+  }
+
+  box.addEventListener("mouseenter", function() {
+    renderInputButtonsBox(buttons);
+  });
+
+  box.addEventListener("mouseleave", function(e) {
+    if(box.getElementsByClassName(boxClass).length > 0) {
+      const inBox = box.getElementsByClassName(boxClass)[0];
+      inBox.remove();
+    }
+  });
+}
+
+function getLocal(message, callback) {
+  callServer("getLocal", message, function(err, result) {
+    if(err) {
+      return webix.alert(err);
+    }
+    callback(result);
+  });
+}
+
+function localize(params, langs, callback) {
+  let windowId = null;
+  const rows = [];
+  langs.forEach((lang) => {
+    params.lang = lang;
+    getLocal(params, function(value) {
+      $$(params.attribute + "_" + lang).setValue(value);
+    });
+    rows.push({
+      view: "text",
+      id: params.attribute + "_" + lang,
+      viewId: params.viewId,
+      label: lang,
+      labelWidth: 50
+    });
+  });
+  const buttons = {
+    cols: [
+      {},
+      {
+        view: "Button",
+        viewId: params.viewId,
+        maxWidth: 200,
+        value: "OK",
+        click: function() {
+          onClose($$(windowId));
+        }
+      },
+      {
+        view: "Button",
+        viewId: params.viewId,
+        maxWidth: 200,
+        value: "Cancel",
+        click: function() {
+          onClose(null);
+          $$(windowId).close();
+        }
+      }
+    ]
+  }
+  rows.push(buttons);
+
+  const viewConfig = {
+    rows: rows
+  }
+  const options = {
+    title: "Translations of: " + params.attribute,
+    body: viewConfig,
+    width: 600
+  }
+
+  function onClose(view) {
+    if(view) {
+      const translations = [];
+      langs.forEach(lang => {
+        const value = $$(params.attribute + "_" + lang).getValue();
+        translations.push({
+          attribute: params.attribute,
+          fieldId: params.fieldId,
+          lang: lang,
+          value: value
+        })
+        if(lang === window.lang) {
+          callback(value);
+        }
+      });
+      $$(windowId).close();
+      callServer("localaze", { 
+        viewId   : params.viewId, 
+        element  : params.attribute, 
+        collection: params.collection,
+        index: params.index,
+        translations: translations
+      });
+    }
+  }
+  windowId = showModalWindow(options, onClose);
+}
 
 webix.protoUI({
   name:"MainWindow",
@@ -105,12 +287,46 @@ webix.protoUI({
   name: "Text",
   defaults:{
     on:{
+      onAfterRender: function() {
+        const self = this;
+        const buttons = [];
+        if(this.config.langs && this.config.langs.length) {
+          const cssClass = "webix_view input_button fa-icon fa-globe";
+          buttons.push({class: cssClass, action: function() {
+            const params = { 
+              viewId    : self.config.viewId, 
+              attribute : self.config.name,
+            }
+            localize(params, self.config.langs, function(value) {
+              self.setValue(value);
+            }); 
+          }});
+        }
+        if(buttons.length) {
+          initInputButtons(this.$view.children[0], "input_buttons_box", 8, buttons);
+        }
+
+        callServer("event", { 
+          viewId   : this.config.viewId, 
+          element  : this.config.name, 
+          event    : "onAfterRender",
+          arguments: []
+        });
+      },
       onChange: function(newv, oldv) {
         callServer("event", { 
           viewId   : this.config.viewId, 
           element  : this.config.name, 
           event    : "onChange",
           arguments: [newv, oldv]
+        });
+      }, 
+      onFocus: function(view) {
+        callServer("event", { 
+          viewId   : this.config.viewId, 
+          element  : this.config.name, 
+          event    : "onFocus",
+          arguments: []
         });
       }
     }
@@ -120,6 +336,7 @@ webix.protoUI({
     this.$ready.push(this._Init);
   },
   _Init: function () {
+    
   },
 
 }, webix.ui.text);
@@ -324,7 +541,7 @@ webix.DataDriver.json = webix.extend({
 }, webix.DataDriver.json);
 
 webix.protoUI({
-  name:"Datatable",
+  name: "Datatable",
   defaults:{
     scroll: true,
     on:{
@@ -334,11 +551,56 @@ webix.protoUI({
       onItemDblClick: function(item) {
 
       },
-      onItemClick: function(id, e, node) {
+      onItemClick: function(cell) {
+        const self = this;
 
-      },
-      onBeforeEditStart: function(item) {
+        function main() {
+          const node = self.getItemNode({
+            row: cell.row,
+            column: cell.column
+          });
 
+          const buttons = [];
+          const columns = self.config.columns;
+          let column;
+          columns.forEach(col => {
+            if (col.id === cell.column) {
+              column = col;
+              if (column.langs && column.langs.length) {
+                const cssClass = "webix_view input_button fa-icon fa-globe";
+                buttons.push({
+                  class: cssClass,
+                  action: function () {
+                    const params = { 
+                      viewId    : self.config.viewId, 
+                      collection: self.config.dataLink,
+                      index     : self.getIndexById(cell.row),
+                      attribute : cell.column,
+                    }
+                    localize(params, column.langs, function (value) {
+                      record = self.getItem(cell.row);
+                      record.value[cell.column] = value;
+                      self.updateItem(cell.row, record);
+                      setTimeout(main, 10);
+                    });
+                  }
+                });
+              }
+              if (buttons.length) {
+                initInputButtons(node, "input_buttons_box_cell", 0, buttons);
+              }
+            }
+          })
+        }
+
+        setTimeout(main, 10);
+
+        callServer("event", { 
+          viewId   : this.config.viewId, 
+          element  : this.config.name, 
+          event    : "onItemClick",
+          arguments: []
+        });
       },
       onAfterEditStart: function(item) {
         const value = this.getText(item.row, item.column);
@@ -380,9 +642,17 @@ webix.protoUI({
 
   },
   _Init: function () {
-
   },
   focus: function(){
 		webix.UIManager.setFocus(this);
 	}
 }, webix.ui.datatable);
+
+webix.editors.lang = webix.extend({
+  render:function() {
+    const html = create("div", {
+      "class": "webix_dt_editor"
+    }, "<input type='text' aria-label='" + getLabel(this.config) + "'>");
+    return html;
+
+  }}, webix.editors.text);

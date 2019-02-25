@@ -24,17 +24,25 @@ module.exports.Init = function (item) {
     attributes.push({ id: "Code", header: "Code" });
   }
   
-  attributes.push({ id: "Name", header: "Name" });
+  attributes.push({ id: "Name", header: "Name", fieldId: "Name", langs: definition.nameLang });
 
   for (let key in definition.attributes) {
     const element = definition.attributes[key];
     if (!serviceAttributes.includes(key) && element.belonging != "folder") {
       let fieldId = element.fieldId;
+      multilang = false;
       if(element.type.lang && element.type.lang.length) {
         fieldId = fieldId + "_" + Application.lang;
+        multilang = true;
       }
       if(!hiddenAttributes.includes(key)) {
-        attributes.push({ id: key, header: element.title, type: element.type.dataType });
+        attributes.push({ 
+          id: key, 
+          header: element.title, 
+          type: element.type.dataType, 
+          fieldId: element.fieldId,
+          langs: element.type.lang
+        });
       }
     }
   }
@@ -54,7 +62,9 @@ module.exports.Init = function (item) {
         name: row.id,
         label: row.header,
         dataLink: "item." + row.id,
-        onlyFolders: row.onlyFolders
+        onlyFolders: row.onlyFolders,
+        fieldId: row.fieldId,
+        langs: row.langs
       }
     );
   })
@@ -78,7 +88,8 @@ module.exports.Init = function (item) {
             id: key, 
             header: element.title, 
             editor: "text",
-            fillspace: true
+            fillspace: true,
+            langs: element.type.lang
           }
           columns.push(column);
         }

@@ -128,7 +128,7 @@ View.onLoad = async function (params) {
   // Application.Enterprise.Catalogs.Partners.show({
   // });
 
-  Application.Products.Catalogs.Attributes.show({
+  Application.Products.Catalogs.Products.show({
   });
 }
 

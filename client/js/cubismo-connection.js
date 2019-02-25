@@ -85,6 +85,9 @@ server.on("dataUpdate", function (message, callback) {
 function callServer(action, message, callback) {
   message.applicationId = window.applicationId;
   message.windowId      = window.windowId;
+  if(!message.lang) {
+    message.lang = window.lang;
+  }
   server.emit(action, message, function(err, result) {
     if(callback) {
       callback(err, result);
