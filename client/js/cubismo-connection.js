@@ -51,6 +51,9 @@ server.on("directive", function (message, callback) {
     callback({ err: "No such method <" + message.directive + "> for element with ID <" + elementId + ">" });
   }
   const _arguments = message.arguments || [];
+  if(message.directive === "setValue") {
+    element.itWasChangerdOnServer = true;
+  }
   const result = element[message.directive](_arguments[0], _arguments[1], _arguments[2], _arguments[3], _arguments[4]);
   callback({ result: result });
 })

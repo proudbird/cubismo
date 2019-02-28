@@ -17,6 +17,24 @@
         "nameLang": [],
         "template": "#Name#",
         "owners": [],
-        "attributes": {}
+        "attributes": {
+            "HSCode": {
+                "fieldId": "FL_zmKfVI4G",
+                "title": "HS Code",
+                "description": "Harmonized System Code",
+                "type": {
+                    "dataType": "FK",
+                    "reference": {
+                        "cube": "this",
+                        "class": "Catalogs",
+                        "modelId": "1333c392-ac67-43a0-9b3e-b3bdf00d8dd3"
+                    }
+                },
+                "defaultValue": "",
+                "toolTip": "",
+                "belonging": "item",
+                "required": false
+            }
+        }
     }
 }

@@ -23,6 +23,7 @@
                 "name": "Values",
                 "class": "Collection",
                 "tableId": "CL_sNr9JUfY",
+                "presentation": "Value",
                 "attributes": {
                     "Value": {
                         "fieldId": "FL_NSz2sive",

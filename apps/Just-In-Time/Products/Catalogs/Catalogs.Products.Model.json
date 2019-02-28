@@ -17,32 +17,6 @@
         "nameLang": ["ru", "en", "pl", "de"],
         "template": "#Name#",
         "owners": [],
-        "collections": {
-            "fc6406d2-88c1-4e86-8efd-cc05d8e7ec44": {
-                "name": "Attributes",
-                "class": "Collection",
-                "tableId": "CL_1RKeT851",
-                "attributes": {
-                    "Attribute": {
-                        "fieldId": "FL_NkTxwzzE",
-                        "title": "Attribute",
-                        "description": "Attribute",
-                        "type": {
-                            "dataType": "FK",
-                            "reference": {
-                                "cube": "this",
-                                "class": "Catalogs",
-                                "modelId": "fd006eed-37d8-4950-9645-6925d00a04ae"
-                            }
-                        },
-                        "defaultValue": "",
-                        "toolTip": "",
-                        "belonging": "item",
-                        "required": false
-                    }
-                }
-            }
-        },
         "attributes": {
             "FullName": {
                 "fieldId": "FL_jf2Yzyuh",
@@ -105,7 +79,7 @@
                 "title": "Weight netto, kg",
                 "description": "Weight netto kilograms",
                 "type": {
-                    "dataType": "INTEGER",
+                    "dataType": "NUMBER",
                     "length": 10,
                     "fractionalLength": 3
                 },
@@ -119,7 +93,7 @@
                 "title": "Weight brutto, kg",
                 "description": "Weight brutto kilograms",
                 "type": {
-                    "dataType": "INTEGER",
+                    "dataType": "NUMBER",
                     "length": 10,
                     "fractionalLength": 3
                 },
@@ -150,23 +124,6 @@
                         "cube": "this",
                         "class": "Catalogs",
                         "modelId": "606b0a6f-bf85-4f56-92f0-5640c936fc93"
-                    }
-                },
-                "defaultValue": "",
-                "toolTip": "",
-                "belonging": "item",
-                "required": false
-            },
-            "HSCode": {
-                "fieldId": "FL_zmKfVI4G",
-                "title": "HS Code",
-                "description": "Harmonized System Code",
-                "type": {
-                    "dataType": "FK",
-                    "reference": {
-                        "cube": "this",
-                        "class": "Catalogs",
-                        "modelId": "1333c392-ac67-43a0-9b3e-b3bdf00d8dd3"
                     }
                 },
                 "defaultValue": "",

@@ -86,7 +86,7 @@ UIElement.update = async function (item, directive) {
     const message = {
       directive: directive,
       elementId: UIElement.config.id,
-      arguments: [item._.instance]
+      arguments: [item.toJSON()]
     }
 
     Application.window.directiveToClient("dataUpdate", message, async function (response) {
@@ -114,6 +114,25 @@ UIElement.getSelected = async function () {
       } else {
         const selectors = _.map(response.result, 'id');
         resolve(await _getItems(UIElement, selectors))
+      }
+    })
+  });
+}
+
+UIElement.openAll = async function () {
+
+  return new Promise(function (resolve, reject) {
+    const message = {
+      directive: "openAll",
+      elementId: UIElement.config.id,
+      arguments: []
+    }
+
+    Application.window.directiveToClient("directive", message, async function (response) {
+      if (response.err) {
+        reject(error);
+      } else {
+        resolve(null)
       }
     })
   });

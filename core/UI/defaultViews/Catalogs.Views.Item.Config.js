@@ -69,6 +69,7 @@ module.exports.Init = function (item) {
     );
   })
 
+  let hasTables = false;
   if(definition.collections) {
     Tools.forOwn(definition.collections, collection => {
       const subRows = { rows: [{ view: "Toolbar", name: "Toolbar", owner: collection.name, composition: "default", elements: [] }] };
@@ -84,12 +85,16 @@ module.exports.Init = function (item) {
       for (let key in collection.attributes) {
         const element = collection.attributes[key];
         if (!serviceAttributes.includes(key)) {
+          let editor = "text";
+          if(element.type.dataType === "FK") {
+            editor = "lookup";
+          }
           const column = {
             id: key, 
             header: element.title, 
-            editor: "text",
+            editor: editor,
             fillspace: true,
-            langs: element.type.lang
+            langs: element.type.lang, 
           }
           columns.push(column);
         }
@@ -99,7 +104,7 @@ module.exports.Init = function (item) {
         view: 'Datatable',
         name: collection.name,
         label: collection.name,
-        dataLink: "item.Values",
+        dataLink: "item." + collection.name,
         editable: true,
         editaction: "dblclick",
         select: true,
@@ -110,10 +115,14 @@ module.exports.Init = function (item) {
       }
       subRows.rows.push(table);
       rows.push(subRows);
+      hasTables = true;
     }); 
   }
 
-  rows.push({});
+  if(!hasTables) {
+    rows.push({});
+  }
+  
   return {
     view: "View",
     name: viewName,

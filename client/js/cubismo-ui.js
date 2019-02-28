@@ -1,6 +1,6 @@
 /* globals webix $$ */
-window.applicationId = window.location.pathname.replace("/","");
-let lang = navigator.language || navigator.userLanguage; 
+window.applicationId = window.location.pathname.replace("/", "");
+let lang = navigator.language || navigator.userLanguage;
 window.lang = lang.slice(0, lang.search("-"));
 
 webix.Date.startOnMonday = true;
@@ -10,32 +10,31 @@ function showModalWindow(options, onClose) {
   webix.ui({
     view: "window",
     id: id,
-    head: 
-      {
-        view:"toolbar", 
-        margin: -4, 
-        cols:[
-          {
-            view: "label", 
-            label: options.title},
-          {},
-          {
-            view: "icon", 
-            icon: "wxi-close", 
-            click: function() {
-              if(onClose) {
-                onClose(null);
-              }
-              $$(id).close();
+    head: {
+      view: "toolbar",
+      margin: -4,
+      cols: [{
+          view: "label",
+          label: options.title
+        },
+        {},
+        {
+          view: "icon",
+          icon: "wxi-close",
+          click: function () {
+            if (onClose) {
+              onClose(null);
             }
+            $$(id).close();
           }
-        ]
-      },
+        }
+      ]
+    },
     modal: true,
     move: true,
     position: "center",
     width: options.width,
-    height: options.height, 
+    height: options.height,
     body: options.body
   }).show();
 
@@ -52,31 +51,31 @@ function initInputButtons(box, boxClass, difference, buttons) {
     inButton.className = inButtonClass;
     inButton.style.width = height + "px";
     inBox.style.height = (height - (difference + 1)) + "px";
-    inBox.style.top = -1*(height - difference) + "px";
+    inBox.style.top = -1 * (height - difference) + "px";
     inBox.style.right = right;
     inButton.style.lineHeight = (height - difference) + "px";
     inButton.style.width = (height - difference) + "px";
     inBox.appendChild(inButton);
-    inButton.addEventListener("mouseenter", function() {
+    inButton.addEventListener("mouseenter", function () {
       inButton.className = inButtonClass + " input_button_hover";
     });
-    inButton.addEventListener("mouseleave", function() {
+    inButton.addEventListener("mouseleave", function () {
       inButton.className = inButtonClass;
     });
-    inButton.addEventListener("click", function() { 
+    inButton.addEventListener("click", function () {
       action();
     }, true);
   }
-  
+
   function renderInputButtonsBox(buttons) {
-    if(box.getElementsByClassName(boxClass).length < 1) {
+    if (box.getElementsByClassName(boxClass).length < 1) {
       var inBox = document.createElement("div");
       box.appendChild(inBox);
       inBox.className = boxClass;
       var height = box.clientHeight;
       inBox.style.height = height + "px";
       inBox.style.backgroundColor = box.style.backgroundColor;
-      inBox.style.top = -1*(height - difference) + "px";
+      inBox.style.top = -1 * (height - difference) + "px";
       let right = -1;
       buttons.forEach(button => {
         addInputButton(inBox, button.class, height, right, button.action);
@@ -85,12 +84,12 @@ function initInputButtons(box, boxClass, difference, buttons) {
     }
   }
 
-  box.addEventListener("mouseenter", function() {
+  box.addEventListener("mouseenter", function () {
     renderInputButtonsBox(buttons);
   });
 
-  box.addEventListener("mouseleave", function(e) {
-    if(box.getElementsByClassName(boxClass).length > 0) {
+  box.addEventListener("mouseleave", function (e) {
+    if (box.getElementsByClassName(boxClass).length > 0) {
       const inBox = box.getElementsByClassName(boxClass)[0];
       inBox.remove();
     }
@@ -98,8 +97,8 @@ function initInputButtons(box, boxClass, difference, buttons) {
 }
 
 function getLocal(message, callback) {
-  callServer("getLocal", message, function(err, result) {
-    if(err) {
+  callServer("getLocal", message, function (err, result) {
+    if (err) {
       return webix.alert(err);
     }
     callback(result);
@@ -111,7 +110,7 @@ function localize(params, langs, callback) {
   const rows = [];
   langs.forEach((lang) => {
     params.lang = lang;
-    getLocal(params, function(value) {
+    getLocal(params, function (value) {
       $$(params.attribute + "_" + lang).setValue(value);
     });
     rows.push({
@@ -123,14 +122,13 @@ function localize(params, langs, callback) {
     });
   });
   const buttons = {
-    cols: [
-      {},
+    cols: [{},
       {
         view: "Button",
         viewId: params.viewId,
         maxWidth: 200,
         value: "OK",
-        click: function() {
+        click: function () {
           onClose($$(windowId));
         }
       },
@@ -139,7 +137,7 @@ function localize(params, langs, callback) {
         viewId: params.viewId,
         maxWidth: 200,
         value: "Cancel",
-        click: function() {
+        click: function () {
           onClose(null);
           $$(windowId).close();
         }
@@ -158,7 +156,7 @@ function localize(params, langs, callback) {
   }
 
   function onClose(view) {
-    if(view) {
+    if (view) {
       const translations = [];
       langs.forEach(lang => {
         const value = $$(params.attribute + "_" + lang).getValue();
@@ -168,14 +166,14 @@ function localize(params, langs, callback) {
           lang: lang,
           value: value
         })
-        if(lang === window.lang) {
+        if (lang === window.lang) {
           callback(value);
         }
       });
       $$(windowId).close();
-      callServer("localaze", { 
-        viewId   : params.viewId, 
-        element  : params.attribute, 
+      callServer("localaze", {
+        viewId: params.viewId,
+        element: params.attribute,
         collection: params.collection,
         index: params.index,
         translations: translations
@@ -186,40 +184,44 @@ function localize(params, langs, callback) {
 }
 
 webix.protoUI({
-  name:"MainWindow",
+  name: "MainWindow",
   $init: function (config) {
     this.$ready.push(this._Init);
   },
   _Init: function () {
     window.windowId = this.config.id;
-    callServer("event",
-      { viewId: this.config.id, element: this.config.name, event: "onLoad" }
-    );
+    callServer("event", {
+      viewId: this.config.id,
+      element: this.config.name,
+      event: "onLoad"
+    });
   }
 }, webix.ui.layout);
 
 webix.protoUI({
-  name:"View",
+  name: "View",
   $init: function (config) {
     this.$ready.push(this._Init);
   },
   _Init: function () {
-    callServer("event",
-      { viewId: this.config.viewId, element: this.config.name, event: "onLoad" }
-    );
+    callServer("event", {
+      viewId: this.config.viewId,
+      element: this.config.name,
+      event: "onLoad"
+    });
   }
 }, webix.ui.layout);
 
 webix.protoUI({
   name: "sidebar",
-  defaults:{
-    on:{
-      onItemClick: function(id) {
+  defaults: {
+    on: {
+      onItemClick: function (id) {
         if (id) {
-          callServer("event", { 
-            viewId   : this.config.viewId, 
-            element  : this.config.name, 
-            event    : "onItemClick",
+          callServer("event", {
+            viewId: this.config.viewId,
+            element: this.config.name,
+            event: "onItemClick",
             arguments: [this.getItem(id)]
           });
         }
@@ -244,30 +246,29 @@ webix.protoUI({
 
 webix.protoUI({
   name: "Toolbar",
-  defaults:{
-    on:{
-     
+  defaults: {
+    on: {
+
     }
   },
   $init: function (config) {
     this.$ready.push(this._Init);
   },
-  _Init: function () {
-  },
+  _Init: function () {},
 
 }, webix.ui.toolbar);
 
 webix.protoUI({
   name: "Button",
-  defaults:{
-    on:{
-      onItemClick: function(id, e) {
+  defaults: {
+    on: {
+      onItemClick: function (id, e) {
         if (id) {
-          callServer("event", { 
-            viewId   : this.config.viewId, 
-            element  : this.config.name, 
-            event    : "onItemClick",
-            owner    : this.config.owner,
+          callServer("event", {
+            viewId: this.config.viewId,
+            element: this.config.name,
+            event: "onItemClick",
+            owner: this.config.owner,
             arguments: []
           });
         }
@@ -278,54 +279,60 @@ webix.protoUI({
     this.$view.className += " webix_el_button";
     this.$ready.push(this._Init);
   },
-  _Init: function () {
-  },
+  _Init: function () {},
 
 }, webix.ui.button);
 
 webix.protoUI({
   name: "Text",
-  defaults:{
-    on:{
-      onAfterRender: function() {
+  defaults: {
+    on: {
+      onAfterRender: function () {
         const self = this;
         const buttons = [];
-        if(this.config.langs && this.config.langs.length) {
+        if (this.config.langs && this.config.langs.length) {
           const cssClass = "webix_view input_button fa-icon fa-globe";
-          buttons.push({class: cssClass, action: function() {
-            const params = { 
-              viewId    : self.config.viewId, 
-              attribute : self.config.name,
+          buttons.push({
+            class: cssClass,
+            action: function () {
+              const params = {
+                viewId: self.config.viewId,
+                attribute: self.config.name,
+              }
+              localize(params, self.config.langs, function (value) {
+                self.setValue(value);
+              });
             }
-            localize(params, self.config.langs, function(value) {
-              self.setValue(value);
-            }); 
-          }});
+          });
         }
-        if(buttons.length) {
+        if (buttons.length) {
           initInputButtons(this.$view.children[0], "input_buttons_box", 8, buttons);
         }
 
-        callServer("event", { 
-          viewId   : this.config.viewId, 
-          element  : this.config.name, 
-          event    : "onAfterRender",
+        callServer("event", {
+          viewId: this.config.viewId,
+          element: this.config.name,
+          event: "onAfterRender",
           arguments: []
         });
       },
-      onChange: function(newv, oldv) {
-        callServer("event", { 
-          viewId   : this.config.viewId, 
-          element  : this.config.name, 
-          event    : "onChange",
-          arguments: [newv, oldv]
-        });
-      }, 
-      onFocus: function(view) {
-        callServer("event", { 
-          viewId   : this.config.viewId, 
-          element  : this.config.name, 
-          event    : "onFocus",
+      onChange: function (newv, oldv) {
+        if (this.itWasChangerdOnServer) {
+          this.itWasChangerdOnServer = false;
+        } else {
+          callServer("event", {
+            viewId: this.config.viewId,
+            element: this.config.name,
+            event: "onChange",
+            arguments: [newv, oldv]
+          });
+        }
+      },
+      onFocus: function (view) {
+        callServer("event", {
+          viewId: this.config.viewId,
+          element: this.config.name,
+          event: "onFocus",
           arguments: []
         });
       }
@@ -336,24 +343,47 @@ webix.protoUI({
     this.$ready.push(this._Init);
   },
   _Init: function () {
-    
+
   },
 
 }, webix.ui.text);
 
 webix.protoUI({
-  name:"Treetable",
-  defaults:{
+  name: "Checkbox",
+  $init: function (config) {
+    this.$view.className += " webix_el_checkbox";
+  },
+  defaults: {
+    on: {
+      onChange: function (newv, oldv) {
+        if (this.itWasChangerdOnServer) {
+          this.itWasChangerdOnServer = false;
+        } else {
+          callServer("event", {
+            viewId: this.config.viewId,
+            element: this.config.name,
+            event: "onChange",
+            arguments: [!!newv, !!oldv]
+          });
+        }
+      }
+    }
+  }
+}, webix.ui.checkbox);
+
+webix.protoUI({
+  name: "Treetable",
+  defaults: {
     scroll: true,
-    on:{
-      onItemDblClick: function(item, e) {
+    on: {
+      onItemDblClick: function (item, e) {
         const id = item.row;
         if (id) {
-          callServer("event", { 
-            viewId   : this.config.viewId, 
-            element  : this.config.name, 
-            event    : "DefaultCmd.Enter",
-            owner    : this.config.owner,
+          callServer("event", {
+            viewId: this.config.viewId,
+            element: this.config.name,
+            event: "DefaultCmd.Enter",
+            owner: this.config.owner,
             arguments: [id]
           });
         }
@@ -363,34 +393,60 @@ webix.protoUI({
   $init: function (config) {
     this.$ready.push(this._Init);
     this.$ready.unshift(this._after_init_call);
+
+    const self = this;
+    config.type = {
+      folder: function (obj, type) {
+        const collapsed = self.isBranchOpen(obj.id);
+        if (obj.isFolder) {
+          if (collapsed) {
+            return "<span class='fa-icon fa-folder-open'>&nbsp;</span>";
+          } else {
+            return "<span class='fa-icon fa-folder'>&nbsp;</span>";
+          }
+        } else {
+          const hasChildes = !!self.getFirstChildId(obj.id);
+          if(hasChildes) {
+            return "<span class='fa-icon fa-equals'>&nbsp;</span>";
+          } else {
+            return "<span class='fa-icon fa-minus'>&nbsp;</span>";
+          }
+        }
+      }
+    }
   },
   _after_init_call: function () {
-  
+
   },
   _Init: function () {
     this.getData();
   },
-  getData: function() {
+  getData: function () {
     const self = this;
     callServer("getData", {
-        viewId:  this.config.viewId,
-        element: this.config.name
-      }, function(err, data) {
-        if(err) {
-          return console.log("Error on getting data from server");
-        }
-        self.parse(data);
+      viewId: this.config.viewId,
+      element: this.config.name
+    }, function (err, data) {
+      if (err) {
+        return console.log("Error on getting data from server");
+      }
+      self.parse(data);
+      callServer("event", {
+        viewId: self.config.viewId,
+        element: self.config.name,
+        event: "DefaultCmd.OnAfterLoad",
+        arguments: []
+      });
     });
   }
 }, webix.ui.treetable);
 
 webix.protoUI({
   name: "Viewbar",
-  defaults:{
-    on:{
-    }
+  defaults: {
+    on: {}
   },
-  addView: function(obj, callback) {
+  addView: function (obj, callback) {
     const id = webix.ui.tabview.prototype.addView.call(this, obj);
     const tab = $$(id);
     tab.show();
@@ -400,30 +456,75 @@ webix.protoUI({
 }, webix.ui.tabview);
 
 webix.protoUI({
+  name: "Fieldset",
+  defaults: {
+    on: {}
+  }
+}, webix.ui.fieldset);
+
+webix.protoUI({
+  name: "Group",
+  defaults: {
+    on: {}
+  }
+}, webix.ui.layout);
+
+webix.protoUI({
   name: "Lookup",
   defaults: {
     readonly: true,
     on: {
-      onAfterRender: function() {
-        showLookup(this, undefined, undefined, this.$view.children[0], this.config.dataLink);
+      onAfterRender: function () {
+        const self = this;
+        const buttons = [];
+        //if(this.config.langs && this.config.langs.length) {
+        let cssClass = "webix_view input_button fa-icon fa-ellipsis-h";
+        buttons.push({
+          class: cssClass,
+          action: function () {
+            callServer("lookup", {
+              action: "select",
+              viewId: self.config.viewId,
+              element: self.config.name,
+              arguments: [self.config.instance]
+            });
+          }
+        });
+        cssClass = "webix_view input_button fa-icon fa-times";
+        buttons.push({
+          class: cssClass,
+          action: function () {
+            self.setValue(null);
+            callServer("lookup", {
+              action: "clear",
+              viewId: self.config.viewId,
+              element: self.config.name,
+              arguments: [null]
+            });
+          }
+        });
+        //}
+        if (buttons.length) {
+          initInputButtons(this.$view.children[0], "input_buttons_box", 8, buttons);
+        }
       }
     }
   },
-  $init: function(config) {
-    this.$view.className += " webix_el_text";
+  $init: function (config) {
+    this.$view.className += " webix_el_text lookup";
     this.$ready.push(this._Init);
   },
   _Init: function () {
-    if(this.config.instance) {
-      this.config.value = this.config.instance.title;
+    if (this.config.instance) {
+      this.config.value = this.config.instance.presentation;
     }
   },
-  setValue: function(value) {
-    if(value) {
+  setValue: function (value) {
+    if (value) {
       this.config.instance = value;
-      this.config.value = value.title;
+      this.config.value = value.presentation;
     } else {
-      delete this.config.instance.title;
+      delete this.config.instance.presentation;
       delete this.config.instance.id;
       this.config.value = "";
     }
@@ -437,33 +538,33 @@ function showLookup(view, id, e, box, dataLink) {
     inButton.style.lineHeight = height + "px";
     inButton.className = inButtonClass;
     inButton.style.width = height + "px";
-    if(view.config.view == "Lookup") {
+    if (view.config.view == "Lookup") {
       inBox.style.height = (height - 8) + "px";
       //inBox.style.width = (height - 8) + "px";
-      inBox.style.top = -1*(height - 8) + "px";
+      inBox.style.top = -1 * (height - 8) + "px";
       inBox.style.right = right;
       inButton.style.lineHeight = (height - 8) + "px";
       inButton.style.width = (height - 8) + "px";
     }
     inBox.appendChild(inButton);
-    inButton.addEventListener("mouseenter", function() {
+    inButton.addEventListener("mouseenter", function () {
       inButton.className = inButtonClass + " input_button_hover";
     });
-    inButton.addEventListener("mouseleave", function() {
+    inButton.addEventListener("mouseleave", function () {
       inButton.className = inButtonClass;
     });
-    inButton.addEventListener("click", function() { 
-      if(view.config.view == "Lookup") {
-        callServer("lookup", { 
-          action   : action,
-          viewId   : view.config.viewId, 
-          element  : view.config.name, 
+    inButton.addEventListener("click", function () {
+      if (view.config.view == "Lookup") {
+        callServer("lookup", {
+          action: action,
+          viewId: view.config.viewId,
+          element: view.config.name,
           arguments: [view.config.instance]
         });
-        if(action === "clear") {
+        if (action === "clear") {
           view.setValue(null);
         }
-      } else { 
+      } else {
         // dataLink.value = view.getItem(id.row);
         // var message = {};
         // message.FormID    = view.config.formID;
@@ -480,15 +581,16 @@ function showLookup(view, id, e, box, dataLink) {
       }
     }, true);
   }
+
   function renderLookupButton() {
-    if(box.getElementsByClassName("input_buttons_box").length < 1) {
+    if (box.getElementsByClassName("input_buttons_box").length < 1) {
       var inBox = document.createElement("div");
       box.appendChild(inBox);
       inBox.className = "input_buttons_box";
       var height = box.clientHeight
       inBox.style.height = height + "px";
       inBox.style.backgroundColor = box.style.backgroundColor;
-      inBox.style.top = -1*(height - 8) + "px";
+      inBox.style.top = -1 * (height - 8) + "px";
       inButtonClass = "webix_view webix_icon input_button wxi-dots";
       addButton(inBox, inButtonClass, height, -1, "select");
       inButtonClass = "webix_view webix_icon input_button wxi-close";
@@ -498,12 +600,12 @@ function showLookup(view, id, e, box, dataLink) {
 
   renderLookupButton();
 
-  box.addEventListener("mouseenter", function() {
+  box.addEventListener("mouseenter", function () {
     renderLookupButton();
   });
 
-  box.addEventListener("mouseleave", function(e) {
-    if(box.getElementsByClassName("input_buttons_box").length > 0) {
+  box.addEventListener("mouseleave", function (e) {
+    if (box.getElementsByClassName("input_buttons_box").length > 0) {
       var inBox = box.getElementsByClassName("input_buttons_box")[0];
       inBox.remove();
     }
@@ -511,47 +613,47 @@ function showLookup(view, id, e, box, dataLink) {
 }
 
 webix.DataDriver.json = webix.extend({
-  parseDates:true,
-  toObject:function(data){
-		if (!data) return null;
-		if (typeof data == "string"){
-			try{
-				if (this.parseDates){
-					var isodate = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(.\d{3})?Z/;
-					data = JSON.parse(data, function(key, value){
-						if (typeof value == "string"){
-							if (isodate.test(value)) {
+  parseDates: true,
+  toObject: function (data) {
+    if (!data) return null;
+    if (typeof data == "string") {
+      try {
+        if (this.parseDates) {
+          var isodate = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(.\d{3})?Z/;
+          data = JSON.parse(data, function (key, value) {
+            if (typeof value == "string") {
+              if (isodate.test(value)) {
                 return new Date(value);
               }
-						}
-						return value;
-					});
-				} else {
-					data =JSON.parse(data);
-				}
-			} catch(e){
-				webix.log(e);
-				webix.log(data);
-				webix.assert_error("Invalid JSON data for parsing");
-				return null;
-			}
-		}
-		return data;
-	}
+            }
+            return value;
+          });
+        } else {
+          data = JSON.parse(data);
+        }
+      } catch (e) {
+        webix.log(e);
+        webix.log(data);
+        webix.assert_error("Invalid JSON data for parsing");
+        return null;
+      }
+    }
+    return data;
+  }
 }, webix.DataDriver.json);
 
 webix.protoUI({
   name: "Datatable",
-  defaults:{
+  defaults: {
     scroll: true,
-    on:{
-      onSelectChange: function() {
+    on: {
+      onSelectChange: function () {
 
       },
-      onItemDblClick: function(item) {
+      onItemDblClick: function (item) {
 
       },
-      onItemClick: function(cell) {
+      onItemClick: function (cell) {
         const self = this;
 
         function main() {
@@ -571,11 +673,11 @@ webix.protoUI({
                 buttons.push({
                   class: cssClass,
                   action: function () {
-                    const params = { 
-                      viewId    : self.config.viewId, 
+                    const params = {
+                      viewId: self.config.viewId,
                       collection: self.config.dataLink,
-                      index     : self.getIndexById(cell.row),
-                      attribute : cell.column,
+                      index: self.getIndexById(cell.row),
+                      attribute: cell.column,
                     }
                     localize(params, column.langs, function (value) {
                       record = self.getItem(cell.row);
@@ -585,7 +687,41 @@ webix.protoUI({
                     });
                   }
                 });
+              } else if (column.editor === "lookup") {
+                let cssClass = "webix_view input_button fa-icon fa-ellipsis-h";
+                buttons.push({
+                  class: cssClass,
+                  action: function () {
+                    callServer("lookup", {
+                      action: "select",
+                      viewId: self.config.viewId,
+                      element: self.config.name,
+                      collection: self.config.dataLink,
+                      index: self.getIndexById(cell.row),
+                      itemId: cell.row,
+                      property: cell.column,
+                      arguments: [self.getItem(cell.row)[cell.column]]
+                    });
+                  }
+                });
+                cssClass = "webix_view input_button fa-icon fa-times";
+                buttons.push({
+                  class: cssClass,
+                  action: function () {
+                    self.setValue(null);
+                    callServer("lookup", {
+                      action: "clear",
+                      viewId: self.config.viewId,
+                      element: self.config.name,
+                      collection: self.config.dataLink,
+                      index: self.getIndexById(cell.row),
+                      property: cell.column,
+                      arguments: [null]
+                    });
+                  }
+                });
               }
+
               if (buttons.length) {
                 initInputButtons(node, "input_buttons_box_cell", 0, buttons);
               }
@@ -595,43 +731,41 @@ webix.protoUI({
 
         setTimeout(main, 10);
 
-        callServer("event", { 
-          viewId   : this.config.viewId, 
-          element  : this.config.name, 
-          event    : "onItemClick",
+        callServer("event", {
+          viewId: this.config.viewId,
+          element: this.config.name,
+          event: "onItemClick",
           arguments: []
         });
       },
-      onAfterEditStart: function(item) {
+      onAfterEditStart: function (item) {
         const value = this.getText(item.row, item.column);
         const editor = this.getEditor(item.row, item.column);
         editor.setValue(value);
       },
-      onAfterEditStop: function(state, editor, changed) {
+      onAfterEditStop: function (state, editor, changed) {
         const item = this.getItem(editor.row);
         // TODO: there may be errors
         item.value[editor.column] = state.value;
-        callServer("event", { 
-          viewId   : this.config.viewId, 
-          element  : this.config.name, 
-          event    : "onItemChange",
+        callServer("event", {
+          viewId: this.config.viewId,
+          element: this.config.name,
+          event: "onItemChange",
           arguments: [editor.column, this.getIndexById(editor.row), this.getItem(editor.row), state.value, state.old]
         });
       },
-      onBeforeLoad: function() {
-      },
-      onAfterLoad: function() {
-      }
+      onBeforeLoad: function () {},
+      onAfterLoad: function () {}
     }
   },
   $init: function (config) {
     config.columns.forEach(column => {
-      column.template = function(row) {
-        const value = row.value[column.id];
-        if(value && typeof value === "object") {
-          return  value.title;
+      column.template = function (row) {
+        const value = row[column.id];
+        if (value && typeof value === "object") {
+          return value.presentation;
         } else {
-          return  value || "";
+          return value || "";
         }
       }
     })
@@ -641,18 +775,18 @@ webix.protoUI({
   _after_init_call: function () {
 
   },
-  _Init: function () {
-  },
-  focus: function(){
-		webix.UIManager.setFocus(this);
-	}
+  _Init: function () {},
+  focus: function () {
+    webix.UIManager.setFocus(this);
+  }
 }, webix.ui.datatable);
 
 webix.editors.lang = webix.extend({
-  render:function() {
+  render: function () {
     const html = create("div", {
       "class": "webix_dt_editor"
     }, "<input type='text' aria-label='" + getLabel(this.config) + "'>");
     return html;
 
-  }}, webix.editors.text);
+  }
+}, webix.editors.text);

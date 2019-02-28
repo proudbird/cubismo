@@ -14,7 +14,7 @@ function ConfigView(View, _arguments, pathToFile) {
 
   var config = Require(pathToFile, {
     Application: _arguments.application
-  });
+  }, true);
   if (config.Init) {
     config = config.Init(_arguments.item ? _arguments.item : _arguments.type, _arguments.options);
   }
@@ -106,6 +106,8 @@ function ConfigView(View, _arguments, pathToFile) {
               commands = require(pathToDefaultCommandsFile);
             }
             commands.defineCommand("DefaultCmd.Add", _arguments);
+            commands.defineCommand("DefaultCmd.Enter", _arguments);
+            commands.defineCommand("DefaultCmd.OnAfterLoad", _arguments);
           }
         }
 
@@ -144,31 +146,10 @@ function _populateDataView(View, element, node) {
     return value;
   }
 
-  function __getDataForCollection(item) {
-
-    const data = { id: item._.instance.id, order: item._.instance.order};
-    const definition = item._.model.definition;
-    for (let key in definition.attributes) {
-      const element = definition.attributes[key];
-      let fieldId = element.fieldId;
-      if(element.type.lang && element.type.lang.length) {
-        fieldId = fieldId + "_" + Application.lang;
-      }
-      const value = item._.instance[fieldId];
-      const instance = Tools.get(value, "_.instance");
-      if(instance) {
-        data[key] = {
-          id: instance.id,
-          title: instance.name
-        }
-      } else {
-        data[key] = value;
-      }
-    }
-    return data;
-  }
-
   item = View[source];
+  if(!item) {
+    return;
+  }
   definition = item._.model.definition;
   if(definition.collections) {
     Tools.forOwn(definition.collections, collection => {
@@ -183,13 +164,10 @@ function _populateDataView(View, element, node) {
     const data = [];
     const collection = item[valueProperty] || [];
     for(let i=0; i < collection.length; i++) {
-      const value = __getDataForCollection(collection[i]);
-      const row = { 
-        id: node.id + "_" + i,
-        rowNumer: i, 
-        value: value 
-      };
-      data.push(row);
+      const value = collection[i];
+      const itemData = value.toJSON();
+      itemData.order = i + 1;
+      data.push(itemData);
     }
      
     node.data = data;
@@ -224,14 +202,14 @@ function _populateDataView(View, element, node) {
       }
     });
 
-    // if model name is determed, so it is a reference type and we need 'instance' property
+    //if model name is determed, so it is a reference type and we need 'instance' property
     if(modelName) {
       node.instance = {
-        type: modelName
+        model: modelName
       };
       if (Tools.isObjectLike(dataValue)) {
         node.instance.id = dataValue.getValue("id");
-        node.instance.title = dataValue.getValue("Name");
+        node.instance.presentation = dataValue.getValue("Name");
       }
     }
     
@@ -239,6 +217,13 @@ function _populateDataView(View, element, node) {
       node.value = __getValue(item, valueProperty);
     } else {
       node.value = item.getValue("Name");
+    }
+
+    if(attribute.type.lang && attribute.type.lang.length) {
+      node.langs = attribute.type.lang;
+    }
+    if(valueProperty === "Name" && definition.nameLang && definition.nameLang.length) {
+      node.langs = definition.nameLang;
     }
   }
 }

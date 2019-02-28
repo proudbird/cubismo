@@ -76,7 +76,11 @@
 }
 
 .webix_tree_none{
-    width: 10px;
+    width: 12px;
+}
+
+.webix_tree_open {
+    width: 24px !important;
 }
 
 .webix_tree_application,
@@ -343,4 +347,12 @@
     -moz-osx-font-smoothing: grayscale;
     /* Support for IE. */
     font-feature-settings: 'liga';
+  }
+
+  .lookup input {
+    background: #f7f7f7;
+  }
+
+  .cubismo_folder {
+      
   }

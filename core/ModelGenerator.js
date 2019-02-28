@@ -35,6 +35,7 @@ generator.define = function(application, db, appModelDefinition) {
       const attribute = model.attributes[attributeName];
       const type = attribute.type;
       let dataType = undefined;
+      let attributeId = attribute.fieldId;
       switch (type.dataType) {
         case "STRING":
           // attribute type is STRING
@@ -48,7 +49,7 @@ generator.define = function(application, db, appModelDefinition) {
           if (Array.isArray(type.lang) && type.lang.length > 0) {
             for (let i = 0; i < type.lang.length; i++) {
               const lang = type.lang[i];
-              const attributeId = attribute.fieldId + "_" + lang;
+              attributeId = attribute.fieldId + "_" + lang;
               attributes[attributeId] = {
                 type: dataType,
                 field: attributeId,
@@ -59,9 +60,9 @@ generator.define = function(application, db, appModelDefinition) {
             }
           }
           else {
-            const attributeId = attribute.fieldId;
-            attributes[attributeName] = {
+            attributes[attributeId] = {
               type: dataType,
+              defaultValue: type.defaultValue,
               field: attributeId,
               set(value) {
                 attributeSetter(this, attributeId, value);
@@ -77,21 +78,23 @@ generator.define = function(application, db, appModelDefinition) {
           else {
             dataType = DBTypes.FLOAT(type.length);
           };
-          attributes[attributeName] = {
+          attributes[attributeId] = {
             type: dataType,
-            field: attribute.fieldId,
+            defaultValue: type.defaultValue,
+            field: attributeId,
             set(value) {
-              attributeSetter(this, attributeName, value);
+              attributeSetter(this, attributeId, value);
             }
           };
           break;
         case "BOOLEAN":
           // attribute type is BOOLEAN      
-          attributes[attributeName] = {
+          attributes[attributeId] = {
             type: DBTypes.BOOLEAN,
-            field: attribute.fieldId,
+            defaultValue: type.defaultValue,
+            field: attributeId,
             set(value) {
-              attributeSetter(this, attributeName, value);
+              attributeSetter(this, attributeId, value);
             }
           };
           break;
@@ -104,11 +107,11 @@ generator.define = function(application, db, appModelDefinition) {
             // date and time
             dataType = DBTypes.DATE;
           };
-          attributes[attributeName] = {
+          attributes[attributeId] = {
             type: dataType,
-            field: attribute.fieldId,
+            field: attributeId,
             set(value) {
-              attributeSetter(this, attributeName, value);
+              attributeSetter(this, attributeId, value);
             }
           };
           break;
@@ -132,7 +135,7 @@ generator.define = function(application, db, appModelDefinition) {
             throw new Error("Can't find model definition with ID {" + fkId + "}. Attribute <" + attributeName + ">; Model <" + model.name + ">");
           }
 
-          belongsTo.push({ to: reference, as: attributeName, foreignKey: attribute.fieldId });
+          belongsTo.push({ to: reference, as: attributeName, foreignKey: attributeId });
       }
     }
 
@@ -315,12 +318,17 @@ generator.define = function(application, db, appModelDefinition) {
 
       }
     }
+
+    if(model.class === "Collection") {
+      _model.belongsTo(model.ownerModel, { as: "Owner", foreignKey: "ownerId", constraints: false });
+    }
     
     if (model.collections && typeof model.collections === "object") {
       attributeOptions = {};
       for(let id in model.collections) {
         const colModel = model.collections[id];
         colModel.ownerModelName = modelName;
+        colModel.ownerModel = _model;
         const _collection = defineModel(colModel);
         _model.hasMany(_collection, { as: colModel.name, foreignKey: "ownerId", constraints: false });
         if (Array.isArray(attributeOptions.belongsTo) && attributeOptions.belongsTo.length) {
@@ -331,6 +339,15 @@ generator.define = function(application, db, appModelDefinition) {
         }
       }
     }
+
+    _model.beforeBulkCreate((records, options) => {
+      for(let i=0; i<records.length; i++) {
+        if(Tools.has(records[i], "_.instance")) {
+          records[i] = records[i]._.instance;
+        }
+      }
+      return records;
+    });
     
     return _model;
   }

@@ -308,7 +308,7 @@ function formatDate(date, format, utc) {
   return format;
 };
 
-Tools.makeHierarchical = function(arr, parent, child) {
+Tools.makeHierarchical = function(arr, parent, child, map) {
   var tree = [],
     mappedArr = {},
     arrElem,
@@ -324,6 +324,18 @@ Tools.makeHierarchical = function(arr, parent, child) {
   for (var id in mappedArr) {
     if (mappedArr.hasOwnProperty(id)) {
       mappedElem = mappedArr[id];
+      if(map) {
+        const data = {};
+        for(let key in mappedElem) {
+          if(map[key]) {
+            const newKey = map[key];
+            data[newKey] = mappedElem[key];
+          } else {
+            data[key] = mappedElem[key];
+          }
+        }
+        mappedElem = data;
+      }
       // If the element is not at the root level, add it to its parent array of children.
       if (mappedElem[parent]) {
         mappedArr[mappedElem[parent]][child].push(mappedElem);

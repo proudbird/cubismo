@@ -33,6 +33,14 @@ async function enter(_arguments) {
   }
 }
 
+async function onAfterLoad(_arguments) {
+  try {
+    _arguments.view.List.openAll();
+  } catch(err) {
+    // TODO maybe
+  }
+}
+
 function defineCommand(command, _arguments) {
   switch (command) {
     case "DefaultCmd.Create":
@@ -68,6 +76,11 @@ function defineCommand(command, _arguments) {
     case "DefaultCmd.Enter":
       _arguments.uiElement[command] = function () {
         enter(_arguments);
+      };
+      break;
+    case "DefaultCmd.OnAfterLoad":
+      _arguments.uiElement[command] = function () {
+        onAfterLoad(_arguments);
       };
       break;
   }

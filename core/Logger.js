@@ -34,7 +34,18 @@ function log(type, format, message, stack) {
     log.push(message);
     console.log(format + log.join(" "));
     if(stack) {
-        console.log(stack);
+        if(stack.stack) {
+            stack = stack.stack;
+        }
+        const _stack = stack.split('\n');
+        let newStack = [];
+        for(let i = 0; i < _stack.length; i++) {
+            //if(_stack[i].includes(path.join(__dirname, "core"))) {
+            newStack.push(_stack[i]);
+            //}
+        }
+        newStack = newStack.join('\n');
+        console.log(newStack);
     };
     console.log(Reset, " ");
 }

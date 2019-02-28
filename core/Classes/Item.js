@@ -4,18 +4,21 @@ const _ = require('lodash');
 const _async = require("async");
 
 const View = require("../UI/View.js");
-
-let Application;
+const ItemCollection = require('./ItemCollection.js');
 
 function Item(_arguments) {
 
+    let instance = _arguments.instance;
+    if (Tools.has(instance, "_.instance")) {
+        instance = instance._.instance;
+    }
+
     this._ = {};
+    this._.instance = instance;
     this._.model = _arguments.model;
-    this._.instance = _arguments.instance;
     this._.application = _arguments.application;
-
-    Application = _arguments.application;
-
+    
+    const self = this;
     const definition = this._.model.definition;
 
     if (definition.owners && definition.owners.length) {
@@ -25,6 +28,7 @@ function Item(_arguments) {
             },
             set: function (value) {
                 this._.instance.Owner = value;
+                this.setValue("ownerId", value.id);
                 return this;
             }
         })
@@ -37,92 +41,90 @@ function Item(_arguments) {
             },
             set: function (value) {
                 this._.instance.Parent = value;
+                this.setValue("parentId", value.id);
                 return this;
             }
         })
     }
 
-    Object.defineProperty(this, "Name", {
-        get: function () {
-            return this._.instance.getDataValue("Name" + this._.application.lang);
-        },
-        set: function (value) {
-            return this._.instance.setDataValue("Name" + this._.application.lang, value);
-        }
-    })
+    if (definition.codeLenght) {
+        Object.defineProperty(this, "Code", {
+            get: function () {
+                const value = this._.instance.getDataValue("Code");
+                return value;
+            },
+            set: function (value) {
+                this.setValue("Code", value);
+                return this;
+            }
+        })
+    }
+
+    if (definition.nameLenght) {
+        Object.defineProperty(this, "Name", {
+            get: function () {
+                let fieldId = "Name";
+                if (definition.nameLang && definition.nameLang.length) {
+                    fieldId = "Name_" + this._.application.lang;
+                }
+                const value = this._.instance.getDataValue(fieldId);
+                return value;
+            },
+            set: function (value) {
+                this.setValue("Name", value);
+                return this;
+            }
+        })
+    }
 
     for (let key in this._.model.definition.attributes) {
         const attribute = definition.attributes[key];
-        if (attribute.type.lang && attribute.type.lang.length) {
+        if (attribute.type.dataType === "FK") {
+            const association = this._.model.associations[key];
             Object.defineProperty(this, key, {
                 get: function () {
-                    return this._.instance.getDataValue(attribute.fieldId + this._.application.lang);
+                    let instance = self._.instance[key];
+                    if(Tools.isEmpty(instance)) {
+                        instance = association.target.build();
+                    }
+                    const newItem = new Item({
+                        application: self._.application,
+                        instance: instance,
+                        model: association.target
+                    });
+                    return newItem;
                 },
                 set: function (value) {
-                    return this._.instance.setDataValue(attribute.fieldId + this._.application.lang, value);
+                    this.setValue(key, value);
+                    return this;
+                }
+            })
+        } else {
+            Object.defineProperty(this, key, {
+                get: function () {
+                    const value = self.getValue(key)
+                    return value;
+                },
+                set: function (value) {
+                    this.setValue(key, value);
+                    return this;
                 }
             })
         }
     }
 
-    for (let key in this._.model.definition.collections) {
+    for (let key in definition.collections) {
         const collection = definition.collections[key];
-        Object.defineProperty(this, collection.name, { 
+        Object.defineProperty(this, collection.name, {
             enumerable: true,
             get: function () {
-                const items = [];
-                const values = this._.instance[collection.name] || [];
-                values.forEach(item => {
-                    const _arg = {};
-                    _arg.application = this._.application;
-                    _arg.instance = item;
-                    _arg.model    = this._.model.associations[collection.name].target;
-                    const newItem = new Item(_arg);
-                    items.push(newItem);
-                })
-                return items;
-            },
-            set: async function (values) {
-                await this._.instance[this._.model.associations[collection.name].accessors.set](values);
-                return this;
+                let itemCollection = this._.instance[collection.name];
+                const association = this._.model.associations[collection.name];
+                itemCollection = ItemCollection(itemCollection, this, collection.name, association.target, this._.application);
+                 
+                return itemCollection;
             }
         });
-        const self = this;
-        this[collection.name].__proto__.add = function(value) {
-            if(!value) {
-                value = { 
-                    order: this.length + 1,
-                    ownerId: self._.instance.id
-                };
-                for (let key in collection.attributes) {
-                    const element = collection.attributes[key];
-                    let fieldId = element.fieldId;
-                    if(element.type.lang && element.type.lang.length) {
-                        fieldId = fieldId + "_" + self._.application.lang;
-                    }
-                    value[fieldId] = null;
-                }
-            }
-            const _arg = {};
-            _arg.instance = self._.model.associations[collection.name].target.build(value);
-            _arg.model    = self._.model.associations[collection.name].target;
-            const newItem = new Item(_arg);
-            //const newItem = self._.model.associations[collection.name].target.build(value);
-            const values = self._.instance[collection.name] || [];
-            values.push(_arg.instance);
-            return newItem;
-        }
-        this[collection.name].__proto__.addMultiple = async function(values) {
-            await self._.instance[self._.model.associations[collection.name].accessors.addMultiple](values);
-            return self;
-        }
-        this[collection.name].__proto__.count = function() {
-            return self._.instance[collection.name].length;
-        }
-        this[collection.name].__proto__.remove = async function() {
-            await self._.instance[self._.model.associations[collection.name].accessors.remove]();
-            return self;
-        }
     }
 
     this.__proto__.show = function (_arguments) {
@@ -140,22 +142,25 @@ function Item(_arguments) {
         instance.save()
             .then(result => {
                 _saveAssociations(this, result);
-                if(Tools.has(self, "_.model.subscribers")) {
+                if (Tools.has(self, "_.model.subscribers")) {
                     Tools.forOwn(self._.model.subscribers, subscriber => {
                         subscriber.update(self, isNewRecord ? "create" : "update");
-                    }) 
+                    })
                 }
+            })
+            .catch(err => {
+                Log.error("Error on saving item", err);
             })
     }
 
     this.__proto__.delete = async function (immediate) {
         const self = this;
         await _delete(this, immediate);
-        if(Tools.has(self, "_.model.subscribers")) {
+        if (Tools.has(self, "_.model.subscribers")) {
             Tools.forOwn(self._.model.subscribers, subscriber => {
                 subscriber.update(self, "delete");
-            }) 
-        } 
+            })
+        }
     }
 
     this.__proto__.get = function (param) {
@@ -171,8 +176,18 @@ function Item(_arguments) {
     this.__proto__.getValue = function (property, lang) {
         lang = lang || this._.application.lang;
         const definition = this._.model.definition;
-        const instance = this._.instance;
+        let instance = this._.instance;
+        if (Tools.has(instance, "_.instance")) {
+            instance = instance._.instance;
+            if (Tools.has(instance, "_.instance")) {
+                instance = instance._.instance;
+            }
+        }
+        if (!instance) {
+            return undefined;
+        }
         let value;
+        let element;
         let fieldId = property;
         if (property === "Name") {
             if (definition.nameLang && definition.nameLang.length) {
@@ -186,17 +201,81 @@ function Item(_arguments) {
             return instance.Parent;
         } else if (property === "Owner") {
             return instance.Owner;
+        } else if (property === "Owner") {
+            return instance.Owner;
         } else {
-            const element = definition.attributes[property];
+            element = definition.attributes[property];
             if (element.type.lang && element.type.lang.length) {
                 fieldId = element.fieldId + "_" + lang;
+            } else if (element.type.dataType === "FK") {
+
+            } else {
+                fieldId = element.fieldId;
             }
         }
-        value = instance.getDataValue(fieldId);
+        value = instance.getDataValue(fieldId) || "";
         return value;
     }
 
-    this.__proto__.setValue = function (property, value, lang) {
+    this.__proto__.setValue = function (property, newValue, lang) {
+        const self = this;
+
+        function _setValue(fieldId, newValue) {
+            let value = newValue;
+            const itWasChangerdOnClient = value.itWasChangerdOnClient;
+            if (itWasChangerdOnClient) {
+                value = newValue.value;
+                if (typeof value === "object" && value) {
+                    self._.instance[fieldId] = value._.instance;
+                    self._.instance[self._.model.associations[fieldId].foreignKey] = value.getValue("id");
+                } else {
+                    self._.instance.setDataValue(fieldId, value);
+                }
+            } else {
+                if (typeof value === "object" && value) {
+                    self._.instance[fieldId] = value._.instance;
+                    self._.instance[self._.model.associations[fieldId].foreignKey] = value.getValue("id");
+                } else {
+                    self._.instance.setDataValue(fieldId, value);
+                }
+                if (self.view) {
+                    let message;
+                    if (self._.model.class === "Collection") {
+                        Tools.forIn(self.view, element => {
+                            const dataLink = Tools.get(element, "config.dataLink");
+                            if (dataLink && dataLink.includes(self._.model.modelName)) {
+                                const itemValue = self.toJSON();
+                                message = {
+                                    directive: "updateItem",
+                                    elementId: element.config.id,
+                                    arguments: [self.getValue("id"), itemValue]
+                                }
+                            }
+                        });
+                    } else {
+                        if (typeof value == "object" && value) {
+                            value = {
+                                id: value.getValue("id"),
+                                presentation: value.getValue("Name"),
+                                model: value._.model.name
+                            }
+                        }
+                        message = {
+                            directive: "setValue",
+                            elementId: self.view[property].config.id,
+                            arguments: [value]
+                        }
+                    }
+
+                    self._.application.window.directiveToClient("directive", message, async function (response) {
+                        if (response.err) {
+                            Log.error("Unsuccessable atempt to change value of <" + property + "> on client.");
+                        }
+                    })
+                }
+            }
+        }
+
         lang = lang || this._.application.lang;
         const model = this._.model;
         const definition = this._.model.definition;
@@ -211,44 +290,103 @@ function Item(_arguments) {
         } else if (property === "Code") {
             fieldId = "Code";
         } else if (property === "Parent") {
-            instance.Parent = value;
-            if(value) {
-                instance.setDataValue("parentId", value.getValue("id"));
+            instance.Parent = newValue.value || newValue;
+            if (newValue) {
+                _setValue("Parent", newValue);
+                //instance.setDataValue("parentId", value.getValue("id"));
             } else {
-                instance.setDataValue("parentId", null);
+                _setValue("Parent", null);
+                //instance.setDataValue("parentId", null);
             }
             return this;
         } else if (property === "Owner") {
-            instance.Parent = value;
-            if(value) {
-                instance.setDataValue("ownerId", value.getValue("id"));
+            instance.Owner = newValue.value || newValue;
+            if (newValue) {
+                _setValue("Owner", newValue);
+                //instance.setDataValue("ownerId", value.getValue("id"));
             } else {
-                instance.setDataValue("ownerId", null);
+                _setValue("Owner", null);
+                //instance.setDataValue("ownerId", null);
             }
             return this;
         } else {
             const element = definition.attributes[property];
+            fieldId = element.fieldId;
             if (element.type.lang && element.type.lang.length) {
                 fieldId = element.fieldId + "_" + lang;
             }
             if (element.type.dataType === "FK") {
-                instance[property] = value;
                 fieldId = model.associations[property].identifier;
-                if(value) {
-                    instance.setDataValue(fieldId, value.getValue("id"));
+                if (newValue) {
+                    _setValue(property, newValue);
+                    //instance.setDataValue(fieldId, value.getValue("id"));
                 } else {
-                    instance.setDataValue(fieldId, null);
+                    _setValue(property, null);
+                    //instance.setDataValue(fieldId, null);
                 }
                 return this;
             }
         }
-        instance.setDataValue(fieldId, value);
+        _setValue(fieldId, newValue);
+        //instance.setDataValue(fieldId, value);
         return this;
     }
 
     this.__proto__.isFolder = function () {
         const instance = this._.instance;
         return instance.getDataValue("isFolder");
+    }
+
+    this.__proto__.getType = function () {
+        const type = Tools.get(this._.application, this._.model.name);
+        return type;
+    }
+
+
+    this.__proto__.toJSON = function () {
+        let instance = this._.instance;
+        if (Tools.has(instance, "_.instance")) {
+            instance = instance._.instance;
+        }
+        const data = {
+            id: instance.id,
+            order: instance.order
+        };
+        const definition = this._.model.definition;
+        for (let key in definition.attributes) {
+            const element = definition.attributes[key];
+            let fieldId = element.fieldId;
+            if (element.type.lang && element.type.lang.length) {
+                fieldId = fieldId + "_" + this._.application.lang;
+            }
+            let value;
+            if (element.type.dataType === "FK") {
+                const association = this._.model.associations[key];
+                value = this[association.as];
+                if (value) {
+                    // TODO: presentation for collection items
+                    let attribute = "Name";
+                    const assDefinition = association.target.definition;
+                    if(assDefinition.presentation) {
+                        attribute = assDefinition.presentation;
+                    }
+                    data[key] = {
+                        id: value.getValue("id"),
+                        presentation: value.getValue(attribute)
+                    }
+                } else {
+                    data[key] = {
+                        id: "",
+                        presentation: ""
+                    }
+                }
+                data[key].model = association.target.name;
+            } else {
+                value = this._.instance[fieldId];
+                data[key] = value;
+            }
+        }
+        return data;
     }
 }
 
@@ -310,7 +448,7 @@ function _saveAssociations(item, result) {
                 if (!value) {
                     return Next();
                 }
-                if (!value._.instance) {
+                if (!value._ || !value._.instance) {
                     return Next();
                 }
                 value = value._.instance;
@@ -339,13 +477,19 @@ function _saveAssociations(item, result) {
                             const addAccessor = association.accessors.add;
                             let newInstances = [];
                             for (let i = 0; i < newValues.length; i++) {
-                                newValues[i][association.foreignKeyField] = result.id;
-                                if (newValues[i].sequelize) {
-                                    newInstances.push(newValues[i].toJSON());
+                                let instance = newValues[i];
+                                if (Tools.has(instance, "_.instance")) {
+                                    instance = instance._.instance;
+                                }
+                                instance[association.foreignKeyField] = result.id;
+                                if (instance.sequelize) {
+                                    const data = instance.toJSON();
+                                    data.order = i + 1;
+                                    newInstances.push(data);
                                 } else {
                                     // @TODO
                                     // здесь нужно что-то делать с вложенными зависимостями
-                                    newInstances.push(newValues[i]);
+                                    newInstances.push(instance);
                                 }
                             }
 

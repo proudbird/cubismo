@@ -239,6 +239,7 @@ function defineModelStructure(application, connection, appModelDefinition) {
         // bind model to the class
         const _class = application[model.cube.name][model.class];
         //_class.addElement(model.modelName, model);
+
         const _arguments = {
             application: application,
             model: model
@@ -311,6 +312,10 @@ function syncDBStructure(application, connection) {
                     });
                 }
             }
+        } else if(type === "REAL" && modelCol.type.key === "FLOAT") {
+            // nothing to change
+        } else if(type === "REAL" && modelCol.type.key === "DECIMAL") {
+            // nothing to change
         } else if(type === modelCol.type.key) {
             // nothing to change
         } else {

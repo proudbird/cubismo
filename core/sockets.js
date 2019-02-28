@@ -50,9 +50,10 @@ function listen(server) {
       const uiElement   = getUIElement(message, view);
 
       const queryString = uiElement.config.query;
+      const map = uiElement.config.query.map;
       application.Query.execute(queryString, undefined, uiElement)
       .then(result => {
-        const data = Tools.makeHierarchical(result[0], "parentId", "data");
+        const data = Tools.makeHierarchical(result[0], "parentId", "data", map);
         callback(null, data);
       })
       .catch(err => {
@@ -77,7 +78,9 @@ function listen(server) {
       const translations = message.translations;
       if(translations && translations.length) {
         translations.forEach(translation => {
-          item.setValue(translation.attribute, translation.value, translation.lang);
+          const newValue = { value: translation.value, itWasChangerdOnClient: true };
+          item.setValue(translation.attribute, newValue, translation.lang);
+          //item.setValue(translation.attribute, translation.value, translation.lang);
         })
       }
     });
@@ -105,39 +108,128 @@ function listen(server) {
       const application = getApplication(message);
       const view = getView(message, application);
       const uiElement = getUIElement(message, view);
-      const instance = message.arguments[0];
+      let instance = message.arguments[0];
+
+      
+
+      let onlyFolders = uiElement.config.onlyFolders;
       const action = message.action;
+      let directive = "setValue";
+
+      function _setValue(value) {
+        const propertyName = uiElement.config.dataLink.replace("item.", "");
+        const newValue = { value: value, itWasChangerdOnClient: true };
+        //view.item.setValue(propertyName, newValue);
+        uiElement.value = newValue;
+        if(!uiElement.config.events) {
+          return;
+        }
+        const procedure = uiElement.config.events["onChange"];
+        if(procedure) {
+          const eventHandler = view[procedure];
+          if(eventHandler) {
+            try {
+              view[procedure](value);
+            } catch(err) {
+                Log.error("Error on handling UI element event", err);
+            }
+          } else {
+            const err = "Can't find method <onChange>.";
+            if(callback) {
+              callback(err);
+            } else { 
+              return Log.error(err);
+            }
+          }
+        } else {
+          // missing handler is not an error
+        }
+      }
+
+      if(message.collection) {
+        directive = "updateItem";
+        var target = Tools.get(view, uiElement.config.dataLink);
+        if(target && target.length) {
+          item = target[message.index];
+          item.view = view;
+          instance = message.arguments[0];
+          onlyFolders = false;
+          //_setItemValue(item, value);
+          //return;
+        } else {
+          Log.error("Collection <" + uiElement.config.dataLink + "> doesn't have rows!");
+        }
+
+        if(Tools.has(uiElement, "config.events.onLookup")) {
+          const procedure = uiElement.config.events["onLookup"];
+          if(procedure) {
+            const eventHandler = view[procedure];
+            if(eventHandler) {
+              try {
+                view[procedure]({
+                  element: uiElement,
+                  item: item,
+                  attribute: message.property
+                });
+              } catch(err) {
+                  Log.error("Error on handling UI element event", err.stack);
+              }
+            } else {
+              const err = "Can't find method <onLookup>.";
+              if(callback) {
+                callback(err);
+              } else { 
+                return Log.error(err);
+              }
+            }
+          } else {
+            // missing handler is not an error
+          }
+          return;
+        }
+      }
 
       if(action === "clear") {
-        uiElement.value = undefined;
+        _setValue(null);
+        //uiElement.value = null;
         return;
       } 
 
       options = {
         purpose: "select",
         caller: view,
-        onlyFolders: uiElement.config.onlyFolders
+        onlyFolders: onlyFolders
       }
-      const type = Tools.getPropertyByTrack(application, instance.type);
+      const type = Tools.getPropertyByTrack(application, instance.model);
       if(type._.model.definition.owners && type._.model.definition.owners.length) {
-        options.owner = view.item;
+        options.owner = item;
       }
+
       type.show({options})
         .then(value => {
-          const message = {
-            directive: "setValue",
-            elementId: uiElement.config.id,
-            arguments: [{
+          let _arguments;
+          if(directive === "updateItem") {
+            item[message.property] = value;
+            _arguments = [message.itemId, item.toJSON() ]
+          } else {
+            const newValue = { 
               id: value.getValue("id"),
-              title: value.getValue("Name"),
-              type: value._.model.name
-            }]
+              presentation: value.getValue("Name"),
+              model: value._.model.name
+            }
+            _arguments = [newValue]
           }
-          socket.emit("directive", message, function(response) {
+          const _message = {
+            directive: directive,
+            elementId: uiElement.config.id,
+            itemId: message.itemId,
+            arguments: _arguments
+          }
+          socket.emit("directive", _message, function(response) {
             if (response.err) {
               Log.error("Unsuccessable atempt to change value of " + uiElement.name, response.err);
             } else {
-              view.item.setValue(uiElement.config.dataLink.replace("item.", ""), value);
+              _setValue(value);
             }
           });
         })
@@ -211,16 +303,26 @@ function listen(server) {
         return;
       }
 
+      if(message.event === "onLoad") {
+        if(view.onLoad) {
+          view.onLoad();
+        }
+        return;
+      }
+
       if(message.event === "onChange") {
-        uiElement.value = _arguments[0];
+        const newValue = { value: _arguments[0], itWasChangerdOnClient: true };
+        uiElement.value = newValue;
       }
 
       if(message.event === "onItemChange") {
         var target = Tools.get(view, uiElement.config.dataLink);
-        if(target) {
+        if(target && target.length) {
           var item = target[_arguments[1]];
           const fieldId = _arguments[0];
           item.setValue(fieldId, _arguments[3]);
+        } else {
+          Log.error("Collection <" + uiElement.config.dataLink + "> doesn't have rows!");
         }
       }
 

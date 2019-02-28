@@ -6,7 +6,7 @@ const path   = require("path");
 const EventEmitter = require('events');
 
 const Require    = require("../Require.js");
-const ConfigView = require("./ConfigView.js");
+const ConfigView = Require(path.join(__dirname, "./ConfigView.js"), undefined, true);
 
 function View(_arguments) {
     
@@ -132,7 +132,7 @@ function show(view, _arguments, _) {
             //_arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
         }
 
-        Require(pathToFile, { Application: _arguments.application, View: view, Item: view.Item, Owner: view.Owner, Parent: view.Parent });
+        Require(pathToFile, { Application: _arguments.application, View: view, Item: view.item, Owner: view.Owner, Parent: view.Parent }, true);
 
         let pathToConfig = pathToFile.replace(".js",  ".Config.json");
         if(!fs.existsSync(pathToConfig)) {

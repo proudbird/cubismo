@@ -1,3 +1,4 @@
+
 /* global Tools */
 "use strict";
 const fs = require("fs");
@@ -7,36 +8,35 @@ const _ = require("lodash");
 const Require = require("../Require.js");
 
 const Item = require('./Item.js');
-const CollectionType = require('./CollectionType.js');
 
 const View = require("../UI/View.js");
 
-function Type(_arguments) {
+function CollectionType(_arguments) {
+
+    //@TODO move it
+            (function (original) {
+                _arguments.model.build = function (values, options) {
+                    if (Array.isArray(values)) {
+                        return this.bulkBuild(values, options);
+                    }
+                    
+                    if(Tools.has(values, "_")) {
+                        //const instance = new this(values._.instance, options);
+                        return values;//._.instance;
+                    } else {
+                        _arguments.instance = new this(values, options);
+                        const item = new Item(_arguments);
+                        return item;
+                    }
+                    
+                };
+            }(_arguments.model.build));
 
     this._ = {};
     this._.model = _arguments.model;
     this._.application = _arguments.application;
 
     const self = this;
-
-    //@TODO move it
-    (function (original) {
-        _arguments.model.build = function (values, options) {
-            if (Array.isArray(values)) {
-                return this.bulkBuild(values, options);
-            }
-            
-            if(Tools.has(values, "_")) {
-                //const instance = new this(values._.instance, options);
-                return values._.instance;
-            } else {
-                _arguments.instance = new this(values, options);
-                const item = new Item(_arguments);
-                return item;
-            }
-            
-        };
-    }(_arguments.model.build));
 
     Object.defineProperty(this, "name", {
         value: this._.model.modelName,
@@ -47,11 +47,8 @@ function Type(_arguments) {
     const associations = this._.model.associations;
     Tools.forIn(associations, association => {
         if(association.associationType === "HasMany") {
-            const _arg = {};
-            _arg.model = association.target;
-            _arg.application = self._.application;
             Object.defineProperty(self, association.as, {
-                value: new CollectionType(_arg),
+                value: association.target,
                 enumerable: false,
                 writable: false
             });
@@ -62,13 +59,6 @@ function Type(_arguments) {
         return _new(this, this._.model, predefinedValues);
     }
 
-    this.__proto__.newFolder = function (predefinedValues) {
-        if (!predefinedValues) {
-            predefinedValues = {}
-            predefinedValues.isFolder = true;
-        }
-        return _new(this, this._.model, predefinedValues);
-    }
 
     this.__proto__.show = async function (_arguments) {
         const self = this;
@@ -95,6 +85,7 @@ function Type(_arguments) {
     }
 
     this.__proto__.select = async function (options, callback) {
+
         return await _select(this, this._.model, options);
     }
 
@@ -239,8 +230,7 @@ function _select(self, model, options, callback) {
                     let inclusion = {
                         model: association.target,
                         as: association.as,
-                        separate: true,
-                        order: ["order"]
+                        separate: true
                     };
                     _inclusions.push(inclusion);
                     if (association.target.associations) {
@@ -294,4 +284,4 @@ function _select(self, model, options, callback) {
     });
 };
 
-module.exports = Type;
+module.exports = CollectionType;

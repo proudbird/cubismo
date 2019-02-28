@@ -14,7 +14,7 @@
         "uniqueCode": true,
         "autoIncrement": true,
         "nameLenght": 50,
-        "nameLang": [],
+        "nameLang": ["ru", "pl"],
         "template": "#Name#",
         "owners": [],
         "attributes": {

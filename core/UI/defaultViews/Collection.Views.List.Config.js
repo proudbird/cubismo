@@ -2,7 +2,7 @@
 module.exports.Init = function (type, options) {
 
   const definition = type._.model.definition;
-  const formTitle = "Catalog " + definition.name;
+  const formTitle = "Collection " + definition.name;
   const listName = "List";
 
   const columns    = [];
@@ -11,41 +11,28 @@ module.exports.Init = function (type, options) {
 
   const serviceAttributes = [
             "createdAt", "updatedAt", "deletedAt"];
-  const hiddenAttributes = ["id", "dropped"];
+  const hiddenAttributes = ["id"];
   
   hiddenAttributes.forEach(atr => {
     attributes.push(atr);
     map[atr] = atr;
   })
 
-  if (definition.multilevel) {
-    if(definition.multilevelType != "items") {
-      attributes.push("isFolder");
-    }
-    attributes.push("level");
-    attributes.push("parentId");
-  }
+  attributes.push("ownerId");
+  attributes.push("order");
 
-  if (definition.owners && definition.owners.length) {
-    attributes.push("ownerId");
-  }
-
-  columns.push({ id: "Code", header: "Code", fillspace:true, template:"{common.treetable()} #Code#"  });
-  attributes.push("Code");
-
-  let NameField = "Name";
-  let order = NameField;
-  if(definition.nameLang && definition.nameLang.length) {
-    NameField = NameField + "_" + Application.lang;
-    order = NameField;
-  }
-  columns.push({ id: "Name", header: "Name", fillspace:true, sort: "string" });
-  attributes.push(NameField);
-  map[NameField] = "Name";
+  // if(definition.presentation) {
+  //   let attribute = definition.attributes[definition.presentation];
+  //   let fieldId = attribute.fieldId;
+  //   if(attribute.type.lang && attribute.type.lang.length) {
+  //     fieldId = fieldId + "_" + Application.lang;
+  //   }
+  //   attributes.push(fieldId);
+  // }
 
   for (let key in definition.attributes) {
     const element = definition.attributes[key];
-    if (!serviceAttributes.includes(key) && element.type.dataType != "FK") {
+    if (!serviceAttributes.includes(key)) {
       let fieldId = element.fieldId;
       if(element.type.lang && element.type.lang.length) {
         fieldId = fieldId + "_" + Application.lang;
@@ -61,13 +48,10 @@ module.exports.Init = function (type, options) {
   const query = {
     SELECT: attributes,
     FROM:   type._.model.name,
-    ORDER:  [order, "ASC"]
+    ORDER:  ["order", "ASC"]
   }
 
   query.WHERE = [];
-  if(options.onlyFolders) {
-    query.WHERE.push({ EQ: ["isFolder", true] });
-  }
 
   if(options.owner) {
     query.WHERE.push({ EQ: ["ownerId", options.owner.getValue("id")] });
@@ -76,23 +60,22 @@ module.exports.Init = function (type, options) {
   query.map = map;
 
   const rows = [];
-  if (definition.owners && definition.owners.length) {
-    rows.push({
-      view: "Lookup",
-      name: "Owner",
-      label: "Owner",
-      dataLink: "owner",
-      onlyFolders: false
-    });
-  }
 
   rows.push({
-    view: "Toolbar",
-    name: "Toolbar",
-    owner: listName,
-    composition: "default",
-    elements: []
+    view: "Lookup",
+    name: "Owner",
+    label: "Owner",
+    dataLink: "owner",
+    onlyFolders: false
   });
+
+  // rows.push({
+  //   view: "Toolbar",
+  //   name: "Toolbar",
+  //   owner: listName,
+  //   composition: "default",
+  //   elements: []
+  // });
 
   rows.push({
     view: "Treetable",

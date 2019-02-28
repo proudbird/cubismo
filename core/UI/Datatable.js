@@ -170,37 +170,12 @@ UIElement.getSelected = function(callback) {
 
 UIElement.add = function(item, callback) {
   
-  const data = { id: item._.instance.id, order: item._.instance.order }
-  const definition = item._.model.definition;
-  for (let key in definition.attributes) {
-    const element = definition.attributes[key];
-    let fieldId = element.fieldId;
-    if(element.type.lang && element.type.lang.length) {
-      fieldId = fieldId + "_" + Application.lang;
-    }
-    const value = item._.instance[fieldId];
-    const instance = Tools.get(value, "_.instance");
-    if(instance) {
-      data[key] = {
-        id: instance.id,
-        title: instance.name
-      }
-    } else {
-      data[key] = value;
-    }
-  }
-
-  const row = { 
-    id: UIElement.config.id + "_" + item._.instance.order,
-    rowNumer: item._.instance.order, 
-    value: data 
-  };
-
   return new Promise(function (resolve, reject) {
+    const itemData = item.toJSON();
     const message = {
       directive: "add",
       elementId: UIElement.config.id,
-      arguments: [row]
+      arguments: [itemData]
     }
 
     Application.window.directiveToClient("directive", message, async function (response) {
