@@ -352,6 +352,26 @@ function Item(_arguments) {
             id: instance.id,
             order: instance.order
         };
+        if(this.Parent) {
+            let parent = this.Parent;
+            if(parent.Parent) {
+                parent = parent.Parent;
+            }
+            data.Parent = {
+                id: parent.getValue("id"),
+                presentation: parent.getValue("Name")
+            };
+        }
+        if(this.Owner) {
+            let owner = this.Owner;
+            if(owner.Owner) {
+                owner = owner.Owner;
+            }
+            data.Owner = {
+                id: owner.getValue("id"),
+                presentation: owner.getValue("Name")
+            };
+        }
         const definition = this._.model.definition;
         for (let key in definition.attributes) {
             const element = definition.attributes[key];

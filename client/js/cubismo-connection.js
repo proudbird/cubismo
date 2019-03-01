@@ -73,8 +73,8 @@ server.on("dataUpdate", function (message, callback) {
     const item = _arguments[0];
     result = element.updateItem(item.id, item);
     const dataItem = element.getItem(item.id);
-    if(dataItem.$parent != item.parentId) {
-      element.move(item.id, undefined, undefined, { parent: item.parentId });
+    if(dataItem.$parent != item.Parent.id) {
+      element.move(item.id, undefined, undefined, { parent: item.Parent.id });
     }
     // sort
   } else if(message.directive === "delete") {

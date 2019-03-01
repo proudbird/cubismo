@@ -397,6 +397,9 @@ webix.protoUI({
     const self = this;
     config.type = {
       folder: function (obj, type) {
+        if(!self) {
+          return;
+        }
         const collapsed = self.isBranchOpen(obj.id);
         if (obj.isFolder) {
           if (collapsed) {
