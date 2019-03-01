@@ -16,5 +16,10 @@ View.Combinations_onLookup = function (params) {
     .show({ options })
     .then(result => {
       params.item[params.attribute] = result;
+      let name = [];
+      Item.Combinations.forEach(colItem => {
+        name.push(colItem.Attribute.Name + ": " + colItem.Value.Value);
+      });
+      Item.Name = name.join("; ");
     })
 }
