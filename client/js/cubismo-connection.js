@@ -1,7 +1,8 @@
 /* globals $$ */
-
+window.applicationId = window.location.pathname.replace("/", "") || "index";
 let reconection;
-const server = io({
+const serverUrl = window.location.hostname + ":21021";
+const server = io(serverUrl, {
   query: {
     applicationId: window.applicationId
   }
@@ -19,7 +20,9 @@ function reconnect() {
   }
 }
 
-server.on('connect', function () {});
+server.on('connect', function (response) {
+  console.log("server is connected")
+});
 
 server.on('disconnect', function () {
   reconection = setInterval(reconnect, 1000);
@@ -86,6 +89,9 @@ server.on("dataUpdate", function (message, callback) {
 })
 
 function callServer(action, message, callback) {
+  if(window.clientId) {
+    message.clientId = window.clientId;
+  }
   message.applicationId = window.applicationId;
   message.windowId      = window.windowId;
   if(!message.lang) {

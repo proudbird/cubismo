@@ -10,7 +10,7 @@ UIElement.hide = async function () {
       arguments: []
     }
 
-    Application.window.directiveToClient("directive", message, async function (response) {
+    Application.window._.client.emit("directive", message, async function (response) {
       if (response.err) {
         reject(error);
       } else {
@@ -29,7 +29,29 @@ UIElement.show = async function () {
       arguments: []
     }
 
-    Application.window.directiveToClient("directive", message, async function (response) {
+    Application.window._.client.emit("directive", message, async function (response) {
+      if (response.err) {
+        reject(error);
+      } else {
+        resolve(null);
+      }
+    })
+  });
+}
+
+UIElement.addView = async function (config) {
+
+  config.id = Tools.SID();
+  config.viewId = UIElement.config.viewId;
+
+  return new Promise(function (resolve, reject) {
+    const message = {
+      directive: "addView",
+      elementId: UIElement.config.id,
+      arguments: [config]
+    }
+
+    Application.window._.client.emit("directive", message, async function (response) {
       if (response.err) {
         reject(error);
       } else {

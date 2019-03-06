@@ -33,6 +33,13 @@ Platform.initApplication = function(appName) {
     .then(() => {
       Platform.applications[appName] = application;
       console.log("Application <" + appName + "> has started.");
+      for(let key in application.Cubes) {
+        const cube = application.Cubes[key];
+        const start = cube.onStart;
+        if(start) {
+          start();
+        }
+      }
       callback(null, application);
     })
     .catch((err) => {

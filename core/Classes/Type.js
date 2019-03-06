@@ -179,7 +179,7 @@ function _show(self, model, _arguments) {
     function mainFunction(callback) {
         view.show()
             .then(viewConfig => {
-                self._.application.window.Viewbar.addView(viewConfig.config);
+                //self._.application.window.ViewContainer.addView(viewConfig.config);
                 callback(null, view);
             })
             .catch(err => {

@@ -1,5 +1,5 @@
 /* globals webix $$ */
-window.applicationId = window.location.pathname.replace("/", "");
+window._hidden_on_resize = [];
 let lang = navigator.language || navigator.userLanguage;
 window.lang = lang.slice(0, lang.search("-"));
 
@@ -269,7 +269,7 @@ webix.protoUI({
             element: this.config.name,
             event: "onItemClick",
             owner: this.config.owner,
-            arguments: []
+            arguments: [this.config.value]
           });
         }
       }
@@ -344,8 +344,7 @@ webix.protoUI({
   },
   _Init: function () {
 
-  },
-
+  }
 }, webix.ui.text);
 
 webix.protoUI({
@@ -370,6 +369,120 @@ webix.protoUI({
     }
   }
 }, webix.ui.checkbox);
+
+webix.protoUI({
+  name: "Icon",
+  $init: function (config) {
+    this.$view.className += " webix_el_checkbox";
+  },
+  defaults: {
+    on: {
+      onItemClick: function () {
+        callServer("event", {
+          viewId: this.config.viewId,
+          element: this.config.name,
+          event: "onItemClick",
+          arguments: []
+        });
+      }
+    }
+  }
+}, webix.ui.icon);
+
+webix.protoUI({
+  name: "Carousel",
+  defaults: {
+    on: {
+      onShow: function(id) {
+        if (id) {
+          callServer("event", {
+            viewId: this.config.viewId,
+            element: this.config.name,
+            event: "onShow",
+            arguments: [id]
+          });
+        }
+      }
+    }
+  },
+  $init: function (config) {
+    this.$ready.push(this._Init);
+  },
+  _Init: function () {
+    var self = this;
+    const event = webix.env.isIE8 ? "mousewheel" : "wheel";
+
+    if (this.$view.addEventListener) {
+      this.$view.addEventListener(event, function(e) {
+        self._on_wheel(e, self)
+      }, {
+        bind: this,
+        passive: false
+      }) 
+    } else if (this.$view.attachEvent) {
+      // this.$view.attachEvent("on" + event, info[2] = function () {
+      //   return handler.apply(this.$view, arguments); //IE8 fix
+      // });
+    }
+  },
+  _on_wheel: function _on_wheel(e, self) {
+    var dir = 0;
+
+    if (e.deltaX > 0) {
+      dir = 1;
+    } else if (e.deltaX < 0) {
+      dir = -1;
+    }
+    if (e.deltaY > 0) {
+      dir = 1;
+    } else if (e.deltaY < 0) {
+      dir = -1;
+    }
+
+    if (dir) {
+      const length = self._cells.length;
+      let index = self.getActiveIndex();
+      index  = index + dir;
+      if(index < 0) {
+        index = 0;
+      } else if(index > (length - 1)) {
+        index = length - 1;
+      }
+      if (self.setActiveIndex(index)) {
+        return preventEvent(e);
+      }
+    }
+  }
+}, webix.ui.carousel);
+
+webix.protoUI({
+  name:"List",
+  defaults:{
+    on:{
+      onSelectChange: function(id) {
+        if (id) {
+          callServer("event", {
+            viewId: this.config.viewId,
+            element: this.config.name,
+            event: "onSelectChange",
+            arguments: [this.getItem(id)]
+          });
+        }
+      },
+      onItemDblClick: function(id) {
+        if (id) {
+
+        }
+      },
+      onAfterDelete: function(id) {
+
+      }
+    }
+  },
+  selectByIndex: function selectByIndex(index) {
+    this.select(this.getIdByIndex(index));
+  }
+}, webix.ui.list);
 
 webix.protoUI({
   name: "Treetable",
@@ -397,24 +510,24 @@ webix.protoUI({
     const self = this;
     config.type = {
       folder: function (obj, type) {
-        if(!self) {
-          return;
-        }
-        const collapsed = self.isBranchOpen(obj.id);
-        if (obj.isFolder) {
-          if (collapsed) {
-            return "<span class='fa-icon fa-folder-open'>&nbsp;</span>";
-          } else {
-            return "<span class='fa-icon fa-folder'>&nbsp;</span>";
-          }
-        } else {
-          const hasChildes = !!self.getFirstChildId(obj.id);
-          if(hasChildes) {
-            return "<span class='fa-icon fa-equals'>&nbsp;</span>";
-          } else {
-            return "<span class='fa-icon fa-minus'>&nbsp;</span>";
-          }
-        }
+        // if(!self) {
+        //   return;
+        // }
+        // const collapsed = self.isBranchOpen(obj.id);
+        // if (obj.isFolder) {
+        //   if (collapsed) {
+        //     return "<span class='fa-icon fa-folder-open'>&nbsp;</span>";
+        //   } else {
+        //     return "<span class='fa-icon fa-folder'>&nbsp;</span>";
+        //   }
+        // } else {
+        //   const hasChildes = !!self.getFirstChildId(obj.id);
+        //   if(hasChildes) {
+        //     return "<span class='fa-icon fa-equals'>&nbsp;</span>";
+        //   } else {
+        //     return "<span class='fa-icon fa-minus'>&nbsp;</span>";
+        //   }
+        // }
       }
     }
   },
@@ -468,9 +581,61 @@ webix.protoUI({
 webix.protoUI({
   name: "Group",
   defaults: {
-    on: {}
+    responsive:true, 
+    on: {
+      onResize: function() {
+        
+      }
+    }
+  },
+  $init: function (config) {
+    this.$ready.push(this._Init);
+  },
+  _Init: function () {
+
+  },
+  $setSize: function(x, y) {
+    if(this.config.adaptive) {
+      const adaptiveWidths = this.config.adaptive.width;
+      if(adaptiveWidths) {
+        for(let key in adaptiveWidths) {
+          const adaptiveWidth = adaptiveWidths[key];
+          if(window.innerWidth < parseInt(key) && x > adaptiveWidth) {
+            this.define("width", adaptiveWidth);
+            if(adaptiveWidth === 0) {
+              window._hidden_on_resize.push(this);
+              this.hide();
+              break;
+            }
+          }
+        }
+      }
+    }
+    webix.ui.layout.prototype.$setSize.call(this, x, y);
   }
 }, webix.ui.layout);
+
+window._check_hidden = function() {
+  // TODO needs to be rebuild
+  const hidden = window._hidden_on_resize;
+  if(hidden && hidden.length) {
+    for (var i = 0; i < hidden.length; i++) {
+      const cell = hidden[i];
+      if(cell.config.adaptive && cell.config.adaptive.width) {
+        for(let limit in cell.config.adaptive.width) {
+          if(window.innerWidth >= parseInt(limit)) {
+            hidden.splice(i, 1);
+            cell.show();
+            cell.define("width", cell.config.adaptive.width[limit]);
+          }
+        }
+      }
+    }
+  }
+};
+window.addEventListener("resize", window._check_hidden);
+
+
 
 webix.protoUI({
   name: "Lookup",

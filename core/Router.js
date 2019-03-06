@@ -26,13 +26,13 @@ router.get('/:applicationId', function(req, res, next) {
     if(!application) {
       Platform.initApplication("Just-In-Time")
       .then((application) => {
-        for(let key in application.Cubes) {
-          const cube = application.Cubes[key];
-          const start = cube.onStart;
-          if(start) {
-            start();
-          }
-        }
+        // for(let key in application.Cubes) {
+        //   const cube = application.Cubes[key];
+        //   const start = cube.onStart;
+        //   if(start) {
+        //     start();
+        //   }
+        // }
         sendWindow();
       })
       .catch(err => {

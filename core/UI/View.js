@@ -10,6 +10,8 @@ const ConfigView = Require(path.join(__dirname, "./ConfigView.js"), undefined, t
 
 function View(_arguments) {
     
+    this._ = {};
+    
     const _ = {};
     _.showCallback   = _arguments.showCallback;
     _.closeCallback  = _arguments.closeCallback;
@@ -54,7 +56,11 @@ function View(_arguments) {
                         })
                     })
                 }
-
+                const window = Tools.get(_arguments.application, "window");
+                if(window) {
+                    _arguments.application.window.ViewContainer.addView(viewConfig);
+                }
+                
                 return callback(null, result);
             })
             .catch((err) => {
@@ -104,11 +110,16 @@ function show(view, _arguments, _) {
         const file = [];
         if(_arguments && _arguments.class) {
             file.push(_arguments.class);
+            if(_arguments.class === "Common") {
+                file.push("Views");
+            }
         }
+        
         if(_arguments && _arguments.modelName) {
             file.push(_arguments.modelName);
             file.push("Views");
         }
+
         file.push(_arguments.name);
         file.push("js");
 
@@ -132,7 +143,7 @@ function show(view, _arguments, _) {
             //_arguments.model = _arguments.application[_arguments.cube.name][_arguments.class][_arguments.modelName];
         }
 
-        Require(pathToFile, { Application: _arguments.application, View: view, Item: view.item, Owner: view.Owner, Parent: view.Parent }, true);
+        Require(pathToFile, { Application: _arguments.application, Cube: _arguments.cube, View: view, Item: view.item, Owner: view.Owner, Parent: view.Parent }, true);
 
         let pathToConfig = pathToFile.replace(".js",  ".Config.json");
         if(!fs.existsSync(pathToConfig)) {

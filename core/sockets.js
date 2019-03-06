@@ -7,30 +7,48 @@ function listen(server) {
   var socketio = require("socket.io");
   var io = {};
 
+  const applications = [];
+
+  const args = process.argv;
+  if(args && args.length > 2) {
+    for(let i=2; i<args.length; i++) {
+      const appId = args[i];
+      const application = Platform.applications[appId];
+      if(!application) {
+        Platform.initApplication(appId)
+        .then(app => {
+          applications.push(app);
+        });
+      }
+    }
+  }
+
   io = socketio.listen(server);
 
-  io.on('connection', function (socket, callback) {
+  io.on('connection', function (socket) {
 
     const applicationId = socket.handshake.query.applicationId;
-    const application = Platform.applications[applicationId];
-    if(!application) {
-      const err = "Application <" + applicationId + "> is not defined.";
-      if(callback) {
-        callback(err);
-      } else { 
-        return Log.error(err);
-      }
+    if(applicationId === "index") {
+      // sumbody is knoking, so let wait
     } else {
-      application.show(socket)
-      .then((view) => {
-        var viewConfig = JSON.stringify(view, function(key, value) {
-          if (typeof value === "function") {
-            return "/Function(" + value.toString() + ")/";
-          }
-          return value;
-        });
-        socket.emit("window", viewConfig);
-      })
+      const application = Platform.applications[applicationId];
+      applications.push(application);
+      if(!application) {
+        const err = "Application <" + applicationId + "> is not defined.";
+          return Log.error(err);
+      } else {
+        application.show(socket)
+        .then((view) => {
+          var viewConfig = JSON.stringify(view, function(key, value) {
+            if (typeof value === "function") {
+              return "/Function(" + value.toString() + ")/";
+            }
+            return value;
+          });
+
+          socket.emit("window", viewConfig);
+        })
+      }
     }
 
     socket.on('error', function (Err) {
@@ -39,6 +57,18 @@ function listen(server) {
     
     socket.on('disconnect', function () {
       //sockets.splice(sockets.indexOf(socket), 1);
+    });
+
+    socket.on("index", (message, callback) => {
+      if(!message.clientId) {
+        return;
+      }
+      applications.forEach(app => {
+        const subscriber = Tools.get(app, "_.clientSubscribers." + message.clientId);
+        if(subscriber) {
+          subscriber.connect(socket);
+        }
+      });
     });
 
     socket.on('getData', function (message, callback) {
@@ -239,7 +269,15 @@ function listen(server) {
     });
 
     function getApplication(message) {
-      const application = Platform.applications[message.applicationId];
+      let application = Platform.applications[message.applicationId];
+      if(message.applicationId === "index" || !application && message.clientId) {
+        applications.forEach(app => {
+          const subscriber = Tools.get(app, "_.clientSubscribers." + message.clientId);
+          if(subscriber) {
+            application = app;
+          }
+        });
+      }
       if(!application) {
         const err = "Application <" + message.applicationId + "> is not defined.";
         if(err) {
@@ -291,6 +329,9 @@ function listen(server) {
       const application = getApplication(message);
       const view        = getView(message, application);
       const uiElement   = getUIElement(message, view);
+
+      const window = application.views[process.env.WINDOW];
+      window._.client = socket;
 
       const _arguments = message.arguments || [];
       if(uiElement[message.element]) {

@@ -30,8 +30,22 @@ const Query = require('./Query.js');
 function Application(name, dirname, filename) {
 
     const _ = {};
+    this._ = {};
 
     constructors.Collection.call(this, undefined, undefined, name, dirname, filename);
+
+    Object.defineProperty(this._, "id", { value: Tools.GUID(), writable: false });
+
+    this.__proto__.getId = function() {
+        return this._.id;
+    };
+
+    this.__proto__.subscribeOnClient = function(clientId, connect) {
+        if(!Tools.has(this._, "clientSubscribers")) {
+            this._.clientSubscribers = {};
+        }
+        this._.clientSubscribers[clientId] = { connect: connect }
+    }
 
     _.connection = new DBConnection(this);
 
@@ -203,6 +217,7 @@ function defineApplicationStructure(application, appModelDefinition) {
                                     const _commonModules = _cube.Common.Modules;
                                     const _module = new constructors.Base(application, _cube, commonModuleName, path.join(cubeDir, "Common"), classFile);
                                     _commonModules.addElement(commonModuleName, _module);
+                                    Require(path.join(_module.dirname, _module.filename), { Application: application, Cube: _cube, Module: _module } );
                                 }
 
                                 /**

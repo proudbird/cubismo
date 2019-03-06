@@ -9,14 +9,43 @@ UIElement.ClearAll = function(callback) {
     });
 }
 
-UIElement.Add = function(Value, callback) {
-    var Message = {};
-    Message.Directive = 'Add';
-    Message.ViewID    = UIElement.View.id;
-    Message.Value     = Value;
-    Form.Client.emit('message', Message, function(Response) {
-      callback(Response);
-    });
+UIElement.add = function(item, callback) {
+  
+  return new Promise(function (resolve, reject) {
+    const itemData = item;
+    const message = {
+      directive: "add",
+      elementId: UIElement.config.id,
+      arguments: [itemData]
+    }
+
+    Application.window._.client.emit("directive", message, function(response) {
+      if (response.err) {
+        reject(error);
+      } else {
+        resolve(response.result);
+      }
+    })
+  });
+}
+
+UIElement.selectByIndex = function(index) {
+  
+  return new Promise(function (resolve, reject) {
+    const message = {
+      directive: "selectByIndex",
+      elementId: UIElement.config.id,
+      arguments: [index]
+    }
+
+    Application.window._.client.emit("directive", message, function(response) {
+      if (response.err) {
+        reject(error);
+      } else {
+        resolve(response.result);
+      }
+    })
+  });
 }
 
 UIElement.GetItems = function(PropertiesFilter, callback) {

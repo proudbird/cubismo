@@ -25,8 +25,9 @@ function ConfigView(View, _arguments, pathToFile) {
       const uiElement = node;
       if (node.view && node.name && node.name !== 'data') {
         if (!node.id) {
-          if (node.main) {
+          if (node.main || node.view === "View") {
             node.id = View.id;
+            node.viewId = View.id;
           } else {
             node.id = Tools.SID();
             node.viewId = View.id;

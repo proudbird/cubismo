@@ -1,0 +1,72 @@
+<ul class="smartColumns">
+    </ul>
+
+<script>
+
+        function lock(id) {
+            $.post("/reservations/reservations/lock",{ time: id, queue: 102}).done(function (data) {
+                console.log(data);
+                slot = data.replace('OK ', '');
+                var url = "/reservations/reservations/updateFormData/1slot1/9";
+                if (data == "FAIL"){
+                    Materialize.toast('This time is locked by other user!',2000);
+                    time_locked = true;
+                    $("#dateContent").load(last_url);
+                    return false;
+                }else{
+                    window.location.href = url.replace('1slot1',slot);
+                    time_locked = false;
+                    return true;
+                }
+            });
+        }
+
+</script>
+
+<!-- TODO: disable alert flashing on page load!!! -->
+<!--			<div class="alert alert-error">
+			<h4 class="alert-heading"> Brak wolnych terminów </h4>
+		</div>
+	-->
+
+
+<!-- Modal -->
+<div id="ModalReservationConfirm" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 id="myModalLabel">Potwierdź rezerwację</h4>
+        </div>
+                <h5>Operacja:Wniosek o legalizację pobytu JG</h5>
+        <h5>Lokalizacja:</h5>
+        <h5 id="confirmDate"></h5>
+        <h5 id="confirmTime"></h5>
+    </div>
+    <div class="modal-footer">
+        <button class="modal-action modal-close waves-effect waves-green btn">Anuluj</button>
+        <a href="#" id="confirmLink" style="margin-right:10px;" class="waves-effect waves-green btn"><i class="material-icons left">done</i>OK</a>
+    </div>
+</div>
+
+<script>
+    $('#register').click(function(){
+        //Set modal on its open
+
+        //Set date
+        confirm_date = 'Data: ' + $('#selDate').val();
+        $('#confirmDate').html(confirm_date);
+        //Set time
+        /*
+        time = $('#selTime').val();
+        confirm_time = 'Godzina ' + time;
+        $('#confirmTime').html(confirm_time);
+        */
+    });
+
+    $('#confirmLink').click(function () {
+
+        $('#confirmLink').addClass('disabled');
+        window.location = $('#confirmLink').attr('href');;
+        $('#confirmLink').attr('href', '#');
+
+    });
+</script>

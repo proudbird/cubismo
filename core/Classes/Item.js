@@ -451,7 +451,7 @@ function _show(Application, item, _arguments) {
     const view = new View(_arguments);
     view.show()
         .then(viewConfig => {
-            Application.window.Viewbar.addView(viewConfig.config);
+            //Application.window.ViewContainer.addView(viewConfig.config);
         })
         .catch(err => {
             Log.error("Error on adding view", err);

@@ -1,15 +1,25 @@
+UIElement.addView = function(view) {
 
-/* globals Tools Form UIElement */
+  const mainFunction = function(callback) {
 
-UIElement.AddForm = function(NewForm, FormView, ContainerID) {
-    var Message = {};
-    Message.Directive = 'addPage';
-    Message.ViewID    = Form.FormsBar.View.id;
-    Message.ID        = ContainerID;
-    Message.Head      = FormView.header;
-    Message.Body      = Tools.ObjectToJSON(FormView);
+    const message = {
+      directive: "addView",
+      elementId: UIElement.config.id,
+      arguments: [view.config]
+    }
     
-    Application.Window().Client.emit('message', Message, function(ContainerID) {
-      NewForm.ContainerID = ContainerID;
-    });
+    Application.window.directiveToClient("directive", message, function(response) {
+      if(response.err) {
+          callback(response.err);
+      } else {
+          callback(null);
+      }
+    })
+  }
+
+  return new Promise(function(resolve, reject) {
+      mainFunction(function(error, result) {
+          error ? reject(error) : resolve(result);
+      });
+  });
 }
