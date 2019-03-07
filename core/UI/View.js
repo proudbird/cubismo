@@ -22,6 +22,8 @@ function View(_arguments) {
     
     Object.defineProperty(this, "id", { value: Tools.SID(), enumerable: false, writable: false });
     Object.defineProperty(this, "name", { value: _arguments.name, enumerable: false, writable: false });
+
+    _arguments.application.views[this.id] = this;
     
     this.params = _arguments.params;
     this.options = _arguments.options;
@@ -41,10 +43,50 @@ function View(_arguments) {
         this.parent.view = this;
     }
 
-    _arguments.application.views[this.id] = this;
-
     this.__proto__.show = function() {
         const self = this;
+        const mainFunction = function(callback) {
+            show(self, _arguments, _)
+            .then((viewConfig) => {
+                // const result = {
+                //     config: viewConfig,
+                //     promise: new Promise(function (resolve, reject) {
+                //         self.closeCallback.on("close", function (value) {
+                //             resolve(value);
+                //         })
+                //     })
+                // }
+                const window = Tools.get(_arguments.application, "window");
+                if(window) {
+                    
+                    _arguments.application.window.ViewContainer.addView(viewConfig);
+                }
+                
+                return callback(null, viewConfig);
+            })
+            .catch((err) => {
+                return callback(err);
+            })
+        }
+        
+        if(_arguments && _arguments.showCallback) {
+            return mainFunction(_arguments.showCallback);
+        }
+        return new Promise(function(resolve, reject) {
+            mainFunction(function(error, result) {
+                error ? reject(error) : resolve(result);
+            });
+        });   
+    }
+
+    this.__proto__.showModal = function(_args) {
+        const self = this;
+        if(_args) {
+            for(let key in _args) {
+                self.params[key] = _args[key];
+            }
+        }
+        self.modal = true;
         const mainFunction = function(callback) {
             show(self, _arguments, _)
             .then((viewConfig) => {
@@ -58,10 +100,15 @@ function View(_arguments) {
                 }
                 const window = Tools.get(_arguments.application, "window");
                 if(window) {
-                    _arguments.application.window.ViewContainer.addView(viewConfig);
+                    window._.client.emit("ShowModalWindow", viewConfig, (windowId) => {
+                        self.windowId = windowId;
+                        callback(null, new Promise(function (resolve, reject) {
+                            self.closeCallback.on("close", function (value) {
+                                resolve(value);
+                            })
+                        }))
+                    });
                 }
-                
-                return callback(null, result);
             })
             .catch((err) => {
                 return callback(err);
@@ -175,14 +222,25 @@ function close(view, _arguments, _, value) {
     const self = this;
 
     const mainFunction = function(callback) {
-        _arguments.application.window.Viewbar.removeView(view.config.tabId)
-        .then(result => {
-            delete _arguments.application.views[view.id]
-            callback(null);
-        })
-        .catch(err => {
-            callback(err);
-        })
+        if(view.modal) {
+            _arguments.application.window._.client.emit("CloseModalWindow", view.windowId, (result) => {
+                if(result.error) {
+                    return Log.error("Error on trying to close modal window", ressult.error);
+                } 
+                delete _arguments.application.views[view.windowId]
+                callback(null);
+            });
+        } else {
+            _arguments.application.window.Viewbar.removeView(view.config.tabId)
+                .then(result => {
+                    delete _arguments.application.views[view.id]
+                    callback(null);
+                })
+                .catch(err => {
+                    Log.error("Error on trying to close modal window", err);
+                })
+        }
+        
     }
 
     if (_.showCallback) {

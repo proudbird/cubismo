@@ -14,11 +14,11 @@ Cube.onStart = function() {
     client.on("mainView", (message, callback) => {
       Cube.Common.Views("Window")
         .show()
-        .then(view => {
+        .then(viewConfig => {
           //Cube.mainView = Application.views[view.config.id];
           //Cube.Common.Modules.Fullpage.init(Cube.mainView.Fullpage);
           console.log("Loading main view...");
-          callback(view.config);
+          callback(viewConfig);
       })
     });
   });

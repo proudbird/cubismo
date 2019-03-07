@@ -12,12 +12,16 @@ function Common(application, cube, name, dirname, filename) {
     Collection.call(this, application, cube, name, dirname, filename);
 }
 
-Common.prototype.Views = function(viewName) {
+Common.prototype.Views = function(viewName, params) {
 
     _arguments = {};
     _arguments.options = {};
     _arguments.params = {};
     _arguments.name = viewName;
+
+    if(params && params.item) {
+        _arguments.item = params.item;
+    }
 
     _arguments.application = this._.application;
     _arguments.cube = this._.cube;

@@ -8,7 +8,7 @@
         "description": "Harmonized System Codes",
         "multilevel": true,
         "multilevelType": "foldersAndItems",
-        "numberOfLevels": 8,
+        "numberOfLevels": 6,
         "codeLenght": 10,
         "codeType": "INTEGER",
         "uniqueCode": true,

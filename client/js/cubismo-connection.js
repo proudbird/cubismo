@@ -43,6 +43,25 @@ server.on("window", function (config) {
   );
 });
 
+server.on("ShowModalWindow", function (config, callback) {
+  const options = {
+    title: config.title,
+    body: config,
+    width: 600
+  }
+  const viewId = showModalWindow(options);
+  callback(viewId);
+});
+
+server.on("CloseModalWindow", function (id, callback) {
+  try {
+    $$(id).close();
+    callback({});
+  } catch(err) {
+    callback({ error: err });
+  }
+});
+
 server.on("directive", function (message, callback) {
   const elementId = message.elementId;
   const element = $$(elementId);

@@ -14,7 +14,7 @@ View.onLoad = async function(Params) {
   menuItems.forEach((item, index) => {
     View.Menu.add({ id: "menuItem_" + index, value: item });
   });
-  View.Menu.selectByIndex(0);
+  View.Menu.selectByIndex(6);
 }
 
 View.ViewContainer_onShow = function(id) {

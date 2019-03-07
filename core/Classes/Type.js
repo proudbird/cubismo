@@ -224,16 +224,22 @@ function _select(self, model, options, callback) {
                         let parentInc = _inclusions;
                         let end = false;
                         for (let i = 0; i < definition.numberOfLevels; i++) {
+                        // for (let i = 0; i < 6; i++) {   MAXIMUM 6 LEVELS!!!!!!
                             if (i === definition.numberOfLevels - 1) {
                                 end = true;
                             }
                             parentInc = include(parentInc, association.target, association.as, end);
                         }
                     } else {
-                        _inclusions.push({
+                        const inc = {
                             model: association.target,
                             as: association.as
-                        });
+                        };
+                        
+                        if(association.as != "Parent") {
+                            inc.include = defineInclusions(association.target);
+                        }
+                        _inclusions.push(inc);
                     }
                 } else if (association.associationType === 'HasMany') {
                     let inclusion = {

@@ -213,6 +213,18 @@ webix.protoUI({
 }, webix.ui.layout);
 
 webix.protoUI({
+  name: "Label",
+  $init: function (config) {
+    this.$ready.push(this._Init);
+  },
+  _Init: function () {
+    if(this.config.value) {
+      this.setValue(this.config.value);
+    }
+  }
+}, webix.ui.label);
+
+webix.protoUI({
   name: "sidebar",
   defaults: {
     on: {
