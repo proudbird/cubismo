@@ -124,7 +124,7 @@ function _new(self, model, predefinedValues) {
         var associations = model.associations;
         for (let key in associations) {
             if (associations[key].associationType === "HasMany") {
-                newInstance[associations[key].as] = [];
+                newInstance._.instance[associations[key].as] = [];
             }
         }
     }
@@ -196,7 +196,54 @@ function _show(self, model, _arguments) {
 
 function _select(self, model, options, callback) {
 
-    function defineInclusions(model) {
+    let count = 1;
+
+    function defineInclusions(model, curLevel, finish) {
+
+        // if(count > 50) {
+        //     //return;
+        // }
+        // count++;
+
+        // console.log("model " + model.name);
+
+        let level = curLevel || 1;
+        // console.log("level " + curLevel);
+
+        const inclusions = [];
+
+        const definition = model.definition;
+
+        if (model.associations) {
+            for (let key in model.associations) {
+                // console.log("association " + key);
+                const association = model.associations[key];
+                const inclusion = {
+                    model: association.target,
+                    as: association.as
+                }
+                if(association.associationType === 'HasMany') {
+                    inclusion.order = ["order"];
+                    inclusion.separate = true;
+                }
+                if (association.as === "Parent") {
+                    if (level < definition.numberOfLevels) {
+                        inclusion.include = defineInclusions(model, level + 1, false);         
+                    } else {
+                        level = 1;
+                    }
+                } else if (association.as === "Owner") {
+                    //inclusion.include = defineInclusions(association.target, level, true);
+                } else if (!finish) {
+                    inclusion.include = defineInclusions(association.target, level, false);
+                }
+                inclusions.push(inclusion);
+            }
+        }
+        return inclusions;
+    }
+
+    function _defineInclusions(model) {
 
         var _inclusions = new Array();
 
@@ -208,6 +255,7 @@ function _select(self, model, options, callback) {
             };
             if (!end) {
                 inc.include = childInc;
+                //inc.include = defineInclusions(target);
             }
             parentInc.push(inc);
 
@@ -229,6 +277,8 @@ function _select(self, model, options, callback) {
                                 end = true;
                             }
                             parentInc = include(parentInc, association.target, association.as, end);
+                       
+                            
                         }
                     } else {
                         const inc = {
@@ -273,7 +323,12 @@ function _select(self, model, options, callback) {
         if (!optionsCopy) {
             optionsCopy = {};
         }
+        const start = new Date();
+        //Log.debug("start")
         var inclusions = defineInclusions(model);
+        const finish = new Date();
+        //Log.debug("finish")
+        //Log.debug("time " + (finish-start))
         if (inclusions.length) {
             optionsCopy.include = inclusions;
         }

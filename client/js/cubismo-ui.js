@@ -520,28 +520,31 @@ webix.protoUI({
     this.$ready.unshift(this._after_init_call);
 
     const self = this;
-    config.type = {
-      folder: function (obj, type) {
-        // if(!self) {
-        //   return;
-        // }
-        // const collapsed = self.isBranchOpen(obj.id);
-        // if (obj.isFolder) {
-        //   if (collapsed) {
-        //     return "<span class='fa-icon fa-folder-open'>&nbsp;</span>";
-        //   } else {
-        //     return "<span class='fa-icon fa-folder'>&nbsp;</span>";
-        //   }
-        // } else {
-        //   const hasChildes = !!self.getFirstChildId(obj.id);
-        //   if(hasChildes) {
-        //     return "<span class='fa-icon fa-equals'>&nbsp;</span>";
-        //   } else {
-        //     return "<span class='fa-icon fa-minus'>&nbsp;</span>";
-        //   }
-        // }
-      }
-    }
+    // config.type = {
+    //   folder: function (obj, type) {
+    //     if(!self || !self.isBranchOpen) {
+    //       return;
+    //     }
+    //     const collapsed = self.isBranchOpen(obj.id);
+    //     if (obj.isFolder) {
+    //       if (collapsed) {
+    //         return "<span class='fa-icon fa-folder-open'>&nbsp;</span>";
+    //       } else {
+    //         return "<span class='fa-icon fa-folder'>&nbsp;</span>";
+    //       }
+    //     } else {
+    //       let hasChildes = false;
+    //       if(self.getFirstChildId) {
+    //         hasChildes = !!self.getFirstChildId(obj.id);
+    //       }
+    //       if(hasChildes) {
+    //         return "<span class='fa-icon fa-equals'>&nbsp;</span>";
+    //       } else {
+    //         return "<span class='fa-icon fa-minus'>&nbsp;</span>";
+    //       }
+    //     }
+    //   }
+    // }
   },
   _after_init_call: function () {
 
@@ -861,7 +864,7 @@ webix.protoUI({
                     }
                     localize(params, column.langs, function (value) {
                       record = self.getItem(cell.row);
-                      record.value[cell.column] = value;
+                      record[cell.column] = value;
                       self.updateItem(cell.row, record);
                       setTimeout(main, 10);
                     });
@@ -926,7 +929,9 @@ webix.protoUI({
       onAfterEditStop: function (state, editor, changed) {
         const item = this.getItem(editor.row);
         // TODO: there may be errors
-        item.value[editor.column] = state.value;
+        if(item.value) {
+          item.value[editor.column] = state.value;
+        }
         callServer("event", {
           viewId: this.config.viewId,
           element: this.config.name,

@@ -52,7 +52,11 @@ Cube.onStart = function() {
     res.sendFile(path.join(system, req.params.folder, req.params.fileName));  
   });
 
-  router.get('/files/:folder(img)/:fileName', function(req, res, next) {
+  router.get('/files/:folder(img)/:fileName/', function(req, res, next) {
     res.sendFile(path.join(files, req.params.folder, req.params.fileName));  
+  });
+
+  router.get('/files/*', function(req, res, next) {
+    res.sendFile(path.join(files, req.params[0]));  
   });
 }

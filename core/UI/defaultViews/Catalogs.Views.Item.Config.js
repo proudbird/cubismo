@@ -53,7 +53,9 @@ module.exports.Init = function (item) {
     let viewType;
     if(row.type === "FK") {
       viewType = "Lookup";
-    } else {
+    } else if(row.type === "BOOLEAN") {
+      viewType = "Checkbox";
+    } else  {
       viewType = "Text";
     }
     rows.push(

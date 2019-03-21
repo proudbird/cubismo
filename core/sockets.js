@@ -396,56 +396,17 @@ function listen(server) {
         // missing handler is not an error
       }
     });
-    
-    socket.on('WindowLoad', function (Message, WindowID) {
-      process.env.WINDOW = WindowID;
-      Platform.Clients[WindowID] = socket;
-      const application = Platform.applications[Message.ApplicationID];
-      application.views[Message.WindowID].client = socket;
-      //Platform.views[Message.WindowID].Client = socket;
-        // for(var key in Platform.Applications[Message.ApplicationID].Cubes) {
-        //   var Start = Platform.Applications[Message.ApplicationID].Cubes[key].OnStart;
-        //   if(Start) {
-        //     Start();
-        // }}
 
-      const onLoad = application.views[Message.WindowID].onLoad;
-      if(onLoad) {
-        onLoad();
+    socket.on('beforeunload', function (message, callback) {
+      process.env.WINDOW = undefined;
+
+      const application = getApplication(message);
+      if(application) {
+        delete application.views[message.windowId];
       }
     });
-    
-    socket.on('FormLoad', function (Message, WindowID) {
-      process.env.WINDOW = WindowID;
-      Platform.views[Message.FormID].client = Platform.Clients[WindowID];
-    });
-  
-    socket.on('message', function (msg, WindowID) {
-      process.env.WINDOW = WindowID;
-      Platform.Clients[WindowID] = socket;
-      if(Platform.Forms[WindowID]) {
-        Platform.Forms[WindowID].Client = socket;
-      }
-      if(Platform.Forms[msg.FormID]) {
-        Platform.Forms[msg.FormID].Client = Platform.Clients[WindowID];
-      };
-        try {
-          process.env.USER = msg.User;
-          const application = Platform.applications[msg.appID];
-          if(!application) {
-            return;
-          }
-          //UIEventController.IncomingCall(msg);
-        } catch(e) {
-          console.log(e);
-        }
-    });
-
-
-
   });
   
   return io;
 }
-
 module.exports.listen = listen;

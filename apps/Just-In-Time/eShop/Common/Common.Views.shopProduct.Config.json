@@ -21,6 +21,11 @@
           "dataLink": "item.FullName"
         },
         {
+          "view": "Group",
+          "name": "Options",
+          "rows": []
+        },
+        {
           "view": "Button",
           "name": "btnShopBedding",
           "width": 300,

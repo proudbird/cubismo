@@ -147,7 +147,43 @@
             "label": "Variation",
             "dataLink": "item.Variation"
           },
-          {}
+          {
+            "view": "Group",
+            "name": "AttributesSet",
+            "rows": [
+                { 
+                  "view": "Toolbar",
+                  "name": "Toolbar",
+                  "owner": "Attributes", 
+                  "composition": "default", 
+                  "elements": []
+                },
+                {
+                  "view": "Datatable",
+                  "name": "Attributes",
+                  "label": "Attributes",
+                  "dataLink": "item.Attributes",
+                  "editable": true,
+                  "editaction": "dblclick",
+                  "select": true,
+                  "multiselect": true,
+                  "scroll": "x",
+                  "header": true,
+                  "columns": [{
+                      "id": "order",
+                      "header": "Lp.",
+                      "width": 30
+                    },
+                    {
+                      "id": "Attribute",
+                      "header": "Attribute",
+                      "editor": "lookup",
+                      "fillspace": true
+                    }
+                  ]
+                }
+            ]
+          }
         ]
       }]
     }

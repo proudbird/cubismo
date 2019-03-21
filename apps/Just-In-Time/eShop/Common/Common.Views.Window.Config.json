@@ -39,8 +39,7 @@
               "events": {
                 "onSelectChange": "Menu_onSelectChange"
               }
-            },
-            {}
+            }
           ]        
         },
         {

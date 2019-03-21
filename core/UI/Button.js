@@ -1,6 +1,24 @@
-
 /* globals Form UIElement */
-const addView = require("./AddView.js");
+
+UIElement.GetValue = function(callback) {
+    var Message = {};
+    Message.Directive = 'GetValue';
+    Message.ViewID    = UIElement.View.id;
+    Form.Client.emit('message', Message, function(Response) {
+      callback(Response);
+    });
+}
+
+UIElement.SetValue = function(Value, callback) {
+  UIElement.View.value = Value;
+    var Message = {};
+    Message.Directive = 'SetValue';
+    Message.ViewID    = UIElement.View.id;
+    Message.Value     = Value;
+    Form.Client.emit('message', Message, function(Response) {
+      callback(Response);
+    });
+}
 
 UIElement.hide = async function () {
 
@@ -40,17 +58,32 @@ UIElement.show = async function () {
   });
 }
 
-UIElement.addView = async function (config) {
-
-  config = addView(Application.views[UIElement.config.viewId], config, {
-    application: Application
-  });
+UIElement.disable = async function () {
 
   return new Promise(function (resolve, reject) {
     const message = {
-      directive: "addView",
+      directive: "disable",
       elementId: UIElement.config.id,
-      arguments: [config]
+      arguments: []
+    }
+
+    Application.window._.client.emit("directive", message, async function (response) {
+      if (response.err) {
+        reject(error);
+      } else {
+        resolve(null);
+      }
+    })
+  });
+}
+
+UIElement.enable = async function () {
+
+  return new Promise(function (resolve, reject) {
+    const message = {
+      directive: "enable",
+      elementId: UIElement.config.id,
+      arguments: []
     }
 
     Application.window._.client.emit("directive", message, async function (response) {

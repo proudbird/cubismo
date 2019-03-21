@@ -231,7 +231,7 @@ function close(view, _arguments, _, value) {
                 callback(null);
             });
         } else {
-            _arguments.application.window.Viewbar.removeView(view.config.tabId)
+            _arguments.application.window.ViewContainer.removeView(view.config.tabId)
                 .then(result => {
                     delete _arguments.application.views[view.id]
                     callback(null);

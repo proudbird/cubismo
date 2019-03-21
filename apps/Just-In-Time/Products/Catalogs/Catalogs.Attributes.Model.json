@@ -17,7 +17,19 @@
         "nameLang": ["ru", "pl"],
         "template": "#Name#",
         "owners": [],
-        "attributes": {},
+        "attributes": {
+            "IsColor": {
+                "fieldId": "FL_NSZ3sive",
+                "title": "is color",
+                "description": "Attribute is color",
+                "type": {
+                    "dataType": "BOOLEAN"
+                },
+                "defaultValue": false,
+                "toolTip": "",
+                "required": false
+            }
+        },
         "collections": {
             "8c7e37d7-7d7a-447c-8802-905d601dbf16": {
                 "name": "Values",
@@ -33,6 +45,18 @@
                             "dataType": "STRING",
                             "length": 150,
                             "lang": ["ru", "pl"]
+                        },
+                        "defaultValue": "",
+                        "toolTip": "",
+                        "required": true
+                    },
+                    "Path": {
+                        "fieldId": "FL_tSz2Frve",
+                        "title": "Path to the swatch",
+                        "description": "Path to the file with swatch (if is)",
+                        "type": {
+                            "dataType": "STRING",
+                            "length": 150
                         },
                         "defaultValue": "",
                         "toolTip": "",

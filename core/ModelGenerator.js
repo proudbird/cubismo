@@ -35,7 +35,7 @@ generator.define = function(application, db, appModelDefinition) {
       const attribute = model.attributes[attributeName];
       const type = attribute.type;
       let dataType = undefined;
-      let attributeId = attribute.fieldId;
+      //let attributeId = attribute.fieldId;
       switch (type.dataType) {
         case "STRING":
           // attribute type is STRING
@@ -47,9 +47,10 @@ generator.define = function(application, db, appModelDefinition) {
           };
           //let attributeId = attribute.fieldId;
           if (Array.isArray(type.lang) && type.lang.length > 0) {
+            //let attributeId = attribute.fieldId;
             for (let i = 0; i < type.lang.length; i++) {
               const lang = type.lang[i];
-              attributeId = attribute.fieldId + "_" + lang;
+              const attributeId = attribute.fieldId + "_" + lang;
               attributes[attributeId] = {
                 type: dataType,
                 field: attributeId,
@@ -58,14 +59,14 @@ generator.define = function(application, db, appModelDefinition) {
                 }
               }
             }
-          }
-          else {
-            attributes[attributeId] = {
+          }  else {
+            //let attributeId = attribute.fieldId;
+            attributes[attribute.fieldId] = {
               type: dataType,
               defaultValue: type.defaultValue,
-              field: attributeId,
+              field: attribute.fieldId,
               set(value) {
-                attributeSetter(this, attributeId, value);
+                attributeSetter(this, attribute.fieldId, value);
               }
             }
           };
@@ -78,23 +79,25 @@ generator.define = function(application, db, appModelDefinition) {
           else {
             dataType = DBTypes.FLOAT(type.length);
           };
-          attributes[attributeId] = {
+          //let attributeId = attribute.fieldId;
+          attributes[attribute.fieldId] = {
             type: dataType,
             defaultValue: type.defaultValue,
-            field: attributeId,
+            field: attribute.fieldId,
             set(value) {
-              attributeSetter(this, attributeId, value);
+              attributeSetter(this, attribute.fieldId, value);
             }
           };
           break;
         case "BOOLEAN":
-          // attribute type is BOOLEAN      
-          attributes[attributeId] = {
+          // attribute type is BOOLEAN   
+          //let attributeId = attribute.fieldId;
+          attributes[attribute.fieldId] = {
             type: DBTypes.BOOLEAN,
             defaultValue: type.defaultValue,
-            field: attributeId,
+            field: attribute.fieldId,
             set(value) {
-              attributeSetter(this, attributeId, value);
+              attributeSetter(this, attribute.fieldId, value);
             }
           };
           break;
@@ -107,11 +110,12 @@ generator.define = function(application, db, appModelDefinition) {
             // date and time
             dataType = DBTypes.DATE;
           };
-          attributes[attributeId] = {
+          //let attributeId = attribute.fieldId;
+          attributes[attribute.fieldId] = {
             type: dataType,
-            field: attributeId,
+            field: attribute.fieldId,
             set(value) {
-              attributeSetter(this, attributeId, value);
+              attributeSetter(this, attribute.fieldId, value);
             }
           };
           break;
@@ -120,6 +124,7 @@ generator.define = function(application, db, appModelDefinition) {
           const fkId = type.reference.modelId;
           let modelDefinition = appModelDefinition[fkId];
           let reference;
+          //let attributeId = attribute.fieldId;
           if(modelDefinition) {
             if(type.reference.collection) {
               modelDefinition = modelDefinition.definition.collections[type.reference.collection];
@@ -135,7 +140,7 @@ generator.define = function(application, db, appModelDefinition) {
             throw new Error("Can't find model definition with ID {" + fkId + "}. Attribute <" + attributeName + ">; Model <" + model.name + ">");
           }
 
-          belongsTo.push({ to: reference, as: attributeName, foreignKey: attributeId });
+          belongsTo.push({ to: reference, as: attributeName, foreignKey: attribute.fieldId });
       }
     }
 

@@ -29,7 +29,7 @@ UIElement.hide = async function () {
       arguments: []
     }
 
-    Application.window.directiveToClient("directive", message, async function (response) {
+    Application.window._.client.emit("directive", message, async function (response) {
       if (response.err) {
         reject(error);
       } else {
@@ -48,7 +48,7 @@ UIElement.show = async function () {
       arguments: []
     }
 
-    Application.window.directiveToClient("directive", message, async function (response) {
+    Application.window._.client.emit("directive", message, async function (response) {
       if (response.err) {
         reject(error);
       } else {

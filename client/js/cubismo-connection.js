@@ -122,3 +122,11 @@ function callServer(action, message, callback) {
     } 
   });   
 }
+
+window.addEventListener("beforeunload", function(event) {
+  server.emit("beforeunload", {
+    applicationId: window.applicationId,
+    windowId: window.windowId
+  });
+  event.returnValue = '';
+});

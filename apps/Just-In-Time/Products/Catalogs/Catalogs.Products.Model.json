@@ -199,6 +199,32 @@
                 "belonging": "item",
                 "required": false
             }
+        }, 
+        "collections": {
+            "8c7e37d7-7d7a-447c-9902-905d601dbf16": {
+                "name": "Attributes",
+                "class": "Collection",
+                "tableId": "CL_sNr99UfY",
+                "presentation": "Attribute",
+                "attributes": {
+                    "Attribute": {
+                        "fieldId": "FL_N332sive",
+                        "title": "Attribute",
+                        "description": "Attribute",
+                        "type": {
+                            "dataType": "FK",
+                            "reference": {
+                                "cube": "this",
+                                "class": "Catalogs",
+                                "modelId": "fd006eed-37d8-4950-9645-6925d00a04ae"
+                            }
+                        },
+                        "defaultValue": "",
+                        "toolTip": "",
+                        "required": true
+                    }
+                }
+            }
         }
     }
 }

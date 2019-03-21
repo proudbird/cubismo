@@ -185,3 +185,12 @@ h3 {
   border: none;
 }
 
+.eshop_button {
+  background-color: #5b663b
+}
+
+.eshop_button_swatch {
+  background-size:     contain;                     
+  background-repeat:   no-repeat;
+  background-position: center center;   
+}

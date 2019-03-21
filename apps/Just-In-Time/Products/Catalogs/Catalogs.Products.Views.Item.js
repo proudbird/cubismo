@@ -44,7 +44,9 @@ function setVisibilityParent(value) {
 function setVisibilityVariants(value) {
   if (value) {
     View.VariationSet.hide();
+    View.AttributesSet.show();
   } else {
     View.VariationSet.show();
+    View.AttributesSet.hide();
   }
 }
