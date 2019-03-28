@@ -397,6 +397,21 @@ function listen(server) {
       }
     });
 
+    socket.on('onBeforeViewClose', async function (message, callback) {
+      process.env.WINDOW = message.windowId;
+      process.env.LANG   = message.lang;
+
+      const application = getApplication(message);
+      const view        = getView(message, application);
+
+      let close = true;
+      if(view["onBeforeViewClose"]) {
+        close = await view["onBeforeViewClose"]();
+      }
+      view.close();
+      //callback(null, close);
+    });
+
     socket.on('beforeunload', function (message, callback) {
       process.env.WINDOW = undefined;
 

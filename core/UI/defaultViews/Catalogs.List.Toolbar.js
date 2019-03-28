@@ -1,5 +1,6 @@
 async function create(_arguments) {
-  _arguments.type.new().show();
+  const newItem = await _arguments.type.new();
+  newItem.show();
 }
 
 async function folder(_arguments) {

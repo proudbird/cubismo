@@ -23,6 +23,7 @@ constructors.Registers    = require('./Classes/Registers.js');
 constructors.Enumerations = require('./Classes/Enumerations.js');
 
 const DBConnection   = require('./DB/Connection.js');
+const SystemData     = require('./DB/SystemData.js');
 const ModelGenerator = require('./ModelGenerator.js');
 const Query = require('./Query.js');
 
@@ -47,11 +48,11 @@ function Application(name, dirname, filename) {
         this._.clientSubscribers[clientId] = { connect: connect }
     }
 
-    _.connection = new DBConnection(this);
+    this._.connection = new DBConnection(this);
 
     const p = path.join(__dirname, "./Query.js");
     
-    this.Query = new Query(this, _.connection.driver);
+    this.Query = new Query(this, this._.connection.driver);
 
     _.modelDefinition = {};
     
@@ -59,7 +60,7 @@ function Application(name, dirname, filename) {
         const self = this;
 
         const mainFunction = function(callback) {
-            _.connection.authenticate()
+            self._.connection.authenticate()
             .then(() => {
                 try {
                     defineApplicationStructure(self, _.modelDefinition);
@@ -68,21 +69,26 @@ function Application(name, dirname, filename) {
                     callback(err);
                 }
     
-                try {
-                    defineModelStructure(self, _.connection.driver, _.modelDefinition);
-                } catch(err) {
-                    Log.error("Unsuccessful attempt to define application model structure");
-                    callback(err);
-                }
-                    
-                syncDBStructure(self, _.connection)
-                .then(() => {
-                    callback(null);
+                SystemData.define(self._.connection.driver);
+                loadNumerators(self._.connection)
+                .then(numerators => {
+                    try {
+                        defineModelStructure(self, self._.connection.driver, _.modelDefinition, numerators);
+                    } catch(err) {
+                        Log.error("Unsuccessful attempt to define application model structure");
+                        callback(err);
+                    }
+       
+                    syncDBStructure(self, self._.connection)
+                    .then(() => {
+                        callback(null);
+                    })
+                    .catch(err => {
+                        Log.error("Unsuccessful attempt to synchronize application model structure with database");
+                        callback(err);
+                    })
                 })
-                .catch(err => {
-                    Log.error("Unsuccessful attempt to synchronize application model structure with database");
-                    callback(err);
-                })
+                
             })
             .catch(err => {
                 callback(err);
@@ -242,7 +248,17 @@ function defineApplicationStructure(application, appModelDefinition) {
     }
 }
 
-function defineModelStructure(application, connection, appModelDefinition) {
+async function loadNumerators(connection) {
+    const dbDriver = connection.driver;
+    const result = await dbDriver.models.SY_Nummirators.findAll();
+    const numerators = {};
+    result.forEach(element => {
+        numerators[element.reference] = element;
+    })
+    return numerators;
+}
+
+function defineModelStructure(application, connection, appModelDefinition, numerators) {
 
     ModelGenerator.on("modelready", function(model, moduleFile) {
         // firstly load common methods for the class
@@ -261,9 +277,12 @@ function defineModelStructure(application, connection, appModelDefinition) {
         }
         const _type = new Type(_arguments);
         _class.addElement(_type.name, _type);
+
+        model.numerator = numerators[model.tableName] || connection.models.SY_Nummirators.build({ reference: model.tableName, number: 0, period: null, parent: null });
     });
 
     ModelGenerator.define(application, connection, appModelDefinition);
+
 }
 
 function syncDBStructure(application, connection) {
@@ -289,6 +308,8 @@ function syncDBStructure(application, connection) {
             length = parseInt(dbCol.type.substring(start, end));
         } else if(dbCol.type === "DATE") { 
             type = "DATEONLY";
+        } else if(dbCol.type === "TIMESTAMP WITH TIME ZONE") { 
+            type = "DATE";
         } else {
             type = dbCol.type;
         }

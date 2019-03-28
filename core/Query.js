@@ -53,7 +53,7 @@ function buildSQLQuery(driver, query, subscriber) {
   const model = driver.models[from];
   if (!model) {
     throw new Error("Can't find DB model <" + from + ">");
-  } else {
+  } else if (subscriber) {
     if(!Tools.has(model, "subscribers")) {
       model.subscribers = {};
     }
@@ -177,6 +177,8 @@ function buildOperation(model, operation) {
         return "\"" + param + "\" AS \"" + value + "\"";
       case "EXISTSAS":
         return "EXISTS (" + param + ") AS \"" + value + "\"";
+      case "STARTSWITH":
+        return "\"" + param + "\" LIKE '" + value + "%'";
     }
   }
 }

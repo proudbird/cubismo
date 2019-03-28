@@ -292,6 +292,11 @@ webix.protoUI({
     this.$ready.push(this._Init);
   },
   _Init: function () {},
+  changeStyle: function(oldClass, newClass) {
+    webix.html.removeCss(this.$view, oldClass);
+    webix.html.addCss(this.$view, newClass);
+    this.refresh();
+  }
 
 }, webix.ui.button);
 
@@ -583,6 +588,22 @@ webix.protoUI({
     tab.show();
     this.removeView("dummy");
     return id;
+  },
+  $init: function(config) {
+    this.$ready.push(this._Init);
+  },
+  _Init: function() {
+    const self = this;
+    const tabbar = this.getTabbar();
+    if(this.config.id != "dummy") {
+      tabbar.attachEvent("onBeforeTabClose", function(id, e){
+        callServer("onBeforeViewClose", {
+          viewId: id,
+          arguments: [id]
+        });
+        return false;
+      })
+    }
   }
 }, webix.ui.tabview);
 

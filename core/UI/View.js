@@ -33,6 +33,7 @@ function View(_arguments) {
     if(_arguments.item) {
         this.item = _arguments.item;
         this.item.view = this;
+        this.item.saved = false;
     }
     if(this.options.owner) {
         this.owner = _arguments.options.owner;
@@ -219,7 +220,13 @@ function show(view, _arguments, _) {
 }
 
 function close(view, _arguments, _, value) {
-    const self = this;
+
+    function resetNumerator() {
+        if(view.item && !view.item.saved) {
+            view.item._.model.numerator.new = 0;
+            view.item._.model.numerator.full = undefined;
+        }
+    }
 
     const mainFunction = function(callback) {
         if(view.modal) {
@@ -227,17 +234,19 @@ function close(view, _arguments, _, value) {
                 if(result.error) {
                     return Log.error("Error on trying to close modal window", ressult.error);
                 } 
-                delete _arguments.application.views[view.windowId]
+                delete _arguments.application.views[view.windowId];
+                resetNumerator();
                 callback(null);
             });
         } else {
             _arguments.application.window.ViewContainer.removeView(view.config.tabId)
                 .then(result => {
-                    delete _arguments.application.views[view.id]
+                    delete _arguments.application.views[view.id];
+                    resetNumerator()
                     callback(null);
                 })
                 .catch(err => {
-                    Log.error("Error on trying to close modal window", err);
+                    Log.error("Error on trying to close window", err);
                 })
         }
         

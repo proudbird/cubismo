@@ -61,7 +61,8 @@ module.exports.Init = function (type, options) {
   const query = {
     SELECT: attributes,
     FROM:   type._.model.name,
-    ORDER:  [order, "ASC"]
+    ORDER:  [order, "ASC"],
+    LIMIT:  1000
   }
 
   query.WHERE = [];
@@ -101,6 +102,7 @@ module.exports.Init = function (type, options) {
     treeType: true,
     select: true,
     multiselect: true,
+    resizeColumn:true,
     columns: columns,
     dynamic: true,
     autoUpdate: true,

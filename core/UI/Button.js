@@ -95,3 +95,22 @@ UIElement.enable = async function () {
     })
   });
 }
+
+UIElement.changeStyle = async function (oldClass, newClass) {
+
+  return new Promise(function (resolve, reject) {
+    const message = {
+      directive: "changeStyle",
+      elementId: UIElement.config.id,
+      arguments: [oldClass, newClass]
+    }
+
+    Application.window._.client.emit("directive", message, async function (response) {
+      if (response.err) {
+        reject(error);
+      } else {
+        resolve(null);
+      }
+    })
+  });
+}

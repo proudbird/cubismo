@@ -9,6 +9,8 @@ const Require = require("../Require.js");
 const Item = require('./Item.js');
 const CollectionType = require('./CollectionType.js');
 
+const Numerator = require('./Numerator.js');
+
 const View = require("../UI/View.js");
 
 function Type(_arguments) {
@@ -56,7 +58,7 @@ function Type(_arguments) {
                 writable: false
             });
         }
-    });
+    });  
 
     this.__proto__.new = function (predefinedValues) {
         return _new(this, this._.model, predefinedValues);
@@ -107,8 +109,12 @@ function Type(_arguments) {
     }
 }
 
-function _new(self, model, predefinedValues) {
+async function _new(self, model, predefinedValues) {
 
+    const code = await Numerator.nextCode(self._.application, model);
+
+    predefinedValues = predefinedValues || {};
+    predefinedValues.Code = code;
     let newInstance;
     if (predefinedValues && predefinedValues._ && predefinedValues._.instance) {
         predefinedValues = predefinedValues._.instance.toJSON();

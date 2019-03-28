@@ -294,6 +294,11 @@ generator.define = function(application, db, appModelDefinition) {
       //paranoid: true,
       freezeTableName: true,
       tableName: model.tableId,
+      indexes: [
+        {
+          fields: ['Code']
+        }
+      ]
     };
 
     const _model = db.define(modelName, attributeOptions.attributes, config);

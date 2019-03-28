@@ -186,7 +186,13 @@ h3 {
 }
 
 .eshop_button {
-  background-color: #5b663b
+  background-color: #5b663b;
+  opacity: 1.0;
+}
+
+.eshop_button_inactive {
+  background-color: #702051;
+  opacity: 0.8;
 }
 
 .eshop_button_swatch {

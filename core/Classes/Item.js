@@ -5,6 +5,7 @@ const _async = require("async");
 
 const View = require("../UI/View.js");
 const ItemCollection = require('./ItemCollection.js');
+const Numerator = require('./Numerator.js');
 
 function Item(_arguments) {
 
@@ -135,22 +136,34 @@ function Item(_arguments) {
         _show(this._.application, this, _arguments);
     }
 
-    this.__proto__.save = function () {
+    this.__proto__.save = async function () {
         const self = this;
         const instance = this._.instance;
         const isNewRecord = instance.isNewRecord;
-        instance.save()
-            .then(result => {
-                _saveAssociations(this, result);
-                if (Tools.has(self, "_.model.subscribers")) {
-                    Tools.forOwn(self._.model.subscribers, subscriber => {
-                        subscriber.update(self, isNewRecord ? "create" : "update");
-                    })
-                }
-            })
-            .catch(err => {
-                Log.error("Error on saving item", err);
-            })
+        try{
+            const result = await instance.save()
+            _saveAssociations(this, result);
+            if (Tools.has(self, "_.model.subscribers")) {
+                Tools.forOwn(self._.model.subscribers, subscriber => {
+                    subscriber.update(self, isNewRecord ? "create" : "update");
+                })
+            }
+            self.saved = true; 
+            if(isNewRecord) {
+                const numerator = self._.model.numerator;
+                numerator.number = self.Code;
+                numerator.new = 0;
+                numerator.full = undefined;
+                numerator.save();
+            }    
+        } catch(err) {
+            Log.error("Error on saving item", err);
+        }
+        return instance;
+    }
+
+    this.__proto__.setNewCode = async function (prefix) {
+        this.Code = await Numerator.nextCode(this._.application, this._.model, prefix);
     }
 
     this.__proto__.delete = async function (immediate) {
