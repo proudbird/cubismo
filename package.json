@@ -4,24 +4,27 @@
   "description": "A powerfull platform for creating and managing business WEB-based applications",
   "main": "cubismo.js",
   "repository": "https://github.com/proudbird/cubismo.git",
-  "author": "Orlix Ltd. <info@orlix.by>",
+  "author": "Max Orlov <proudbird.mail@gmail.com>",
+  "engines": {
+    "node": ">=10.0.0"
+  },
   "dependencies": {
     "async": "^2.6.0",
     "body-parser": "^1.18.2",
-    "debug": "^4.1.1",
-    "deepdash": "^1.9.5",
     "express": "^4.16.2",
-    "express-fileupload": "^1.1.1-alpha.1",
-    "mkdirp": "^0.5.1",
-    "mkdirp-sync": "0.0.3",
-    "node-async-loop": "^1.2.2",
     "npm": "^6.0.1",
-    "numerator": "0.0.3",
+    "numerator": "^0.1.1",
     "pg": "^7.8.0",
-    "pg-hstore": "^2.3.2",
     "sequelize": "^4.42.0",
     "shortid": "^2.2.8",
-    "socket.io": "^2.1.0",
-    "traverse": "^0.6.6"
-  }
+    "socket.io": "^2.1.0"
+  },
+  "license": "GPLv3",
+  "keywords": [
+    "platform",
+    "business",
+    "SDK",
+    "framework",
+    "webix"
+  ]
 }
