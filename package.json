@@ -1,7 +1,7 @@
 {
   "name": "cubismo",
   "version": "0.3.2",
-  "description": "A powerfull platform for creating and managing business WEB-based applications",
+  "description": "A powerful platform for developing and managing cross-platform business applications, based on WEB-technologies",
   "main": "cubismo.js",
   "repository": "https://github.com/proudbird/cubismo.git",
   "author": "Max Orlov <proudbird.mail@gmail.com>",
