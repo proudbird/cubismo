@@ -70,7 +70,7 @@ function Application(name, dirname, filename) {
                 }
     
                 SystemData.define(self._.connection.driver);
-                loadNumerators(self._.connection)
+                //loadNumerators(self._.connection)
                 .then(numerators => {
                     try {
                         defineModelStructure(self, self._.connection.driver, _.modelDefinition, numerators);
@@ -250,12 +250,12 @@ function defineApplicationStructure(application, appModelDefinition) {
 
 async function loadNumerators(connection) {
     const dbDriver = connection.driver;
-    const result = await dbDriver.models.SY_Nummirators.findAll();
-    const numerators = {};
-    result.forEach(element => {
-        numerators[element.reference] = element;
-    })
-    return numerators;
+    //const result = await dbDriver.models.SY_Nummirators.findAll();
+    // const numerators = {};
+    // result.forEach(element => {
+    //     numerators[element.reference] = element;
+    // })
+    // return numerators;
 }
 
 function defineModelStructure(application, connection, appModelDefinition, numerators) {
