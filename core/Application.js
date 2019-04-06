@@ -71,7 +71,7 @@ function Application(name, dirname, filename) {
     
                 SystemData.define(self._.connection.driver);
                 //loadNumerators(self._.connection)
-                .then(numerators => {
+                //.then(numerators => {
                     try {
                         defineModelStructure(self, self._.connection.driver, _.modelDefinition, numerators);
                     } catch(err) {
@@ -87,7 +87,7 @@ function Application(name, dirname, filename) {
                         Log.error("Unsuccessful attempt to synchronize application model structure with database");
                         callback(err);
                     })
-                })
+                //})
                 
             })
             .catch(err => {
