@@ -19,7 +19,7 @@ Platform.initApplication = function(appName) {
   const self = this;
 
   const mainFunction = function(callback) {
-    const appListFile = fs.readFileSync("./appList.json", 'UTF-8');
+    const appListFile = fs.readFileSync(path.join(__ROOT, "appList.json"), 'UTF-8');
     const appList = JSON.parse(appListFile);
     if(!appList[appName]) {
       throw new Error("There is no an application with the name <" + 
