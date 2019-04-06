@@ -9,7 +9,7 @@ const Require = require("../Require.js");
 const Item = require('./Item.js');
 const CollectionType = require('./CollectionType.js');
 
-const Numerator = require('./Numerator.js');
+const Numerator = require('./Numerating.js');
 
 const View = require("../UI/View.js");
 

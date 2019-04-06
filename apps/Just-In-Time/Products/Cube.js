@@ -20,4 +20,18 @@ Module.onStart = async function() {
     //     }
     // }
     //transaction.commit()
+
+    // const brands = await Cube.Catalogs.Brands.select();
+    // const end = new Date();
+    // console.log(end - start);
+    // console.log(brands.length);
+    // for(let i=0; i<brands.length; i++) {
+    //     await brands[i].delete(true);
+    //     if (parseInt(i / 1000) === i / 1000) {
+    //         const end = new Date();
+    //         console.log("1000 items are deleted for %d ms", end - start);
+    //         console.log(i);
+    //         start = new Date();
+    //     }
+    // };
 }

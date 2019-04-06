@@ -5,7 +5,7 @@ const _async = require("async");
 
 const View = require("../UI/View.js");
 const ItemCollection = require('./ItemCollection.js');
-const Numerator = require('./Numerator.js');
+const Numerator = require('./Numerating.js');
 
 function Item(_arguments) {
 
@@ -174,6 +174,7 @@ function Item(_arguments) {
                 subscriber.update(self, "delete");
             })
         }
+        return Promise.resolve(null);
     }
 
     this.__proto__.get = function (param) {
@@ -580,6 +581,7 @@ async function _delete(item, immediate) {
             force: false
         });
     }
+    return null;
 };
 
 module.exports = Item;
