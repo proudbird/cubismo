@@ -15,7 +15,7 @@ function ConfigView(View, _arguments, pathToFile) {
     config = config.Init(_arguments.item ? _arguments.item : _arguments.type, _arguments.options);
   }
 
-  Tools.traverse(config, function (node, key, parentKey) {
+  Tools.traverse(config, function (node) {
     addView(View, node, _arguments);
   });
 

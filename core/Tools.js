@@ -364,62 +364,11 @@ function getNestedChildren(arr, parent) {
   return out
 }
 
-Tools._traverse = function (original, fn) {
-
-  const copy = Tools.cloneDeep(original);
-  const path = undefined;
-  let nextpath = undefined;
-
-  function _traverse(original, copy, path, fn) {
-    fn(original, "_root_");
-    Tools.forOwn(copy, (value, key) => {
-      if (Tools.isArray(value)) {
-        for(let i=0; i<value.length; i++) {
-          if(path) {
-            nextpath = path + "." + key + "[" + i + "]";
-          } else {
-            nextpath = key + "[" + i + "]";
-          }
-          const el = value[i];
-          if (Tools.isObject(el)) {
-            _traverse(original, el, nextpath, fn);
-          } else {
-            var node = Tools.get(original, nextpath);
-            fn(node, key);
-          }
-        }
-      } else if (Tools.isObject(value)) {
-        if(path) {
-          nextpath = path + "." + key;
-        } else {
-          nextpath = key;
-        }
-        _traverse(original, value, nextpath, fn);
-      } else {
-        if(path) {
-          nextpath = path + "." + key;
-        } else {
-          nextpath = key;
-        }
-        var node = Tools.get(original, nextpath);
-        // console.log("path: " + path)
-        // console.log("nextpath: " + nextpath)
-        // console.log("key: " + key)
-        // console.log("node: " + node)
-        fn(node, key);
-      }
-    });
-  }
-
-  _traverse(original, copy, path, fn);
-}
-
 Tools.traverse = function (original, fn) {
   const copy = Tools.cloneDeep(original);
-  fn(original, "_root_");
-  Tools.eachDeep(copy, (value, key, path, depth, parent, parentKey, parentPath) => {
-    const node = Tools.get(original, path);
-    //console.log("path: " + path)
-    fn(node, key, parentKey);
+  fn(original);
+  Tools.eachDeep(copy, (value, key, parent, context) => {
+    const node = Tools.get(original, context.path);
+    fn(node);
   });
 }
