@@ -28,7 +28,7 @@ Cube.onStart = function() {
   const system = path.join(__ROOT, "client");
 
   server.testName = "webSite";
-  server.listen(process.env.PORT || 80, process.env.IP || "0.0.0.0", function(){
+  server.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function(){
     var addr = server.address();
     console.log("E-Shop server listening at", addr.address + ":" + addr.port);
   });
