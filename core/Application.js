@@ -249,12 +249,12 @@ function defineApplicationStructure(application, appModelDefinition) {
 }
 
 async function loadNumerators(connection) {
-    const dbDriver = connection.driver;
-    const result = await dbDriver.models.SY_Nummirators.findAll();
+    // const dbDriver = connection.driver;
+    // const result = await dbDriver.models.SY_Nummirators.findAll();
     const numerators = {};
-    result.forEach(element => {
-        numerators[element.reference] = element;
-    })
+    // result.forEach(element => {
+    //     numerators[element.reference] = element;
+    // })
     return numerators;
 }
 
