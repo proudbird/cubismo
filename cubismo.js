@@ -48,9 +48,13 @@ var router = require("./server/Router.js");
 var http   = require("http");
 var server = http.createServer(router);
 
-server.listen(process.env.PORT || 21021, process.env.IP || "0.0.0.0", function(){
-  var addr = server.address();
-  console.log("cubismo server listening at " + addr.address + ":" + addr.port);
-});
+function run(port) {
+  server.listen(process.env.PORT || port, process.env.IP || "0.0.0.0", function(){
+    var addr = server.address();
+    console.log("cubismo server listening at " + addr.address + ":" + addr.port);
+  });
+  
+  sockets.listen(server);
+}
 
-sockets.listen(server);
+module.exports.run = run;
