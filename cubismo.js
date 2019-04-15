@@ -8,7 +8,7 @@ process.on('uncaughtException', function (err) {
   const _stack = err.stack.split('\n');
   let newStack = [];
   for(let i = 0; i < _stack.length; i++) {
-    //if(_stack[i].includes(path.join(__dirname, "core"))) {
+    //if(_stack[i].includes(path.join(__dirname, "server"))) {
       newStack.push(_stack[i]);
     //}
   }
@@ -23,7 +23,7 @@ process.on('unhandledRejection', function (err) {
   //const _stack = err.stack.split('\n');
   //let newStack = [];
   //for(let i = 0; i < _stack.length; i++) {
-    //if(_stack[i].includes(path.join(__dirname, "core"))) {
+    //if(_stack[i].includes(path.join(__dirname, "server"))) {
       //newStack.push(_stack[i]);
     //}
   //}
@@ -40,11 +40,11 @@ process.on('unhandledRejection', function (err) {
   console.log('\n');
 });
 
-require("./core/Logger.js");
-require("./core/Globals.js")();
-require("./core/TempStorage.js");
+require("./server/Logger.js");
+require("./server/Globals.js")();
+require("./server/TempStorage.js");
 
-var router = require("./core/Router.js");
+var router = require("./server/Router.js");
 var http   = require("http");
 var server = http.createServer(router);
 

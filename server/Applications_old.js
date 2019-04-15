@@ -117,7 +117,7 @@ Applications.Require = function(FileName, SubWraper, ClearCache) {
 }}
 
 Applications.InitForm = function(FormName, Application, Cube, ModelType, ModelName) {
-  var FileName = __ROOT + '/core/Form.js';
+  var FileName = __ROOT + '/server/Form.js';
   
   const cube  = Cube ? 'Platform.Applications["' + Application.ID + '"]["' + Cube.Name + '"]' : 'undefined';
   const type  = ModelType ? '"' + ModelType + '"' : 'undefined';
@@ -211,7 +211,7 @@ Applications.BindFormModule = function(FormName, ID, Application, Cube, Applicat
 }
 
 Applications.BindUIElementModule = function(Application, FormID, ElementName, ViewName) {
-  var FileName = __ROOT + '/core/UI/' + ViewName + '.js';
+  var FileName = __ROOT + '/server/UI/' + ViewName + '.js';
   if (fs.existsSync(FileName)) {
     if(ElementName) {
       var SubWraper = [
@@ -275,7 +275,7 @@ Applications.BindCubes = function(AppID) {
 }}}}}
   
 Applications.BindCubeMethods = function(AppID, Cube) {
-  var FileName = __ROOT + '/core/Cube.js';
+  var FileName = __ROOT + '/server/Cube.js';
   var SubWraper = [
     '"use strict";',
     'var Application = Platform.Applications["' + AppID + '"];',
