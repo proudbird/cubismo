@@ -29,5 +29,8 @@
     "SDK",
     "framework",
     "webix"
-  ]
+  ],
+  "devDependencies": {
+    "rollup": "^1.10.0"
+  }
 }
