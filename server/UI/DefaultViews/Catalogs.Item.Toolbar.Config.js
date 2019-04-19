@@ -23,7 +23,7 @@ function Init(owner, viewId, customComposition) {
     toolbarElements.push(
       { 
         view: "Button", 
-        id: Tools.SID(), 
+        id: _.SID(), 
         viewId: viewId,
         name: "DefaultCmd." + element.name, 
         value: element.title, 

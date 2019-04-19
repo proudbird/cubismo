@@ -13,7 +13,7 @@ function ItemCollection(collection, owner, name, model, application) {
     }
   
     collection.__proto__.add = function (value) {
-        if(Tools.isEmpty(value)) {
+        if(_.isEmpty(value)) {
             value = {};
         }
         value.order = this.length + 1;

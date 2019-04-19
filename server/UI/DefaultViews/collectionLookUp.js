@@ -1,3 +1,3 @@
 Form.select = function(value) {
-  Tools.Dialog.message(value.id)
+  _.Dialog.message(value.id)
 }

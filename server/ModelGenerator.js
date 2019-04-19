@@ -352,7 +352,7 @@ generator.define = function(application, db, appModelDefinition) {
 
     _model.beforeBulkCreate((records, options) => {
       for(let i=0; i<records.length; i++) {
-        if(Tools.has(records[i], "_.instance")) {
+        if(_.has(records[i], "_.instance")) {
           records[i] = records[i]._.instance;
         }
       }

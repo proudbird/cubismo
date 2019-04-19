@@ -10,10 +10,10 @@ module.exports = function() {
   global.sockets   = require("./sockets.js");
   
   global.Tools    = require("./Tools");
-  global.log      = global.Tools.log;
-  global.Callback = global.Tools.Callback;
-  global.Window   = global.Tools.Window;
-  global.Dialog   = global.Tools.Dialog;
+  global.log      = global._.log;
+  global.Callback = global._.Callback;
+  global.Window   = global._.Window;
+  global.Dialog   = global._.Dialog;
   global.TEMP     = "temp/"
   global.Platform = require("./Platform");
 }

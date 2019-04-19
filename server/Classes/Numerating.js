@@ -19,7 +19,7 @@ async function nextCode(application, model, prefix) {
   }
 
   let last = await application.Query.execute(query);
-  last = Tools.get(last, "[0][0].Code") || 0;
+  last = _.get(last, "[0][0].Code") || 0;
   const next = numerator.next(last);
 
   model.numerator = model.numerator || {};

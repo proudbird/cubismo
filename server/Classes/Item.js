@@ -10,7 +10,7 @@ const Numerator = require('./Numerating.js');
 function Item(_arguments) {
 
     let instance = _arguments.instance;
-    if (Tools.has(instance, "_.instance")) {
+    if (_.has(instance, "_.instance")) {
         instance = instance._.instance;
     }
 
@@ -85,7 +85,7 @@ function Item(_arguments) {
             Object.defineProperty(this, key, {
                 get: function () {
                     let instance = self._.instance[key];
-                    if(Tools.isEmpty(instance)) {
+                    if(_.isEmpty(instance)) {
                         instance = association.target.build();
                     }
                     const newItem = new Item({
@@ -143,8 +143,8 @@ function Item(_arguments) {
         try{
             const result = await instance.save()
             _saveAssociations(this, result);
-            if (Tools.has(self, "_.model.subscribers")) {
-                Tools.forOwn(self._.model.subscribers, subscriber => {
+            if (_.has(self, "_.model.subscribers")) {
+                _.forOwn(self._.model.subscribers, subscriber => {
                     subscriber.update(self, isNewRecord ? "create" : "update");
                 })
             }
@@ -169,8 +169,8 @@ function Item(_arguments) {
     this.__proto__.delete = async function (immediate) {
         const self = this;
         await _delete(this, immediate);
-        if (Tools.has(self, "_.model.subscribers")) {
-            Tools.forOwn(self._.model.subscribers, subscriber => {
+        if (_.has(self, "_.model.subscribers")) {
+            _.forOwn(self._.model.subscribers, subscriber => {
                 subscriber.update(self, "delete");
             })
         }
@@ -191,9 +191,9 @@ function Item(_arguments) {
         lang = lang || this._.application.lang;
         const definition = this._.model.definition;
         let instance = this._.instance;
-        if (Tools.has(instance, "_.instance")) {
+        if (_.has(instance, "_.instance")) {
             instance = instance._.instance;
-            if (Tools.has(instance, "_.instance")) {
+            if (_.has(instance, "_.instance")) {
                 instance = instance._.instance;
             }
         }
@@ -255,8 +255,8 @@ function Item(_arguments) {
                 if (self.view) {
                     let message;
                     if (self._.model.class === "Collection") {
-                        Tools.forIn(self.view, element => {
-                            const dataLink = Tools.get(element, "config.dataLink");
+                        _.forIn(self.view, element => {
+                            const dataLink = _.get(element, "config.dataLink");
                             if (dataLink && dataLink.includes(self._.model.modelName)) {
                                 const itemValue = self.toJSON();
                                 message = {
@@ -352,14 +352,14 @@ function Item(_arguments) {
     }
 
     this.__proto__.getType = function () {
-        const type = Tools.get(this._.application, this._.model.name);
+        const type = _.get(this._.application, this._.model.name);
         return type;
     }
 
 
     this.__proto__.toJSON = function () {
         let instance = this._.instance;
-        if (Tools.has(instance, "_.instance")) {
+        if (_.has(instance, "_.instance")) {
             instance = instance._.instance;
         }
         const data = {
@@ -512,7 +512,7 @@ function _saveAssociations(item, result) {
                             let newInstances = [];
                             for (let i = 0; i < newValues.length; i++) {
                                 let instance = newValues[i];
-                                if (Tools.has(instance, "_.instance")) {
+                                if (_.has(instance, "_.instance")) {
                                     instance = instance._.instance;
                                 }
                                 instance[association.foreignKeyField] = result.id;

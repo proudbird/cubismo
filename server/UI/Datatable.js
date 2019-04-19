@@ -13,7 +13,7 @@ UIElement.Refresh = function(callback) {
 
 UIElement.Add = function(value, callback) {
   if(!value) {
-    value = {id: Tools.GUID()}
+    value = {id: _.GUID()}
   }
   var Message = {};
   Message.Directive = 'Add';

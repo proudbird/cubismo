@@ -1,6 +1,6 @@
 /* globals __ROOT Tools Platform Application Forms FormName Cube ApplicationType Model*/
 var Form = module.exports = {};
-Form.ID = Tools.SID();
+Form.ID = _.SID();
 Form.Name = FormName;
 
 var CallbackOnClose = undefined;
@@ -8,10 +8,10 @@ var CallbackOnClose = undefined;
 Form.Show = function(Params, Modal, WindowParams, callbackOnShow, callbackOnClose) {
   Platform.Forms[Form.ID] = Form;
   if(Form.Name != "Window") {
-    if(!Tools.Window().Forms) {
-      Tools.Window().Forms = {};
+    if(!_.Window().Forms) {
+      _.Window().Forms = {};
     }
-    Tools.Window().Forms[Form.Name] = Form;
+    _.Window().Forms[Form.Name] = Form;
   }
   if(Params) {
     Form.Params = Params;
@@ -26,7 +26,7 @@ Form.Show = function(Params, Modal, WindowParams, callbackOnShow, callbackOnClos
   
   CallbackOnClose = callbackOnClose;
 
-  var ContainerID = Tools.SID();
+  var ContainerID = _.SID();
   Form.ContainerID = ContainerID;
   
   Platform.Applications.BindFormModule(FormName, Form.ID, Application, Cube, ApplicationType, Model);
@@ -56,7 +56,7 @@ Form.Show = function(Params, Modal, WindowParams, callbackOnShow, callbackOnClos
         Object.defineProperty(Form, Node.name, {value: {}, enumerable: true});
         
         Object.defineProperty(Form[Node.name], 'View', {value: UIElement, enumerable: true});
-        var dataValue = Tools.getPropertyByTrack(Form, Node.dataBind);
+        var dataValue = _.getPropertyByTrack(Form, Node.dataBind);
         if(dataValue) {
           Object.defineProperty(Form[Node.name], "data", {value: dataValue, enumerable: true});
         }
@@ -91,7 +91,7 @@ Form.Show = function(Params, Modal, WindowParams, callbackOnShow, callbackOnClos
       Message.Head      = WindowParams.Head;
       Message.Width     = WindowParams.Width;
       Message.Height    = WindowParams.Height;
-      Message.Body      = Tools.ObjectToJSON(FormView);
+      Message.Body      = _.ObjectToJSON(FormView);
       Application.Window().Client.emit('message', Message, function() {
         if(callbackOnShow) {
           callbackOnShow();
@@ -144,7 +144,7 @@ Form.OpenFile = function(Params) {
 Form.moveToSection = function(formName, callback) {
   var message = {};
   message.directive = 'moveToSection';
-  message.sectionId  = Tools.Window().Forms[formName].View.container;
+  message.sectionId  = _.Window().Forms[formName].View.container;
   Form.Client.emit('message', message, function(response) {
     if(callback) {
       callback(response);

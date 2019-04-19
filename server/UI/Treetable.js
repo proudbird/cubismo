@@ -149,7 +149,7 @@ UIElement.openAll = async function () {
 //     }
 //   };
 
-//   const type = Tools.getPropertyByTrack(Application, from);
+//   const type = _.getPropertyByTrack(Application, from);
 
 //   const mainFunction = function (callback) {
 //     type.select(options)
@@ -179,7 +179,7 @@ async function _getItems(view, selectors) {
     }
   };
 
-  const type = Tools.getPropertyByTrack(Application, from);
+  const type = _.getPropertyByTrack(Application, from);
   return await type.select(options);
 }
 

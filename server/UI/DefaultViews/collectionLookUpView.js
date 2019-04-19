@@ -38,7 +38,7 @@ module.exports.Init = function (model, owner, instance) {
     rows: [
       { 
         view: "Treetable",
-        id: Tools.SID(),
+        id: _.SID(),
         formID: ID,
         name: "List",
         treeType: true,

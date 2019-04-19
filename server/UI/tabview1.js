@@ -6,7 +6,7 @@ UIElement.AddForm = function(NewForm, FormView, ContainerID, callback) {
     Message.ViewID    = Form.FormsBar.View.id;
     Message.ID        = ContainerID;
     Message.Head      = FormView.header;
-    Message.Body      = Tools.ObjectToJSON(FormView);
+    Message.Body      = _.ObjectToJSON(FormView);
     
     Application.Window().Client.emit('message', Message, function(ContainerID) {
       NewForm.ContainerID = ContainerID;

@@ -73,7 +73,7 @@ module.exports.Init = function (item) {
 
   let hasTables = false;
   if(definition.collections) {
-    Tools.forOwn(definition.collections, collection => {
+    _.forOwn(definition.collections, collection => {
       const subRows = { rows: [{ view: "Toolbar", name: "Toolbar", owner: collection.name, composition: "default", elements: [] }] };
       const columns = [];
 

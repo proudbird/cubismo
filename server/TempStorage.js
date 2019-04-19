@@ -6,7 +6,7 @@ const _storage = {};
 class TempStorage {
 
     setValue(value) {
-        const id = Tools.GUID();
+        const id = _.GUID();
         _storage[id] = value;
         return id;
     }

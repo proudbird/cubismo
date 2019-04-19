@@ -16,7 +16,7 @@ function ConfigView(View, _arguments, pathToFile) {
   }
 
   Traverse(config).map(function (node) {
-    if(Tools.isObjectLike(node)) {
+    if(_.isObjectLike(node)) {
       console.log(node)
     }
     if (node && typeof node != 'function') {
@@ -26,7 +26,7 @@ function ConfigView(View, _arguments, pathToFile) {
           if (node.main) {
             node.id = this.node_.id = View.id;
           } else {
-            node.id = this.node_.id = Tools.SID();
+            node.id = this.node_.id = _.SID();
             node.viewId = this.node_.viewId = View.id;
           }
           this.update(node);
@@ -107,7 +107,7 @@ function ConfigView(View, _arguments, pathToFile) {
           }
         }
 
-        // const dataValue = Tools.getPropertyByTrack(View, node.dataBind);
+        // const dataValue = _.getPropertyByTrack(View, node.dataBind);
         // if (dataValue) {
         //   Object.defineProperty(View[node.name], "data", {
         //     value: dataValue,
@@ -159,7 +159,7 @@ function _populateDataView(View, element, node, _arguments) {
   }
   
   // UI element can be single value (text, lookup, etc.) and multy-value (all lists)
-  if(Tools.has(element, "select")) { // only multi-value elements have 'select' option 
+  if(_.has(element, "select")) { // only multi-value elements have 'select' option 
 
   } else { // single value element
     item = View[source];
@@ -183,7 +183,7 @@ function _populateDataView(View, element, node, _arguments) {
       element.instance = node.node_.instance = {
         type: modelName
       };
-      if (Tools.isObjectLike(dataValue)) {
+      if (_.isObjectLike(dataValue)) {
         element.instance.id = dataValue.getValue("id");
         element.instance.title = dataValue.getValue("Name");
         node.node_.value = element.instance.title;

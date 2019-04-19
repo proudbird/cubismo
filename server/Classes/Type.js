@@ -29,7 +29,7 @@ function Type(_arguments) {
                 return this.bulkBuild(values, options);
             }
             
-            if(Tools.has(values, "_")) {
+            if(_.has(values, "_")) {
                 //const instance = new this(values._.instance, options);
                 return values._.instance;
             } else {
@@ -48,7 +48,7 @@ function Type(_arguments) {
     });
 
     const associations = this._.model.associations;
-    Tools.forIn(associations, association => {
+    _.forIn(associations, association => {
         if(association.associationType === "HasMany") {
             const _arg = {};
             _arg.model = association.target;
@@ -104,7 +104,7 @@ function Type(_arguments) {
     this.__proto__.owner = function (options, callback) {
         const ownerAssosiation = this._.model.associations["Owner"];
         if(ownerAssosiation) {
-            return Tools.getPropertyByTrack(this._.application, ownerAssosiation.target.name);
+            return _.getPropertyByTrack(this._.application, ownerAssosiation.target.name);
         }
         return undefined;
     }

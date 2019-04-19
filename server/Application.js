@@ -36,14 +36,14 @@ function Application(name, dirname, filename) {
 
     constructors.Collection.call(this, undefined, undefined, name, dirname, filename);
 
-    Object.defineProperty(this._, "id", { value: Tools.GUID(), writable: false });
+    Object.defineProperty(this._, "id", { value: _.GUID(), writable: false });
 
     this.__proto__.getId = function() {
         return this._.id;
     };
 
     this.__proto__.subscribeOnClient = function(clientId, connect) {
-        if(!Tools.has(this._, "clientSubscribers")) {
+        if(!_.has(this._, "clientSubscribers")) {
             this._.clientSubscribers = {};
         }
         this._.clientSubscribers[clientId] = { connect: connect }

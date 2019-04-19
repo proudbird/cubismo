@@ -11,7 +11,7 @@ Controller.IncomingCall = function(Message) {
     if(typeof(Message.index) === 'number') {
       const view = Form[Message.ViewName];
       //var targetName = view.View.dataBind.replace("Instance.", "");
-      var target = Tools.getPropertyByTrack(Form, view.View.dataBind);
+      var target = _.getPropertyByTrack(Form, view.View.dataBind);
       //var target = Form.Instance[targetName];
       if(target) {
         var item = target[Message.index];
@@ -19,7 +19,7 @@ Controller.IncomingCall = function(Message) {
           item = {};
           target.push(item);
         }
-        var attributes = Tools.getPropertyByTrack(Form.Instance._options.includeMap, view.View.dataBind, 2).attributes;
+        var attributes = _.getPropertyByTrack(Form.Instance._options.includeMap, view.View.dataBind, 2).attributes;
         for(var index in attributes) { 
           var attributeName = attributes[index];
           item[attributeName] = Message.item[attributeName];
@@ -50,7 +50,7 @@ Controller.IncomingCall = function(Message) {
     if(dataLink.collection) {
       model = model[dataLink.collection];
       var form = Platform.Forms[Message.FormID];
-      var list = Tools.getPropertyByTrack(form, form[target.name].View.dataBind);
+      var list = _.getPropertyByTrack(form, form[target.name].View.dataBind);
       if(Array.isArray(list)) {
         connection = list[target.index][dataLink.connection];
         instance = list[target.index][target.columnId];
@@ -62,7 +62,7 @@ Controller.IncomingCall = function(Message) {
 
     model.lookUp(undefined, false, { purpose: "lookup", instance: instance , owner: connection }, undefined, function(value) {
       var form = Platform.Forms[Message.FormID];
-      var toModify = Tools.getPropertyByTrack(form, form[target.name].View.dataBind);
+      var toModify = _.getPropertyByTrack(form, form[target.name].View.dataBind);
       if(form[target.name].View.view == "lookup") {
         //if(!toModify) {
           form.Instance[target.name] = value;
@@ -75,7 +75,7 @@ Controller.IncomingCall = function(Message) {
         }
       } else {
         if(!Array.isArray(toModify)) {
-          Tools.setPropertyByTrack(form, form[target.name].View.dataBind, []);
+          _.setPropertyByTrack(form, form[target.name].View.dataBind, []);
         };
         if(toModify[target.index]) {
           toModify[target.index][target.columnId] = value;
