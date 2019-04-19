@@ -1,6 +1,7 @@
 /* global Tools */
 "use strict";
 const numerator = require("numerator");
+const Tools     = require("../Tools");
 
 async function nextCode(application, model, prefix) {
 

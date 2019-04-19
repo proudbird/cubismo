@@ -1,9 +1,7 @@
-/* globals __ROOT Tools Platform Application Form */
-
 var UIEventController = require("./UIEventController");
 const Query = require("./Query");
 
-function listen(server) {
+function init(platform, server) {
   var socketio = require("socket.io");
   var io = {};
 
@@ -13,9 +11,9 @@ function listen(server) {
   if(args && args.length > 2) {
     for(let i=2; i<args.length; i++) {
       const appId = args[i];
-      const application = Platform.applications[appId];
+      const application = platform.applications[appId];
       if(!application) {
-        Platform.initApplication(appId)
+        platform.initApplication(appId)
         .then(app => {
           applications.push(app);
         });
@@ -28,14 +26,16 @@ function listen(server) {
   io.on('connection', function (socket) {
 
     const applicationId = socket.handshake.query.applicationId;
+
+    Log.debug(`Client for application <${applicationId}> is connected`);
+
     if(applicationId === "index") {
       // sumbody is knoking, so let wait
     } else {
-      const application = Platform.applications[applicationId];
+      const application = platform.applications[applicationId];
       applications.push(application);
       if(!application) {
-        const err = "Application <" + applicationId + "> is not defined.";
-          return Log.error(err);
+        return Log.error(`Application <${applicationId}> is not defined`);
       } else {
         application.show(socket)
         .then((view) => {
@@ -64,7 +64,7 @@ function listen(server) {
         return;
       }
       applications.forEach(app => {
-        const subscriber = Tools.get(app, "_.clientSubscribers." + message.clientId);
+        const subscriber = _.get(app, "_.clientSubscribers." + message.clientId);
         if(subscriber) {
           subscriber.connect(socket);
         }
@@ -83,7 +83,7 @@ function listen(server) {
       const map = uiElement.config.query.map;
       application.Query.execute(queryString, undefined, uiElement)
       .then(result => {
-        const data = Tools.makeHierarchical(result[0], "parentId", "data", map);
+        const data = _.makeHierarchical(result[0], "parentId", "data", map);
         callback(null, data);
       })
       .catch(err => {
@@ -101,7 +101,7 @@ function listen(server) {
       let item          = view.item;
 
       if(message.collection) {
-        const collection = Tools.get(view, message.collection);
+        const collection = _.get(view, message.collection);
         item = collection[message.index]
       }
 
@@ -124,7 +124,7 @@ function listen(server) {
       let item          = view.item;
 
       if(message.collection) {
-        const collection = Tools.get(view, message.collection);
+        const collection = _.get(view, message.collection);
         item = collection[message.index]
       }
     
@@ -178,7 +178,7 @@ function listen(server) {
 
       if(message.collection) {
         directive = "updateItem";
-        var target = Tools.get(view, uiElement.config.dataLink);
+        var target = _.get(view, uiElement.config.dataLink);
         if(target && target.length) {
           item = target[message.index];
           item.view = view;
@@ -190,7 +190,7 @@ function listen(server) {
           Log.error("Collection <" + uiElement.config.dataLink + "> doesn't have rows!");
         }
 
-        if(Tools.has(uiElement, "config.events.onLookup")) {
+        if(_.has(uiElement, "config.events.onLookup")) {
           const procedure = uiElement.config.events["onLookup"];
           if(procedure) {
             const eventHandler = view[procedure];
@@ -230,7 +230,7 @@ function listen(server) {
         caller: view,
         onlyFolders: onlyFolders
       }
-      const type = Tools.getPropertyByTrack(application, instance.model);
+      const type = _.getPropertyByTrack(application, instance.model);
       if(type._.model.definition.owners && type._.model.definition.owners.length) {
         options.owner = item;
       }
@@ -269,10 +269,10 @@ function listen(server) {
     });
 
     function getApplication(message) {
-      let application = Platform.applications[message.applicationId];
+      let application = platform.applications[message.applicationId];
       if(message.applicationId === "index" || !application && message.clientId) {
         applications.forEach(app => {
-          const subscriber = Tools.get(app, "_.clientSubscribers." + message.clientId);
+          const subscriber = _.get(app, "_.clientSubscribers." + message.clientId);
           if(subscriber) {
             application = app;
           }
@@ -357,7 +357,7 @@ function listen(server) {
       }
 
       if(message.event === "onItemChange") {
-        var target = Tools.get(view, uiElement.config.dataLink);
+        var target = _.get(view, uiElement.config.dataLink);
         if(target && target.length) {
           var item = target[_arguments[1]];
           const fieldId = _arguments[0];
@@ -424,4 +424,4 @@ function listen(server) {
   
   return io;
 }
-module.exports.listen = listen;
+module.exports.init = init;

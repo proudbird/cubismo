@@ -54,7 +54,7 @@ function buildSQLQuery(driver, query, subscriber) {
   if (!model) {
     throw new Error("Can't find DB model <" + from + ">");
   } else if (subscriber) {
-    if(!Tools.has(model, "subscribers")) {
+    if(!_.has(model, "subscribers")) {
       model.subscribers = {};
     }
     model.subscribers[subscriber.config.id] = subscriber;

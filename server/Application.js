@@ -5,6 +5,7 @@ const fs     = require("fs");
 const path   = require("path");
 const _async = require("async");
 
+const Tools      = require("./Tools");
 const Require    = require("./Require");
 const MainWindow = require("./UI/Window.js");
 

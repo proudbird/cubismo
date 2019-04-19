@@ -15,7 +15,7 @@ function AddView(View, node, _arguments) {
             node.id = View.id;
             node.viewId = View.id;
           } else {
-            node.id = Tools.SID();
+            node.id = _.SID();
             node.viewId = View.id;
           }
         }
@@ -23,7 +23,7 @@ function AddView(View, node, _arguments) {
         if (node.owner && node.composition === "default") {
           let pathToDefaultCommandsFile = path.join(__dirname, "./DefaultViews/Catalogs.List.Toolbar.Config.js");
           if (_arguments.item) {
-            if(Tools.has(_arguments.item, node.owner)) {
+            if(_.has(_arguments.item, node.owner)) {
               pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Collection");
             } else {
               pathToDefaultCommandsFile = pathToDefaultCommandsFile.replace("List", "Item");
@@ -137,7 +137,7 @@ function _populateDataView(View, element, node) {
   }
   definition = item._.model.definition;
   if(definition.collections) {
-    Tools.forOwn(definition.collections, collection => {
+    _.forOwn(definition.collections, collection => {
       if(collection.name === valueProperty) {
         colDefinition = collection;
         return false;
@@ -192,7 +192,7 @@ function _populateDataView(View, element, node) {
       node.instance = {
         model: modelName
       };
-      if (Tools.isObjectLike(dataValue)) {
+      if (_.isObjectLike(dataValue)) {
         node.instance.id = dataValue.getValue("id");
         node.instance.presentation = dataValue.getValue("Name");
       }

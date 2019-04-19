@@ -174,7 +174,7 @@ async function _getItems(view, selectors) {
   const options = {
     where: {
       id: {
-        [QO.in]: selectors
+        [_.QO.in]: selectors
       }
     }
   };

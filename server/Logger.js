@@ -1,5 +1,7 @@
 "use strict";
 
+const path = require("path");
+
 const   Reset = "\x1b[0m",
         Bright = "\x1b[1m",
         Dim = "\x1b[2m",
@@ -26,28 +28,31 @@ const   Reset = "\x1b[0m",
         BgCyan = "\x1b[46m",
         BgWhite = "\x1b[47m";
 
-function log(type, format, message, stack) {
+function log(type, format, message, err) {
     const log = [];
     const timestamp = new Date().toLocaleString();
     log.push(timestamp);
-    log.push("[" + type + "]");
+    log.push(type + ":");
     log.push(message);
+    log.push(Reset);
     console.log(format + log.join(" "));
-    if(stack) {
-        if(stack.stack) {
-            stack = stack.stack;
+    if(err) {
+        if(err.message) {
+            console.log(format + "  > " + err.message);
         }
-        const _stack = stack.split('\n');
-        let newStack = [];
-        for(let i = 0; i < _stack.length; i++) {
-            //if(_stack[i].includes(path.join(__dirname, "core"))) {
-            newStack.push(_stack[i]);
-            //}
+        if(err.stack) {
+            const moduleDir = path.dirname(__dirname);
+            const _stack = err.stack.split('\n');
+            let newStack = [];
+            for(let i = 0; i < _stack.length; i++) {
+                //if(_stack[i].includes(moduleDir)) {
+                    newStack.push(_stack[i]);
+                //}
+            }
+            newStack = newStack.join('\n');
+            console.log(format + newStack);
         }
-        newStack = newStack.join('\n');
-        console.log(newStack);
     };
-    console.log(Reset, " ");
 }
 
 class Log{
@@ -57,19 +62,21 @@ class Log{
     }
     
     info(message) {
-        log("INFO", FgWhite + Blink, message);
+        log("   INFO", FgWhite + Blink, message);
     }
     
     error(message, e) {
-        log("ERROR", FgRed + Bright, message, e ? e : undefined);
+        log("  ERROR", FgRed + Bright, message, e ? e : undefined);
     }
     
     fatal(message, e) {
-        log("FATAL", FgRed + Bright + BgWhite, message, e ? e : undefined);
+        log("  FATAL", FgRed + Bright + BgWhite, message, e ? e : undefined);
     }
     
     debug(message, e) {
-        log("DEBUG", FgYellow, message, e ? e.stack : undefined);
+        if(process.env.NODE_ENV === "development") {
+            log("  DEBUG", FgYellow, message, e ? e.stack : undefined);
+        }
     }
 }
 

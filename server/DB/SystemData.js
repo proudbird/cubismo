@@ -1,3 +1,7 @@
+"use strict";
+
+const sequelize = require("sequelize");
+
 const sysTables = {
   SY_Nummirators: {
     config: {
@@ -6,24 +10,24 @@ const sysTables = {
     },
     attributes: {
       id: {
-        type: DBTypes.UUID,
-        defaultValue: DBTypes.UUIDV4,
+        type: sequelize.UUID,
+        defaultValue: sequelize.UUIDV4,
         primaryKey: true,
         unique: true
       },
       reference: {
-        type: DBTypes.STRING(11),
+        type: sequelize.STRING(11),
       },
       period: {
-        type: DBTypes.DATE,
+        type: sequelize.DATE,
         defaultValue: null
       },
       parent: {
-        type: DBTypes.UUID,
+        type: sequelize.UUID,
         defaultValue: null,
       },
       number: {
-        type: DBTypes.STRING(25),
+        type: sequelize.STRING(25),
         defaultValue: null,
       }
     }

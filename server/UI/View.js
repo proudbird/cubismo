@@ -11,16 +11,14 @@ const ConfigView = Require(path.join(__dirname, "./ConfigView.js"), undefined, t
 function View(_arguments) {
     
     this._ = {};
-    
-    const _ = {};
-    _.showCallback   = _arguments.showCallback;
-    _.closeCallback  = _arguments.closeCallback;
+    this._.showCallback   = _arguments.showCallback;
+    this._.closeCallback  = _arguments.closeCallback;
 
     class Generator extends EventEmitter {}
     const generator = new Generator();
     this.closeCallback = generator;
     
-    Object.defineProperty(this, "id", { value: Tools.SID(), enumerable: false, writable: false });
+    Object.defineProperty(this, "id", { value: _.SID(), enumerable: false, writable: false });
     Object.defineProperty(this, "name", { value: _arguments.name, enumerable: false, writable: false });
 
     _arguments.application.views[this.id] = this;
@@ -57,7 +55,7 @@ function View(_arguments) {
                 //         })
                 //     })
                 // }
-                const window = Tools.get(_arguments.application, "window");
+                const window = _.get(_arguments.application, "window");
                 if(window) {
                     
                     _arguments.application.window.ViewContainer.addView(viewConfig);
@@ -99,7 +97,7 @@ function View(_arguments) {
                         })
                     })
                 }
-                const window = Tools.get(_arguments.application, "window");
+                const window = _.get(_arguments.application, "window");
                 if(window) {
                     window._.client.emit("ShowModalWindow", viewConfig, (windowId) => {
                         self.windowId = windowId;
@@ -151,8 +149,7 @@ function View(_arguments) {
 }
 module.exports = View;
 
-function show(view, _arguments, _) {
-    const self = this;
+function show(view, _arguments) {
 
     const mainFunction = function(callback) {
         const file = [];
@@ -209,8 +206,8 @@ function show(view, _arguments, _) {
         }
     }
 
-    if (_.showCallback) {
-        return mainFunction(_.showCallback);
+    if (view._.showCallback) {
+        return mainFunction(view._.showCallback);
     }
     return new Promise(function(resolve, reject) {
         mainFunction(function(error, result) {
@@ -219,7 +216,7 @@ function show(view, _arguments, _) {
     });
 }
 
-function close(view, _arguments, _, value) {
+function close(view, _arguments, value) {
 
     function resetNumerator() {
         if(view.item && !view.item.saved) {
@@ -252,8 +249,8 @@ function close(view, _arguments, _, value) {
         
     }
 
-    if (_.showCallback) {
-        return mainFunction(_.showCallback);
+    if (view._.showCallback) {
+        return mainFunction(view._.showCallback);
     }
     return new Promise(function(resolve, reject) {
         mainFunction(function(error, result) {

@@ -2,11 +2,11 @@ const fs = require('fs');
 const util = require('util');
 const sid = require('shortid');
 
-const Tools = require('deepdash')(require('lodash'));
+const _ = require('deepdash')(require('lodash'));
 
-module.exports = Tools;
+module.exports = _;
 
-Tools.FindFile = function (FileName, Path, ExcludeNodeModule) {
+_.FindFile = function (FileName, Path, ExcludeNodeModule) {
 
   var fullPathToFile = Path + '/' + FileName;
   if (fs.existsSync(fullPathToFile)) {
@@ -31,7 +31,7 @@ Tools.FindFile = function (FileName, Path, ExcludeNodeModule) {
           return fullPathToFile;
         } else {
           var newPath = Path + '/' + rootName;
-          fullPathToFile = Tools.FindFile(FileName, newPath);
+          fullPathToFile = _.FindFile(FileName, newPath);
           if (fs.existsSync(fullPathToFile)) {
             return fullPathToFile;
           }
@@ -75,11 +75,11 @@ function findOneInArray(array, selector) {
 module.exports.findOneInArray = findOneInArray;
 
 
-Tools.SID = function () {
+_.SID = function () {
   return sid.generate();
 }
 
-Tools.GUID = function () {
+_.GUID = function () {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     var r = Math.random() * 16 | 0,
       v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -87,7 +87,7 @@ Tools.GUID = function () {
   });
 }
 
-Tools.ObjectToJSON = function (Object) {
+_.ObjectToJSON = function (Object) {
   return JSON.stringify(Object, function (key, value) {
     if (typeof value === "function") {
       return "/Function(" + value.toString() + ")/";
@@ -99,7 +99,7 @@ Tools.ObjectToJSON = function (Object) {
   });
 }
 
-Tools.dataToJSON = function (data) {
+_.dataToJSON = function (data) {
   let result = [];
   for (let i in data) {
     result.push(data[i].toJSON());
@@ -108,7 +108,7 @@ Tools.dataToJSON = function (data) {
   return result;
 }
 
-Tools.getPropertyByTrack = function (instance, track, startPosition) {
+_.getPropertyByTrack = function (instance, track, startPosition) {
   if (!track) {
     return undefined;
   }
@@ -126,7 +126,7 @@ Tools.getPropertyByTrack = function (instance, track, startPosition) {
   return result;
 }
 
-Tools.setPropertyByTrack = function (instance, track, value, startPosition) {
+_.setPropertyByTrack = function (instance, track, value, startPosition) {
   if (!track) {
     return undefined;
   }
@@ -145,7 +145,7 @@ Tools.setPropertyByTrack = function (instance, track, value, startPosition) {
   return result;
 }
 
-Tools.log = function (message, error) {
+_.log = function (message, error) {
   console.log("=== " + message);
   console.timeStamp();
   if (error) {
@@ -160,14 +160,14 @@ Tools.log = function (message, error) {
   //console.log("\n");
 }
 
-Tools.Callback = function (callback) {
+_.Callback = function (callback) {
   if (typeof callback === 'function') {
     let a = arguments;
     return callback(a[1], a[2], a[3], a[4], a[5]);
   }
 }
 
-Tools.ConvertByteSize = function (size, dimension) {
+_.ConvertByteSize = function (size, dimension) {
   dimension = dimension || 1;
   const rate = Math.pow(1024, dimension);
   size = size / rate;
@@ -177,34 +177,34 @@ Tools.ConvertByteSize = function (size, dimension) {
   return Math.round(size * 100) / 100;
 }
 
-Tools.Window = function () {
+_.Window = function () {
   return Platform.Forms[process.env.WINDOW];
 }
 
-Tools.Dialog = {};
+_.Dialog = {};
 
-Tools.Dialog.alert = function (config) {
+_.Dialog.alert = function (config) {
   Window().Client.emit('dialog', {
     type: 'alert',
     config: config
   });
 }
 
-Tools.Dialog.message = function (config) {
+_.Dialog.message = function (config) {
   Window().Client.emit('dialog', {
     type: 'message',
     config: config
   });
 }
 
-Tools.Dialog.waitingCursor = function (state) {
+_.Dialog.waitingCursor = function (state) {
   Window().Client.emit('dialog', {
     type: 'waitingCursor',
     config: state
   });
 }
 
-Tools.Dialog.notify = function (title, options, callback) {
+_.Dialog.notify = function (title, options, callback) {
 
   if (options && options.icon) {
     options.icon = "/files/img/" + options.icon;
@@ -308,7 +308,7 @@ function formatDate(date, format, utc) {
   return format;
 };
 
-Tools.makeHierarchical = function(arr, parent, child, map) {
+_.makeHierarchical = function(arr, parent, child, map) {
   var tree = [],
     mappedArr = {},
     arrElem,
@@ -364,11 +364,16 @@ function getNestedChildren(arr, parent) {
   return out
 }
 
-Tools.traverse = function (original, fn) {
-  const copy = Tools.cloneDeep(original);
+_.traverse = function (original, fn) {
+  const copy = _.cloneDeep(original);
   fn(original);
-  Tools.eachDeep(copy, (value, key, parent, context) => {
-    const node = Tools.get(original, context.path);
+  _.eachDeep(copy, (value, key, parent, context) => {
+    const node = _.get(original, context.path);
     fn(node);
   });
 }
+
+global._ = _;
+
+const sequelize = require("sequelize");
+_.QO = sequelize.Op;

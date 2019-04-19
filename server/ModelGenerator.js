@@ -1,6 +1,6 @@
-/* globals __ROOT Tools Platform DBTypes*/
+/* globals __ROOT Tools Platform sequelize*/
 'use strict';
-
+const sequelize = require("sequelize");
 const EventEmitter = require('events');
 
 class Generator extends EventEmitter {}
@@ -40,10 +40,10 @@ generator.define = function(application, db, appModelDefinition) {
         case "STRING":
           // attribute type is STRING
           if (type.length > 0) {
-            dataType = DBTypes.STRING(type.length);
+            dataType = sequelize.STRING(type.length);
           }
           else {
-            dataType = DBTypes.TEXT;
+            dataType = sequelize.TEXT;
           };
           //let attributeId = attribute.fieldId;
           if (Array.isArray(type.lang) && type.lang.length > 0) {
@@ -74,10 +74,10 @@ generator.define = function(application, db, appModelDefinition) {
         case "NUMBER":
           // attribute type is NUMBER
           if (type.fractionLength > 0) {
-            dataType = DBTypes.DECIMAL(type.length, type.fractionLength);
+            dataType = sequelize.DECIMAL(type.length, type.fractionLength);
           }
           else {
-            dataType = DBTypes.FLOAT(type.length);
+            dataType = sequelize.FLOAT(type.length);
           };
           //let attributeId = attribute.fieldId;
           attributes[attribute.fieldId] = {
@@ -93,7 +93,7 @@ generator.define = function(application, db, appModelDefinition) {
           // attribute type is BOOLEAN   
           //let attributeId = attribute.fieldId;
           attributes[attribute.fieldId] = {
-            type: DBTypes.BOOLEAN,
+            type: sequelize.BOOLEAN,
             defaultValue: type.defaultValue,
             field: attribute.fieldId,
             set(value) {
@@ -104,11 +104,11 @@ generator.define = function(application, db, appModelDefinition) {
         case "DATE":
           // attribute type is DATE      
           if (type.dateType === "date") {
-            dataType = DBTypes.DATEONLY;
+            dataType = sequelize.DATEONLY;
           }
           else {
             // date and time
-            dataType = DBTypes.DATE;
+            dataType = sequelize.DATE;
           };
           //let attributeId = attribute.fieldId;
           attributes[attribute.fieldId] = {
@@ -154,13 +154,13 @@ generator.define = function(application, db, appModelDefinition) {
     const attributes = {
       // field 'id' and 'dropped' are must be
       id: {
-        type: DBTypes.UUID,
-        defaultValue: DBTypes.UUIDV4,
+        type: sequelize.UUID,
+        defaultValue: sequelize.UUIDV4,
         primaryKey: true,
         unique: true
       },
       dropped: {
-        type: DBTypes.BOOLEAN,
+        type: sequelize.BOOLEAN,
         defaultValue: false
       }
     };
@@ -169,12 +169,12 @@ generator.define = function(application, db, appModelDefinition) {
     if (model.multilevel) {
       if(model.multilevelType != "items") {
         attributes.isFolder = {
-          type: DBTypes.BOOLEAN,
+          type: sequelize.BOOLEAN,
           defaultValue: false
         }
       }
       attributes.level = {
-        type: DBTypes.INTEGER,
+        type: sequelize.INTEGER,
         defaultValue: 0
       }
     }
@@ -182,7 +182,7 @@ generator.define = function(application, db, appModelDefinition) {
     // catalog may be without property Code
     if (model.codeLenght > 0) {
       attributes.Code = {
-        type: model.codeType == "INTEGER" ? DBTypes.INTEGER : DBTypes.STRING(model.codeLenght),
+        type: model.codeType == "INTEGER" ? sequelize.INTEGER : sequelize.STRING(model.codeLenght),
         autoIncrement: false, //model.autoIncrement,
         unique: model.uniqueCode
       }
@@ -195,13 +195,13 @@ generator.define = function(application, db, appModelDefinition) {
         for (let i = 0; i < model.nameLang.length; i++) {
           const lang = model.nameLang[i];
           attributes["Name_" + lang] = {
-            type: DBTypes.STRING(model.nameLenght)
+            type: sequelize.STRING(model.nameLenght)
           }
         }
       }
       else {
         attributes.Name = {
-          type: DBTypes.STRING(model.nameLenght)
+          type: sequelize.STRING(model.nameLenght)
         }
       }
     }
@@ -216,22 +216,22 @@ generator.define = function(application, db, appModelDefinition) {
     const attributes = {
       // field 'id', 'dropped' and 'Date' are must be
       id: {
-        type: DBTypes.UUID,
-        defaultValue: DBTypes.UUIDV4,
+        type: sequelize.UUID,
+        defaultValue: sequelize.UUIDV4,
         primaryKey: true,
         unique: true
       },
       dropped: {
-        type: DBTypes.BOOLEAN,
+        type: sequelize.BOOLEAN,
         defaultValue: false
       },
       booked: {
-        type: DBTypes.BOOLEAN,
+        type: sequelize.BOOLEAN,
         defaultValue: false
       },
       Date: {
-        type: DBTypes.DATE,
-        defaultValue: DBTypes.NOW
+        type: sequelize.DATE,
+        defaultValue: sequelize.NOW
       }
     };
 
@@ -247,13 +247,13 @@ generator.define = function(application, db, appModelDefinition) {
     const attributes = {
       // field 'id', 'dropped' and 'Date' are must be
       id: {
-        type: DBTypes.UUID,
-        defaultValue: DBTypes.UUIDV4,
+        type: sequelize.UUID,
+        defaultValue: sequelize.UUIDV4,
         primaryKey: true,
         unique: true
       },
       order: {
-        type: DBTypes.INTEGER
+        type: sequelize.INTEGER
       }
     };
 
