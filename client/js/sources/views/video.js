@@ -16,6 +16,12 @@ webix.protoUI({
   },
   initStream: async function(constraints) {
     const stream = await getMedia(constraints);
-    this.define("src", stream);
+    webix.message(this.config.id);
+    const video = document.querySelector("video");//getElementById(this.config.id); //this.$view;
+    video.srcObject = stream;
+    video.onloadedmetadata = function(e) {
+      video.play();
+      video.muted = true;
+    }
   }
 }, webix.ui.video);
