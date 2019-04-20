@@ -31,7 +31,6 @@ const Query = require('./Query.js');
 
 function Application(name, dirname, filename) {
 
-    const _ = {};
     this._ = {};
 
     constructors.Collection.call(this, undefined, undefined, name, dirname, filename);
@@ -55,7 +54,7 @@ function Application(name, dirname, filename) {
     
     this.Query = new Query(this, this._.connection.driver);
 
-    _.modelDefinition = {};
+    this._.modelDefinition = {};
     
     this.init = function() {
         const self = this;
@@ -64,7 +63,7 @@ function Application(name, dirname, filename) {
             self._.connection.authenticate()
             .then(() => {
                 try {
-                    defineApplicationStructure(self, _.modelDefinition);
+                    defineApplicationStructure(self, self._.modelDefinition);
                 } catch(err) {
                     Log.error("Unsuccessful attempt to define application structure");
                     callback(err);
@@ -74,7 +73,7 @@ function Application(name, dirname, filename) {
                 loadNumerators(self._.connection)
                 .then(numerators => {
                     try {
-                        defineModelStructure(self, self._.connection.driver, _.modelDefinition, numerators);
+                        defineModelStructure(self, self._.connection.driver, self._.modelDefinition, numerators);
                     } catch(err) {
                         Log.error("Unsuccessful attempt to define application model structure");
                         callback(err);

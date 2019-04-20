@@ -1,11 +1,7 @@
-"use strict";
-
-process.env.BLUEBIRD_WARNINGS = 0;
-
 require("./server/Logger.js");
 require("./server/Errors.js");
 
-function run(root, port) {
+module.exports.run = function run(root, port) {
 
   const platform = require("./server/Platform.js");
   platform.dir = root;
@@ -23,5 +19,3 @@ function run(root, port) {
   const sockets = require("./server/Sockets.js");
   sockets.init(platform, server);
 }
-
-module.exports.run = run;

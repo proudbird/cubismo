@@ -1,7 +1,3 @@
-"use strict";
-
-const path = require("path");
-
 const   Reset = "\x1b[0m",
         Bright = "\x1b[1m",
         Dim = "\x1b[2m",
@@ -41,16 +37,17 @@ function log(type, format, message, err) {
             console.log(format + "  > " + err.message);
         }
         if(err.stack) {
-            const moduleDir = path.dirname(__dirname);
-            const _stack = err.stack.split('\n');
-            let newStack = [];
-            for(let i = 0; i < _stack.length; i++) {
-                //if(_stack[i].includes(moduleDir)) {
-                    newStack.push(_stack[i]);
-                //}
-            }
-            newStack = newStack.join('\n');
-            console.log(format + newStack);
+            //const moduleDir = path.dirname(__dirname);
+            // const _stack = err.stack.split('\n');
+            // let newStack = [];
+            // for(let i = 0; i < _stack.length; i++) {
+            //     //if(_stack[i].includes(moduleDir)) {
+            //         newStack.push(_stack[i]);
+            //     //}
+            // }
+            // newStack = newStack.join('\n');
+            // console.log(format + newStack);
+            console.log(format + err.stack);
         }
     };
 }

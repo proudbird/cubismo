@@ -1,16 +1,40 @@
 {
-  "name": "cubismo",
-  "version": "0.3.2",
-  "description": "A powerful platform for developing and managing cross-platform business applications, based on WEB-technologies",
-  "main": "cubismo.js",
-  "repository": "https://github.com/proudbird/cubismo.git",
-  "author": "Max Orlov <proudbird.mail@gmail.com>",
-  "engines": {
-    "node": ">=10.0.0"
+  "_from": "cubismo@0.3.2",
+  "_id": "cubismo@0.3.2",
+  "_inBundle": false,
+  "_integrity": "sha512-N4QYeFPv8ETCKXAHqF5Hs08RUminzlcR/yyZu/2x06ezbrrWCNC5uBXrZ2ATuyyFfKJLU7uPvdYtfv9TYaPaRg==",
+  "_location": "/cubismo",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "cubismo@0.3.2",
+    "name": "cubismo",
+    "escapedName": "cubismo",
+    "rawSpec": "0.3.2",
+    "saveSpec": null,
+    "fetchSpec": "0.3.2"
   },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/cubismo/-/cubismo-0.3.2.tgz",
+  "_shasum": "124905237e00560722224fdac032f920b7ac9755",
+  "_spec": "cubismo@0.3.2",
+  "_where": "c:\\ITProjects\\server",
+  "author": {
+    "name": "Max Orlov",
+    "email": "proudbird.mail@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/proudbird/cubismo/issues"
+  },
+  "bundleDependencies": false,
   "dependencies": {
     "async": "^2.6.0",
     "body-parser": "^1.18.2",
+    "debug": "^4.1.1",
     "deepdash": "^3.1.3",
     "express": "^4.16.2",
     "express-fileupload": "^1.1.3-alpha.2",
@@ -22,7 +46,12 @@
     "shortid": "^2.2.8",
     "socket.io": "^2.1.0"
   },
-  "license": "GPL-2.0-or-later",
+  "deprecated": false,
+  "description": "A powerful platform for developing and managing cross-platform business applications, based on WEB-technologies",
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "homepage": "https://github.com/proudbird/cubismo#readme",
   "keywords": [
     "platform",
     "business",
@@ -30,7 +59,17 @@
     "framework",
     "webix"
   ],
+  "license": "GPL-2.0-or-later",
+  "main": "cubismo.js",
+  "name": "cubismo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/proudbird/cubismo.git"
+  },
+  "version": "0.3.2",
   "devDependencies": {
-    "rollup": "^1.10.0"
+    "@babel/cli": "^7.4.3",
+    "@babel/core": "^7.4.3",
+    "rollup": "^1.10.1"
   }
 }

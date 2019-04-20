@@ -1,8 +1,4 @@
-"use strict";
-
-const os = require("os");
 const fs = require('fs');
-const mkdirp = require('mkdirp');
 const path = require('path');
 const express = require('express');
 const router = express();
@@ -31,7 +27,7 @@ module.exports.init = function (platform) {
     const application = platform.applications[applicationId];
     if (!application) {
       Log.debug(`Application <${applicationId}> is not running. Starting...`)
-      platform.initApplication("Just-In-Time")
+      platform.initApplication(applicationId)
         .then(() => {
           Log.debug(`Application <${applicationId}> has been started`)
           sendWindow();
