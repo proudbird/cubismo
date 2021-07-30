@@ -1,0 +1,37 @@
+{
+  "marketplaces": {
+    "dirname": "c:\\ITProjects\\cubismo\\apps\\_orlix",
+    "workspace": "c:\\ITProjects\\cubismo\\workspace",
+    "dbconfig": {
+      "database": "optima",
+      "username": "optima",
+      "password": "<35{%rta)9^vjNuc",
+      "options": {
+        "host": "127.0.0.1",
+        "dialect": "postgres",
+        "logging": false,
+        "operatorsAliases": 1,
+        "charset": "utf8",
+        "collate": "utf8_general_ci"
+      }
+    }
+  },
+  "optima": {
+    "dirname": "c:\\ITProjects\\cubismo\\apps\\optima\\_build",
+    "workspace": "c:\\ITProjects\\cubismo\\workspace",
+    "dbconfig": {
+      "database": "optima",
+      "username": "optima",
+      "password": "<35{%rta)9^vjNuc",
+      "options": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "dialect": "postgres",
+        "logging": false,
+        "operatorsAliases": 1,
+        "charset": "utf8",
+        "collate": "utf8_general_ci"
+      }
+    }
+  }
+}

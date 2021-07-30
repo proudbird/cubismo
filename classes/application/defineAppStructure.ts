@@ -1,0 +1,170 @@
+import path from 'path'
+import catalogist from 'catalogist'
+
+import Cubismo     from '../../cubismo'
+import Application from './Application'
+import { AppSettings } from './Application'
+import Cube        from '../Cube'
+
+
+export default function defineAppStructure(
+        cubismo : Cubismo,
+        application: Application, 
+        settings : AppSettings,
+        metaDataStructure: any
+      ): IModelStructure {
+
+    const modelStructure = {}
+
+
+  const appTree = catalogist.treeSync(settings.dirname, {
+    withSysRoot: true,
+    childrenAlias: "next"
+  })
+
+  appTree.forEach(appLevel => {
+
+    if(appLevel.ext.includes('.map')) {
+      // skip file
+      return
+    }
+    
+    if (appLevel.next) {
+      
+      let cubeModuleFile = appLevel.name + '.js'
+      if (!Utils.find(appLevel.next, {
+          fullName: cubeModuleFile
+        })) {
+        return
+      }
+ 
+    const _cube = new Cube(
+                          cubismo,
+                          application,
+                          undefined,
+                          metaDataStructure.Cube,
+                          appLevel.name,
+                          appLevel.fullPath,
+                          cubeModuleFile)
+ 
+    const fileName = path.join(appLevel.fullPath, cubeModuleFile) 
+    application.addCube(_cube, fileName)
+    application.cubes.addCube(_cube, fileName) 
+
+    appLevel.next.forEach(cubeLevel => {
+
+      if(cubeLevel.ext.includes('.map')) {
+        // skip file
+        return
+      }
+      
+        const className = cubeLevel.fullName
+        if(!cubeLevel.isDirectory) {
+          return
+        }
+
+        let classModuleFile = cubeLevel.fullName + '.js'
+
+        const classDefinition = metaDataStructure[className]
+        if(!classDefinition) {
+          return Logger.error(`Application <${application.id}> doesn't has a Data Class definition for ${className}`)
+        }
+
+        const _metaDataClass = new classDefinition.classMaker(
+                                                        cubismo,
+                                                        application,
+                                                        _cube,
+                                                        classDefinition.type,
+                                                        cubeLevel.name,
+                                                        cubeLevel.fullPath,
+                                                        classModuleFile)
+        
+        const fileName = path.join(cubeLevel.fullPath, classModuleFile)
+
+        _cube.addClass(_metaDataClass, fileName)
+
+        cubeLevel.next.forEach(classLevel => {
+
+          if(classLevel.ext.includes('.map')) {
+            // skip file
+            return
+          }
+
+          if(classLevel.dirName === 'Modules') {
+            const _metaDataObject = new classDefinition.objectMaker(
+                  cubismo,
+                  application,
+                  _cube,
+                  classDefinition.type,
+                  classLevel.name,
+                  classLevel.dirFullName,
+                  classLevel.fullName)
+            _cube['Modules'].addObject(_metaDataObject, classLevel.fullPath)
+            return
+          }
+
+          let objectName: string
+          let objectModuleFile: string
+          let objectModelDefinition: any
+
+          let fullFileName = path.join(cubeLevel.fullPath, classLevel.fullName)
+          let fileName = classLevel.fullName
+          let splitedName = fileName.split(".")
+          
+          if (splitedName[0] === className && splitedName[2] === "js") {
+            objectName = splitedName[1]
+            objectModuleFile = fullFileName
+          }
+
+          if (splitedName[0] === className && splitedName[2] === "Model" && splitedName[3] === "json") {
+            objectName = splitedName[1]
+            objectModelDefinition = require(fullFileName)
+          }
+  
+          if (objectModelDefinition && objectName) {
+
+            const moduleFileName= fullFileName.replace('Model.json', 'js');
+
+            for (let key in objectModelDefinition) {
+              const definition = objectModelDefinition[key]
+              definition.id = key
+
+              if(classLevel.dirName === 'Enums') {
+                const values = objectModelDefinition[key].values    
+                const _metaDataObject = new classDefinition.objectMaker(
+                      cubismo,
+                      application,
+                      _cube,
+                      classDefinition,
+                      definition.name,
+                      definition.id,
+                      values)
+                _cube['Enums'].addObject(_metaDataObject, moduleFileName)
+                return
+              }
+
+              modelStructure[key] = {
+                definition: definition,
+                module: moduleFileName
+              }
+
+              // if(definition.collections) {
+              //   for (let collectionId in definition.collections) {
+              //     const collectionDefinition = definition.collections[collectionId]
+              //     collectionDefinition.id = collectionId
+              //     modelStructure[collectionId] = {
+              //       definition: collectionDefinition,
+              //       module: undefined
+              //     }
+              //   return
+              //   }
+              // }
+            }
+          }
+        })
+      })
+    }
+ })
+
+ return modelStructure
+}

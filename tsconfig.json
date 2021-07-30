@@ -1,0 +1,28 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+      "module": "commonjs",
+      "esModuleInterop": true,
+      "target": "ES2020",
+      "noImplicitAny": false,
+      "moduleResolution": "node",
+      "sourceMap": true,
+      "outDir": "../../dist/server",
+      "baseUrl": ".",
+      "typeRoots": ["src/types"],
+      "paths": {
+          "*": [
+              "."
+          ]
+      },
+      "types": [
+        "node",
+        "mocha"
+      ]
+  },
+  "include":[ 
+    "./**/*",
+    "./**/*.js",
+  ],
+  "exclude": []
+}
