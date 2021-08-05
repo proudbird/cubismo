@@ -1,7 +1,6 @@
 import MetaDataObject from '../../classes/MetaDataObject'
 import path from 'path'
 import ModelGenerator from '../../database/ModelGenerator'
-import addElement from '../addElement'
 
 export default function defineModelStructure(cubismo, application, connection, appModelDefinition, metaDataStructure) {
 
