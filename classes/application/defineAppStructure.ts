@@ -7,20 +7,55 @@ import { AppSettings } from './Application'
 import Cube        from '../Cube'
 
 
+enum MetaDataClasses {
+  Modules      = 'Modules',
+  Constants    = 'Constants',
+  Catalogs     = 'Catalogs',
+  Registrators = 'Registrators',
+  DataSets     = 'DataSets',
+  Enums        = 'Enums',
+  Types        = 'Types'
+}
+
+
+
+type MetaDataClasse = 'Modules' | 'Constants' | 'Catalogs' | 'Registrators' | 'DataSets' | 'Enums' | 'Types'; 
+
+export declare type ApplicationStructure = {
+  id: string,
+  dirname: string,
+  cubes: {
+    [name: string]: {
+      filename: string,
+      classes: { 
+        [name: string]: {
+          filename: string,
+          objects: {
+            [name: string]: {
+              filename: string,
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 export default function defineAppStructure(
         cubismo : Cubismo,
         application: Application, 
         settings : AppSettings,
         metaDataStructure: any
       ): IModelStructure {
-
-    const modelStructure = {}
+  
+  const applicationStructure: ApplicationStructure = { id: application.id, dirname: settings.dirname, cubes: {} };        
+  const modelStructure = {}
 
 
   const appTree = catalogist.treeSync(settings.dirname, {
     withSysRoot: true,
     childrenAlias: "next"
-  })
+  });
 
   appTree.forEach(appLevel => {
 
@@ -49,13 +84,19 @@ export default function defineAppStructure(
  
     const fileName = path.join(appLevel.fullPath, cubeModuleFile) 
     application.addCube(_cube, fileName)
-    application.cubes.addCube(_cube, fileName) 
+    application.cubes.addCube(_cube, fileName);
+
+    applicationStructure.cubes[appLevel.name] = { filename: path.join(appLevel.fullPath, cubeModuleFile), classes: {} };
 
     appLevel.next.forEach(cubeLevel => {
 
       if(cubeLevel.ext.includes('.map')) {
         // skip file
         return
+      }
+
+      if(cubeLevel.name === 'Types') {
+        return;
       }
       
         const className = cubeLevel.fullName
@@ -81,11 +122,13 @@ export default function defineAppStructure(
         
         const fileName = path.join(cubeLevel.fullPath, classModuleFile)
 
-        _cube.addClass(_metaDataClass, fileName)
+        _cube.addClass(_metaDataClass, fileName);
+
+        applicationStructure.cubes[appLevel.name].classes[cubeLevel.name] = { filename: path.join(cubeLevel.fullPath, classModuleFile), objects: {} };
 
         cubeLevel.next.forEach(classLevel => {
 
-          if(classLevel.ext.includes('.map')) {
+          if(classLevel.ext.includes('.map') || classLevel.fullName.includes('.d')) {
             // skip file
             return
           }
@@ -99,7 +142,8 @@ export default function defineAppStructure(
                   classLevel.name,
                   classLevel.dirFullName,
                   classLevel.fullName)
-            _cube['Modules'].addObject(_metaDataObject, classLevel.fullPath)
+            _cube['Modules'].addObject(_metaDataObject, classLevel.fullPath);
+            applicationStructure.cubes[appLevel.name].classes[cubeLevel.name].objects[classLevel.name] = { filename: classLevel.fullPath };
             return
           }
 
@@ -127,7 +171,9 @@ export default function defineAppStructure(
 
             for (let key in objectModelDefinition) {
               const definition = objectModelDefinition[key]
-              definition.id = key
+              definition.id = key;
+
+              applicationStructure.cubes[appLevel.name].classes[cubeLevel.name].objects[definition.name] = { filename: moduleFileName };
 
               if(classLevel.dirName === 'Enums') {
                 const values = objectModelDefinition[key].values    
@@ -139,7 +185,8 @@ export default function defineAppStructure(
                       definition.name,
                       definition.id,
                       values)
-                _cube['Enums'].addObject(_metaDataObject, moduleFileName)
+                _cube['Enums'].addObject(_metaDataObject, moduleFileName);
+                
                 return
               }
 
@@ -164,7 +211,7 @@ export default function defineAppStructure(
         })
       })
     }
- })
+ });
 
- return modelStructure
+ return { modelStructure, applicationStructure };
 }

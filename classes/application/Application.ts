@@ -32,6 +32,8 @@ import { Sequelize } from 'sequelize'
 import { ConnectionConfig } from '../../database/types'
 
 import addElement from '../addElement'
+import getListOfCubes from './getListOfCubes';
+import loadMetaDataModules from './loadMetaDataModules';
 
 let workspaceDir: string
 
@@ -76,9 +78,7 @@ export default class Application extends EventEmitter implements IApplication  {
 
     this.Query = new Query(this, this.#dbDriver.connection);
      
-
-    loadModule(path.join(this.#settings.dirname, 'Application.js'), 
-               'Application', this.#id, this, this, this, this.#cache)
+    cubismo.applicationCubes.set(this.#id, getListOfCubes(this.#settings.dirname));
 
     const defaultTypes = {
       Cube    : addMetaDataClassDefinition(this.#mdClasses, 'Cube'    , 'Cube'   , Cube   ),
@@ -93,8 +93,9 @@ export default class Application extends EventEmitter implements IApplication  {
       initApp(this, settings, this.#cubismo, defaultTypes)
     })
 
-    this.once('appStructureLoaded', (modelStructure) => {
-      defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure, defaultTypes)
+    this.once('appStructureLoaded', (modelStructure, applicationStructure) => {
+      defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure, defaultTypes);
+      loadMetaDataModules(cubismo, this, applicationStructure);
     })
 
     const dbDriver = this.#dbDriver
@@ -128,7 +129,7 @@ export default class Application extends EventEmitter implements IApplication  {
   }
 
   addCube(element: ICube, fileName: string): ICube {
-    return addElement(element, this, this,  this.#elements, this.#cache, fileName)
+    return addElement(element, this, this.#cubismo, this,  this.#elements, this.#cache, fileName)
   } 
 
   get id(): string {
@@ -155,13 +156,13 @@ export default class Application extends EventEmitter implements IApplication  {
 function initApp(application: Application, appSettings: AppSettings, cubismo: Cubismo, defaultTypes: any): void {
 
   try {
-    const modelStructure = defineAppStructure(
+    const {modelStructure, applicationStructure} = defineAppStructure(
           cubismo,
           application, 
           appSettings,
           defaultTypes)
 
-    application.emit('appStructureLoaded', modelStructure)
+    application.emit('appStructureLoaded', modelStructure, applicationStructure)
     Logger.debug(`Application <${application.id}> has been initialized`)
   } catch(error) {
     Logger.error("Unsuccessful attempt to define application structure", error)

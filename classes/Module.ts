@@ -36,6 +36,10 @@ export default class Module {
     this.#filename      = filename
   }
 
+  get cube(): Cube {
+    return this.#cube;
+  }
+
   get type(): string {
     return this.#type.type
   }

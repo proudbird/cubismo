@@ -45,7 +45,7 @@ export default class MetaDataClass {
   }
 
   get cube(): Cube {
-    return this.#cube
+    return this.#cube;
   }
 
   get type(): string {

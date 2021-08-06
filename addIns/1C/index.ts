@@ -1,5 +1,4 @@
 import winax from 'winax';
-import { Converter } from "converter-1c-internal";
 import Cubismo from '../../cubismo'
 
 delete global.ActiveXObject // we don't want someone else could create ActiveX objects - unsafe
@@ -76,9 +75,6 @@ export default class OneC {
       }
     })
   }
-
-  convertFromInternal = Converter.convertFrom1C;
-  convertToInternal = Converter.convertTo1C;
 }
 
 

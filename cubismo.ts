@@ -26,6 +26,7 @@ export default class Cubismo {
   #applications : Map<string, ApplicationProperties>
   #addIns       : Map<string, AddIn>
   enums        : WeakMap<Application, EnumStore> 
+  applicationCubes: Map<string, string[]>;
 
   #router: Router
   #communicator: Communicator
@@ -37,6 +38,7 @@ export default class Cubismo {
     this.#applications = new Map;
     this.#addIns = new Map;
     this.enums = new WeakMap;
+    this.applicationCubes = new Map;
   }
 
   get port(): number {

@@ -7,9 +7,11 @@ import addElement from './addElement'
 
 export default class Cube extends MetaDataClass {
 
+  #cubismo     : Cubismo
   #application : Application
   #elements    : Map<string, [Cube, string]>
   #cache       : Map<string, [number, any]>
+  #cube        : Cube
 
   constructor(
     cubismo    : Cubismo,
@@ -32,11 +34,16 @@ export default class Cube extends MetaDataClass {
     )
 
     this.#application = application
+    this.#cube        = this
     this.#elements    = new Map()
     this.#cache       = new Map()
   }
 
+  get cube(): Cube {
+    return this.#cube;
+  }
+
   addClass(element: IMetaDataClass, fileName: string): IMetaDataClass {
-    return addElement(element, this, this.#application, this.#elements, this.#cache, fileName)
+    return addElement(element, this, this.#cubismo, this.#application, this.#elements, this.#cache, fileName)
   } 
 }

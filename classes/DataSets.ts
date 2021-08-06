@@ -41,7 +41,7 @@ export default class DatSets extends MetaDataClass {
   }
 
   addObject(element: IMetaDataObject, fileName: string): IMetaDataObject {
-    return addElement(element, this, this.#application, this.#elements, this.#cache, fileName)
+    return addElement(element, this, this.#cubismo, this.#application, this.#elements, this.#cache, fileName);
   } 
 }
 
