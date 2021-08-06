@@ -25,6 +25,8 @@
     ".",
     "./package.json",
     "./package-lock.json",
+    "./addIns/1C/package.json",
+    "./addIns/1C/package-lock.json",
     "./applications.json"
   ],
   "exclude": ["node_modules"]
