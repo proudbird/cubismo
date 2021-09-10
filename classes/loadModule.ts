@@ -31,7 +31,8 @@ export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataO
   const params = { 
     Application: application,
     Import,
-    Workspace  : application.workspace
+    Workspace  : application.workspace,
+    me: context
   };
 
   const cubes = cubismo.applicationCubes.get(application.id); 
