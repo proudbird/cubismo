@@ -156,6 +156,9 @@ function adoptOptions(options: any, model: any) {
     for(let property in options.where) {
       let adopted = property;
       let value = options.where[property];
+      if(!value) {
+        throw new Error(`Rigth side of 'where' option can not be empty`)
+      }
       if(property.includes('Name')) {
         adopted = getAdoptedinLang(property, 'Name', model.definition.nameLang)
       } else if(property === 'Owner') {

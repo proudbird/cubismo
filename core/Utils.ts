@@ -15,7 +15,9 @@ function guid() {
 } _.mixin({ 'guid': guid }, { 'chain': false });
 
 function sid () {
-  return ShortId.generate();
+  ShortId.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$');
+  let id = ShortId.generate();
+  return id.replace("$", "0");
 } _.mixin({ 'shortId': sid }, { 'chain': false });
   _.mixin({ 'sid': sid }, { 'chain': false }); // alias
 

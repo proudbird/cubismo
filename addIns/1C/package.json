@@ -10,6 +10,7 @@
   "author": "cubismo",
   "license": "MIT",
   "dependencies": {
-    "converter-1c-internal": "^1.0.8"
+    "bodyparser-1c-internal": "^0.0.1",
+    "converter-1c-internal": "^1.0.11"
   }
 }

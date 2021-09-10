@@ -288,11 +288,11 @@ async function saveAssociations(owner, ownerModel, record) {
 
   if(ownerModel.collections && ownerModel.collections.length) {
     for(let model of ownerModel.collections) {
-      await model.destroy({
-        where: {
-            ['ownerId']: owner.id
-        }
-      })
+      // await model.destroy({
+      //   where: {
+      //       ['ownerId']: owner.id
+      //   }
+      // })
       const collectionItems = await owner[model.modelName];
       for(let item of collectionItems) {
         await item.save()

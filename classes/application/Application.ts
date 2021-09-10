@@ -3,7 +3,7 @@ import path from 'path'
 import loadModule from '../loadModule'
 
 import DBDriver from '../../database/DBDriver';
-import Query from '../../database/Query';
+import Query from '../../database/queries/Query';
 
 import Cubismo     from '../../cubismo'
 import Cubes       from '../Cubes'

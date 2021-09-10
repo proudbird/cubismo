@@ -46,7 +46,7 @@ export default class Query {
         const data: [] = result[0];
         for(let index in data) {
           const record = data[index];
-          const selectItem = new QuerySelectItem(record, query.fieldsMap, this.#driver);
+          const selectItem = new QuerySelectItem(record, query.fieldsMap);
           select.push(selectItem);
         }
       } 
@@ -87,6 +87,7 @@ async function buildSQLQuery(driver, query, subscriber) {
       tempTableName = `temp_${Utils.sid()}`;
       from = { mame: tempTableName, alias: as[1]};
       model = { tableName: tempTableName, associations: {} }
+      model.alias = from.alias;
       result = `CREATE TEMP TABLE ${tempTableName} (${columns.join(', ')});\n`;
       const insertions = defineInsertions(table.columns, tempTableName, table.rows);
       
@@ -96,6 +97,7 @@ async function buildSQLQuery(driver, query, subscriber) {
   } else {
     from = getAliasStatement(fromStatement);
     model = driver.models[from.name];
+    model.alias = from.alias;
     tables.set(from.alias, model);
     if (!model) {
       throw new Error("Can't find DB model <" + from + ">");
@@ -110,8 +112,11 @@ async function buildSQLQuery(driver, query, subscriber) {
   //SELECT
   
   const select: string = query.SELECT || query.select;
+  const joins = query.JOINS || query.joins;
   const selectFields = select.split(',');
   let fields = [];
+
+  const referenceJoins = {};
 
   let fieldDescription;
   for (let key of selectFields) {
@@ -121,17 +126,28 @@ async function buildSQLQuery(driver, query, subscriber) {
     } else {
       fieldDescription = getFieldDescription(model, field);
     }
-    const fieldAlias = `${from.alias}_${fieldDescription.fieldId}`.toLowerCase();
-    fieldsMap.set(fieldAlias, fieldDescription.attribute);
-    if(tempTableName) {
-      fields.push(`${from.alias}.${fieldDescription.fieldId} AS ${fieldAlias}`);
+    if(fieldDescription.toJoin) {
+      const typeDefinition = fieldDescription.attribute.type;
+      if(!referenceJoins[typeDefinition.model.name]) {
+        referenceJoins[typeDefinition.model.name] = { leftModel: typeDefinition.referenceModel, rigthModels: {} };
+      }
+      referenceJoins[typeDefinition.model.name].rigthModels[typeDefinition.model.name] = typeDefinition.model;
+      const tableAlias = typeDefinition.model.alias;
+      const fieldAlias = `${tableAlias}_${fieldDescription.fieldId}`.toLowerCase();
+      fieldsMap.set(fieldAlias, fieldDescription.attribute);
+      fields.push(`${tableAlias}."${fieldDescription.fieldId}" AS ${fieldAlias}`);
     } else {
-      fields.push(`${from.alias}."${fieldDescription.fieldId}" AS ${fieldAlias}`);
+      const fieldAlias = `${from.alias}_${fieldDescription.fieldId}`.toLowerCase();
+      fieldsMap.set(fieldAlias, fieldDescription.attribute);
+      if(tempTableName) {
+        fields.push(`${from.alias}.${fieldDescription.fieldId} AS ${fieldAlias}`);
+      } else {
+        fields.push(`${from.alias}."${fieldDescription.fieldId}" AS ${fieldAlias}`);
+      }
     }
   }
   
   // JOINS
-  const joins = query.JOINS || query.joins;
   let joinsResult = '';
   if(joins) {
     for(let index in joins) {
@@ -143,7 +159,7 @@ async function buildSQLQuery(driver, query, subscriber) {
         const joinFrom = getAliasStatement(joinFromStatement);
         const joinModel = driver.models[joinFrom.name]
         const joinTableName = joinModel.tableName;
-        
+        joinModel.alias = joinFrom.alias;
         tables.set(joinFrom.alias, joinModel);
 
         const leftJoinSelect = leftJoin.SELECT || leftJoin.select;
@@ -151,9 +167,23 @@ async function buildSQLQuery(driver, query, subscriber) {
         for (let key of leftSelectFields) {
           const field = key.trim();
           const fieldDescription = getFieldDescription(joinModel, field);
-          const fieldAlias = `${joinFrom.alias}_${fieldDescription.fieldId}`.toLowerCase();
-          fieldsMap.set(fieldAlias, fieldDescription.attribute);
-          fields.push(`${joinFrom.alias}."${fieldDescription.fieldId}" AS ${fieldAlias}`);
+          if(fieldDescription.toJoin) {
+            const typeDefinition = fieldDescription.attribute.type;
+            if(!referenceJoins[typeDefinition.model.name]) {
+              referenceJoins[typeDefinition.model.name] = { leftModel: typeDefinition.referenceModel, rigthModels: {} };
+            }
+            referenceJoins[typeDefinition.model.name].rigthModels[typeDefinition.model.name] = typeDefinition.model;
+            const tableAlias = typeDefinition.model.alias;
+            const fieldAlias = `${tableAlias}_${fieldDescription.fieldId}`.toLowerCase();
+            fieldsMap.set(fieldAlias, fieldDescription.attribute);
+            fields.push(`${tableAlias}."${fieldDescription.fieldId}" AS ${fieldAlias}`);
+            // join statement will be later
+            continue;
+          } else {
+            const fieldAlias = `${joinFrom.alias}_${fieldDescription.fieldId}`.toLowerCase();
+            fieldsMap.set(fieldAlias, fieldDescription.attribute);
+            fields.push(`${joinFrom.alias}."${fieldDescription.fieldId}" AS ${fieldAlias}`);
+          }
         }
 
         const leftJoinOn = leftJoin.ON || leftJoin.on;
@@ -168,6 +198,16 @@ async function buildSQLQuery(driver, query, subscriber) {
         }
         joinsResult += ` LEFT JOIN "${joinTableName}" ${joinFrom.alias} ON ${on.leftTableAlias}."${on.leftFieldName}"${leftCast} = ${on.rigthTableAlias}."${on.rigthFieldName}"${rigthCast}`;
       }
+    }
+  }
+
+  for(let leftModelName in referenceJoins) {
+    const leftModel = referenceJoins[leftModelName].leftModel;
+    const leftTableAlias = leftModel.alias;
+    const rigthModels = referenceJoins[leftModelName].rigthModels;
+    for(let rigthModelName in rigthModels) {
+      const rigthModel = rigthModels[rigthModelName];
+      joinsResult += ` LEFT JOIN "${rigthModel.tableName}" ${rigthModel.alias} ON ${leftModel.alias}."${leftModel.referenceField}" = ${rigthModel.alias}."id"`;
     }
   }
 
@@ -287,17 +327,51 @@ function buildOperation(model, operation) {
   }
 }
 
-function getFieldDescription(_model: any, fieldStatement: string): {fieldId: string, attribute: { name: string, alias: string, type: any }} {
+function getFieldDescription(_model: any, fieldStatement: string): {fieldId: string, attribute: { name: string, alias: string, type: any }, toJoin: boolean} {
 
-  let fieldId: string;
-  const field = getAliasStatement(fieldStatement);
-
-  //let attribute = field;
   let dataType = { 
     dataType: undefined,
     reference: undefined,
-    model: undefined
+    model: undefined,
+    referenceModel: undefined,
+    referenceField: undefined
   };
+
+  let toJoin = false;
+
+  const field = getAliasStatement(fieldStatement);
+  if(field.name.includes('.')) {
+    // we are trying to get fields from the reference
+    const track = field.name.split('.');
+    // now only 2 steps we can deal with
+    if(track.length > 2) {
+      throw new Error(`We can deal with only 2-step inclusion: [${field.name}]`);
+    }
+    const attribute = track[0];
+    const definition = _model.definition;
+    const element = definition.attributes[attribute];
+    if(!element) {
+      throw new Error(`Can not find attribute '${attribute}' in ${_model.name}`);
+    }
+    if(element.type.dataType !== 'FK') {
+      throw new Error(`Attribute '${attribute}' is not a reference. It is a type of '${element.type.dataType}'`);
+    }
+    dataType.referenceModel = _model;
+    _model.referenceField = element.fieldId;
+    // _model.referenceAlias = _model.name.replace(/\./g, '');
+    _model = _model.sequelize.models[element.type.reference.modelId];
+    _model.alias = _model.name.replace(/\./g, '');
+    if(!_model) {
+      throw new Error(`Can not find model with id '${element.type.reference.modelId}'`);
+    }
+    field.name = track[1];
+    field.alias = field.alias || track.join('');
+    toJoin = true;
+  }
+
+  let fieldId: string = field.name;
+
+  //let attribute = field;
 
   const lang = _model.application.lang;
   const definition = _model.definition;
@@ -328,14 +402,14 @@ function getFieldDescription(_model: any, fieldStatement: string): {fieldId: str
           fieldId = element.fieldId;
         }
 
-        dataType = element.type;
+        dataType.dataType = element.type;
       }
     }
   //}
 
   dataType.model = _model;
 
-  return { fieldId, attribute: { name: field.name, alias: field.alias, type: dataType }};
+  return { fieldId, attribute: { name: field.name, alias: field.alias, type: dataType }, toJoin};
 }
 
 function getOnStatement(on: string[], tables: Map<string, any>) {
@@ -380,7 +454,7 @@ function getAliasStatement(source: string) {
 
   const statement = source.replace(' as ', ' AS ').split(' AS ');
   let name: string = statement[0];
-  let alias: string = name;
+  let alias: string = name.replace(/\./g, '');
   if(statement.length > 1) {
     alias = statement[1]; 
   }

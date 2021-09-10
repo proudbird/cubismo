@@ -1,5 +1,8 @@
 import winax from 'winax';
+import {Converter} from "converter-1c-internal";
+import bodyParser from "bodyparser-1c-internal";
 import Cubismo from '../../cubismo'
+
 
 delete global.ActiveXObject // we don't want someone else could create ActiveX objects - unsafe
 
@@ -21,11 +24,11 @@ export default class OneC {
     //super('OneC', cubismo)
   }
 
-  async connect(conf: ConnectionConfig): Promise<Connection> {
+  async connect(conf: ConnectionConfig): Promise<any> {
 
     return new Promise((resolve, reject) => {
       
-      let connection: Connection
+      let connection: any
       let activeX: winax.Object
 
       try {
@@ -75,10 +78,9 @@ export default class OneC {
       }
     })
   }
-}
 
+  public convertFrom1C = Converter.convertFrom1C;
+  public convertTo1C = Converter.convertTo1C;
 
-class Connection {
-
-
+  public bodyParserFrom1C = bodyParser;
 }

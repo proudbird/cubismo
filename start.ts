@@ -43,14 +43,14 @@ async function runServer() {
   cubismo = new Cubismo(port, __dirname, sekretKey)
   await cubismo.start(applicationId)
   message = `port ${port}`
-  notifier.notify({
-    title: 'Server is started',
-    message: message,
-    icon: path.join(__dirname, 'favicon.png'),
-    sound: true,
-    wait: false,
-    appName: 'cubismo'
-  })
+  // notifier.notify({
+  //   title: 'Server is started',
+  //   message: message,
+  //   icon: path.join(__dirname, 'favicon.png'),
+  //   sound: true,
+  //   wait: false,
+  //   appName: 'cubismo'
+  // })
 }
 
 async function stopServer(stopPort, restart?: boolean) {
@@ -62,7 +62,7 @@ async function stopServer(stopPort, restart?: boolean) {
     if(await checkInstance(stopPort)) {
 
       function exit() {
-        systray.kill()
+        //systray.kill()
         process.exit()
       }
     
@@ -191,46 +191,46 @@ export function initKey(): string {
 }
 
 // SYSTRAY
-const systray = new SysTray({
-  menu: {
-    // you should using .png icon in macOS/Linux, but .ico format in windows
-    icon: readFileSync('favicon.ico','base64'),
-    title: "cubismo",
-    tooltip: "cubismo server",
-    items: [
-      {
-        title: `Running on port ${port}`,
-        tooltip: undefined,
-        checked: false,
-        enabled: true
-      },
-      {
-        title: "Restart server",
-        tooltip: "Restart server",
-        // checked is implement by plain text in linux
-        checked: false,
-        enabled: true
-      },
-      {
-        title: "Stop server",
-        tooltip: "Stop server",
-        // checked is implement by plain text in linux
-        checked: false,
-        enabled: true
-      }
-    ]
-  },
-  debug: false,
-  copyDir: true, // copy go tray binary to outside directory, useful for packing tool like pkg.
-})
+// const systray = new SysTray({
+//   menu: {
+//     // you should using .png icon in macOS/Linux, but .ico format in windows
+//     icon: readFileSync('favicon.ico','base64'),
+//     title: "cubismo",
+//     tooltip: "cubismo server",
+//     items: [
+//       {
+//         title: `Running on port ${port}`,
+//         tooltip: undefined,
+//         checked: false,
+//         enabled: true
+//       },
+//       {
+//         title: "Restart server",
+//         tooltip: "Restart server",
+//         // checked is implement by plain text in linux
+//         checked: false,
+//         enabled: true
+//       },
+//       {
+//         title: "Stop server",
+//         tooltip: "Stop server",
+//         // checked is implement by plain text in linux
+//         checked: false,
+//         enabled: true
+//       }
+//     ]
+//   },
+//   debug: false,
+//   copyDir: true, // copy go tray binary to outside directory, useful for packing tool like pkg.
+// })
 
-systray.onClick(action => {
-  if(action.seq_id === 1) {
-    stopServer(port, true)
-  } else if(action.seq_id === 2) {
-    stopServer(port)
-  }
-})
+// systray.onClick(action => {
+//   if(action.seq_id === 1) {
+//     stopServer(port, true)
+//   } else if(action.seq_id === 2) {
+//     stopServer(port)
+//   }
+// })
 
 // setTimeout(toPdf, 20);
 

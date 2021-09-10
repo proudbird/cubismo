@@ -1,3 +1,6 @@
+import Application from '../classes/application/Application'
+import Cube from '../classes/Cube'
+import Cubismo from '../cubismo'
 import Sequelize from 'sequelize'
 import { Model } from 'sequelize'
 
@@ -27,7 +30,17 @@ export type DataBaseModel = Model & {
   tableAttributes: [],
   fieldRawAttributesMap: [TableFieldRawAttributes],
   options        : {}
-  findOne: Function
+  findOne: Function,
+  definition: ModelDefinition,
+  name: string,
+  modelName: string,
+  cubismo: Cubismo,
+  application: Application,
+  cube: Cube,
+  class: string,
+  owners: DataBaseModel[],
+  ownerModel: DataBaseModel
+
 }
 
 export type DataBaseModels = {
@@ -50,6 +63,49 @@ export type DataBaseColumnDefinition = {
   required    : string, 
   position    : number, 
   length      : number | null
+}
+
+export type ModelDefinition = {
+  id: string,
+  name: string,
+  cube: string,
+  class: string,
+  tableId: string,
+  title: string,
+  description: string,
+  multilevel: true,
+  multievelType: string,
+  numberOfLevels: number,
+  codeLenght: number,
+  codeType: string,
+  uniqueCode: true,
+  autoIncrement: true,
+  nameLenght: number,
+  nameLang: string[],
+  template: string,
+  owners: string[],
+  attributes: {
+    [name: string]: ModelAttributeDefinition
+  }
+}
+
+export type ModelAttributeDefinition = {
+  fieldId: string,
+  title?: string,
+  description?: string,
+  type: {
+    dataType: string,
+    lang?: string[],
+    reference?: {
+      cube?: string,
+      class?: string,
+      modelId: string
+    }
+  },
+  defaultValue?: string | number | boolean | Date | null,
+  toolTip?: string,
+  belonging?: string,
+  required?: boolean
 }
 
 export type CatalogAtrributes = {
