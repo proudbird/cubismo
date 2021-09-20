@@ -3,7 +3,7 @@ import path from 'path'
 import http from 'http'
 import { Server as SocketIO, Socket } from 'socket.io'
 
-import { ApplicationProperties} from './cubismo'
+import { ApplicationProperties} from './Cubismo'
 
 export default class Communicator extends SocketIO {
   constructor(httpServer: http.Server, applications: Map<string, ApplicationProperties>) {
@@ -51,7 +51,7 @@ async function getAppWindowConfig(dirname: string) {
       reject(new Error(`Can't find window config file in the apllication folder`))
     }
   
-    fs.readFile(configFileName, 'UTF-8', (err, configFile) => {
+    fs.readFile(configFileName, 'utf-8', (err, configFile) => {
       if(err) {
         reject(err)
       }

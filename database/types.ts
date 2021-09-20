@@ -1,6 +1,6 @@
 import Application from '../classes/application/Application'
 import Cube from '../classes/Cube'
-import Cubismo from '../cubismo'
+import Cubismo from '../cubismo/Cubismo'
 import Sequelize from 'sequelize'
 import { Model } from 'sequelize'
 

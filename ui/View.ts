@@ -3,7 +3,7 @@ import path         from 'path'
 import EventEmitter from 'events'
 
 import demand    from 'demander'
-import Cubismo from '../cubismo'
+import Cubismo from '../cubismo/Cubismo'
 import Application from '../classes/application/Application'
 import Cube from '../classes/Cube'
 import MetaDataClass from '../classes/MetaDataClass'

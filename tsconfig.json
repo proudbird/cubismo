@@ -28,6 +28,6 @@
     "./addIns/1C/package.json",
     "./addIns/1C/package-lock.json",
     "./applications.json"
-  ],
+, "../../apps/index/Mail/Modules/Postman.ts"  ],
   "exclude": ["node_modules"]
 }

@@ -3,8 +3,8 @@ import path    from 'path'
 import http    from 'http'
 import SysTray from 'systray'
 import notifier from 'node-notifier'
-import Cubismo from './cubismo'
-import './core/Utils'
+import Cubismo from './cubismo/Cubismo'
+import './common/Utils'
 
 
 import puppeteer from 'puppeteer'

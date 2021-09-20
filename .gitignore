@@ -3,3 +3,4 @@ node_modules
 .npmignore
 .gitignor
 addIns/1C/node_modules
+applications.json

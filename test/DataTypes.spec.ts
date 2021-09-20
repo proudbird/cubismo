@@ -1,13 +1,13 @@
 import sinon from 'sinon';
 import { expect, should  } from 'chai';
-import StringDefinition from "../Common/StringDefinition";
-import NumberDefinition from "../Common/NumberDefinition";
-import DataType from "../Common/DataType";
-import { MAX_STRING_LENGTH } from "../Environment/Constants";
-import { MAX_NUMBER_LENGTH } from "../Environment/Constants";
-import { RangeErrors } from "../Errors/Errors";
-import Table from "../DataCollections/Table";
-import NumberSignType from '../Common/NumberSignType';
+import StringDefinition from "../common/StringDefinition";
+import NumberDefinition from "../common/NumberDefinition";
+import DataType from "../common/DataType";
+import { MAX_STRING_LENGTH } from "../environment/Constants";
+import { MAX_NUMBER_LENGTH } from "../environment/Constants";
+import { RangeErrors } from "../errors/Errors";
+import Table from "../common/DataCollections/Table";
+import NumberSignType from '../common/NumberSignType';
 
 describe('StringDefinition', function() {
 

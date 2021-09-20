@@ -1,6 +1,6 @@
 import DataTypeDefinition from "./DataTypeDefinition";
 import DataType from "./DataType";
-import { MAX_NUMBER_LENGTH } from "../Environment/Constants";
+import { MAX_NUMBER_LENGTH } from "../environment/Constants";
 import { TestValidity, ValidityRule } from "./Validators";
 import NumberSignType from "./NumberSignType";
 

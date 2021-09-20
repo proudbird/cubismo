@@ -1,7 +1,7 @@
 import path from 'path'
 import catalogist from 'catalogist'
 
-import Cubismo     from '../../cubismo'
+import Cubismo     from '../../cubismo/Cubismo'
 import Application from './Application'
 import { AppSettings } from './Application'
 import Cube        from '../Cube'

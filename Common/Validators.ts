@@ -1,4 +1,4 @@
-import { RangeErrors } from "../Errors/Errors";
+import { RangeErrors } from "../errors/Errors";
 
 export function TestValidity<RuleTest extends ValidityRuleTest>(value: any, rule: RuleTest, errorAnnotation: string): void {
   const testResult = rule.test(value);

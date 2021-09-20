@@ -1,8 +1,8 @@
-import StringDefinition from "../Common/StringDefinition";
-import DataTypeDefinition from "../Common/DataTypeDefinition";
-import { RangeErrors } from "../Errors/Errors";
-import { TestValidity, ValidityRule } from "../Common/Validators";
-import DataType from "../Common/DataType";
+import StringDefinition from "../StringDefinition";
+import DataTypeDefinition from "../DataTypeDefinition";
+import { RangeErrors } from "../../errors/Errors";
+import { TestValidity, ValidityRule } from "../Validators";
+import DataType from "../DataType";
 
 type MetaDataType = '';
 

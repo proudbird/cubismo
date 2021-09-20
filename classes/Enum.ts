@@ -1,4 +1,4 @@
-import Cubismo        from '../cubismo'
+import Cubismo        from '../cubismo/Cubismo'
 import Application    from './Application/Application'
 import Cube           from './Cube'
 import { MetaDataObjectDefinition } from './MetaData'
@@ -62,7 +62,9 @@ export default class Enum {
     this.#type          = type
     this.#modelId       = modelId
 
-    const storeValues = {};
+    const appData = this.#cubismo.applications.get(this.#application.id);
+    const store = appData.enums || {};
+    const enumValues = {};
 
     values.forEach(value => {
       const enumValue = new EnumValue(value.id, value.name, value.title);
@@ -70,14 +72,13 @@ export default class Enum {
         value     : enumValue,
         writable  : false,
         enumerable: true
-      })
+      });
 
-      storeValues[value.id] = enumValue;
+      enumValues[value.id] = enumValue;
     })
 
-    const store = this.#cubismo.enums.get(this.#application) || {};
-    store[this.#modelId] = storeValues;
-    this.#cubismo.enums.set(this.#application, store);
+    store[this.#modelId] = enumValues;
+    appData.enums = store;
   }
 
   get type(): string {

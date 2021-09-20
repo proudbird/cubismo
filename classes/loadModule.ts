@@ -1,7 +1,7 @@
 import fs     from 'fs'
 import demand from 'demander'
-import Import from '../core/Import'
-import Cubismo from '../cubismo';
+import Import from '../cubismo/Import'
+import Cubismo from '../cubismo/Cubismo';
 
 export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataObject>(
     fileName   : string, 

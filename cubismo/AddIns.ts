@@ -2,19 +2,18 @@ import EventEmmiter from 'events'
 import path from 'path'
 import catalogist from 'catalogist'
 
-import OneC from './addIns/1C/index'
+import OneC from '../addIns/1C/index'
+import Cubismo from './Cubismo'
 
 
 const AddIns = {}
 global['AddIns'] = AddIns
 
-export class AddIn extends EventEmmiter {
+export class AddIn {
 
   #name: string
 
   constructor(name, cubismo) {
-    super()
-
     this.#name = name
   }
 
@@ -23,7 +22,7 @@ export class AddIn extends EventEmmiter {
   }
 }
 
-export async function loadAddIns(cubismo, addIns): Promise<void> {
+export async function loadAddIns(cubismo: Cubismo): Promise<void> {
 
   return new Promise(async (resolve) => {
     // const addInDir = path.join(__dirname, 'addIns')
@@ -34,7 +33,7 @@ export async function loadAddIns(cubismo, addIns): Promise<void> {
 
 
     const addIn = new OneC(cubismo);
-    addIns.set('OneC', addIn)
+    cubismo.addIns.set('OneC', addIn);
     AddIns['OneC'] = addIn
     resolve()
 

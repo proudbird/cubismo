@@ -88,17 +88,9 @@ declare type MetaDataItemCache = {
   module: NodeModule
 } 
 
-declare interface Enum {
-  id   : string,
-  name : string,
-  title: string
-}
 
-declare type EnumStore = {
-  [key: string]: {
-    [key: string]: Enum
-  }
-}
+
+
 
 // declare class MetaDataCollection {
 

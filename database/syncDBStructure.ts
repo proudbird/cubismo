@@ -111,7 +111,10 @@ export default async function syncDBStructure(application: Application, dbDriver
     async function compareTables(models: any, dbSchema: DataBaseSchema): Promise<void> {
 
       for (const key in models) {
-        const model = models[key]
+        const model = models[key];
+        if(model.definition && key === model.definition.id) {
+          continue;
+        }
         if (!dbSchema[model.tableName]) {
           // DB doesn't have such a table, so let's create it
           safeChanges.push({
@@ -200,7 +203,6 @@ export default async function syncDBStructure(application: Application, dbDriver
        fieldsToDelete[key] = tableName 
       }
     }
-
     await compareTables(dbDriver.connection.models, dbSchema)
     await executeChanges(dbSchema)
     application.emit('dataBaseSynchronized', 1)

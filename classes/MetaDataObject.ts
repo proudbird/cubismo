@@ -1,6 +1,6 @@
 import { Model } from 'sequelize'
 
-import Cubismo     from '../cubismo'
+import Cubismo     from '../cubismo/Cubismo'
 import Application from './Application/Application'
 import Cube        from './Cube'
 import { MetaDataObjectDefinition } from './MetaData'

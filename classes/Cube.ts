@@ -1,4 +1,4 @@
-import Cubismo       from '../cubismo'
+import Cubismo       from '../cubismo/Cubismo'
 import Application   from './Application/Application'
 import MetaDataClass from './MetaDataClass'
 import { MetaDataClassDefinition } from './MetaData'

@@ -1,7 +1,8 @@
 import winax from 'winax';
 import {Converter} from "converter-1c-internal";
 import bodyParser from "bodyparser-1c-internal";
-import Cubismo from '../../cubismo'
+import Cubismo from '../../cubismo/Cubismo'
+import { AddIn } from '../../cubismo/AddIns';
 
 
 delete global.ActiveXObject // we don't want someone else could create ActiveX objects - unsafe
@@ -18,10 +19,10 @@ declare type ConnectionConfig = {
   Pwd: string
 }
 
-export default class OneC {
+export default class OneC extends AddIn {
 
   constructor(cubismo: Cubismo) {
-    //super('OneC', cubismo)
+    super('OneC', cubismo)
   }
 
   async connect(conf: ConnectionConfig): Promise<any> {

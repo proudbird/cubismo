@@ -2,7 +2,7 @@ import loadModule from "../loadModule";
 import { existsSync } from "fs";
 import { join } from "path";
 
-import Cubismo from "../../cubismo";
+import Cubismo from "../../cubismo/Cubismo";
 import Application from "./Application";
 import { ApplicationStructure } from "./defineAppStructure";
 

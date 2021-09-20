@@ -1,4 +1,4 @@
-import Cubismo from '../cubismo'
+import Cubismo from '../cubismo/Cubismo'
 import { fstat, watch } from 'fs'
 import loadModule from './loadModule'
 
