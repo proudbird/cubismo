@@ -5,7 +5,7 @@ import loadModule from '../loadModule'
 import DBDriver from '../../database/DBDriver';
 import Query from '../../database/queries/Query';
 
-import Cubismo     from '../../cubismo'
+import Cubismo     from '../../cubismo/Cubismo'
 import Cubes       from '../Cubes'
 import Cube        from '../Cube'
 import Modules     from '../Modules'
@@ -34,16 +34,23 @@ import { ConnectionConfig } from '../../database/types'
 import addElement from '../addElement'
 import getListOfCubes from './getListOfCubes';
 import loadMetaDataModules from './loadMetaDataModules';
+import initSystemTables from './initSystemTables';
+import { Users } from '../../database/system/users';
+import { resolve } from 'path/posix';
+import { ApplicationSettings } from 'cubismo/types';
 
-let workspaceDir: string
+
+let workspaceDir: string;
 
 export type AppSettings = {
   id       : string,
   dirname  : string,
-  filename : string,
+  //filename : string,
   dbconfig : ConnectionConfig,
   workspace: string
 }
+
+
 
 export default class Application extends EventEmitter implements IApplication  {
 
@@ -57,10 +64,10 @@ export default class Application extends EventEmitter implements IApplication  {
   #dbDriver : DBDriver
   #views    : View[]
   #workspace: string
-
+  users: Users;
   Query: Query
 
-  constructor(settings: AppSettings, cubismo: Cubismo) {
+  constructor(settings: ApplicationSettings, cubismo: Cubismo, onReady: Function) {
 
     super()
       
@@ -69,16 +76,14 @@ export default class Application extends EventEmitter implements IApplication  {
     this.#cubismo  = cubismo
     this.#elements = new Map()
     this.#cache    = new Map()
-    this.#dbDriver = new DBDriver(settings.dbconfig)
+    this.#dbDriver = new DBDriver(settings.dbconfig);
     this.#settings = settings
     this.#mdClasses= new Map()
     this.#cubes    = new Cubes(cubismo, this)
 
-    this.#workspace = workspaceDir = settings.workspace
+    this.#workspace = workspaceDir = settings.workspace;
 
     this.Query = new Query(this, this.#dbDriver.connection);
-     
-    cubismo.applicationCubes.set(this.#id, getListOfCubes(this.#settings.dirname));
 
     const defaultTypes = {
       Cube    : addMetaDataClassDefinition(this.#mdClasses, 'Cube'    , 'Cube'   , Cube   ),
@@ -87,26 +92,30 @@ export default class Application extends EventEmitter implements IApplication  {
       DataSets: addMetaDataClassDefinition(this.#mdClasses, 'DataSets', 'DataSet', DataSets, DataSet, DataSetRecord),
       Enums   : addMetaDataClassDefinition(this.#mdClasses, 'Enums'   , 'Enum'   , Enums   , Enum),
       Collections: addMetaDataClassDefinition(this.#mdClasses, 'Collections', 'Collection', undefined, Collections, CollectionItem)
-    }
+    };
 
-    this.once('initialize', () => {
-      initApp(this, settings, this.#cubismo, defaultTypes)
-    })
+    const ready = new Promise(async (resolve, reject) => {
+      
+      try {
+        const {modelStructure, applicationStructure} = defineAppStructure(
+          cubismo,
+          this, 
+          settings,
+          defaultTypes);
+        
+        await initSystemTables(this, this.#dbDriver);
+        defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure, defaultTypes);
+        await syncDBStructure(this, this.#dbDriver);
+        loadMetaDataModules(cubismo, this, applicationStructure); 
+        onStart(this);
+        resolve({ error: null, appData:  });
+      } catch (error) {
+        reject({ error: new Error(`Can't initialize application '${this.#id}': ${error.message}`)});
+      }
+    });
 
-    this.once('appStructureLoaded', (modelStructure, applicationStructure) => {
-      defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure, defaultTypes);
-      loadMetaDataModules(cubismo, this, applicationStructure);
-    })
+    onReady(ready);
 
-    const dbDriver = this.#dbDriver
-    this.once('modelStructureLoaded', () => {
-      syncDBStructure(this, dbDriver)
-    })
-
-    this.once('dataBaseSynchronized', () => {
-      onStart(this);
-      this.emit('initialized', defaultTypes)
-    })
 
     function addMetaDataClassDefinition(metaDataClassDefinitions : Map<string, MetaDataClassDefinition>,
                                         name          : string, 
@@ -151,23 +160,6 @@ export default class Application extends EventEmitter implements IApplication  {
   workspace(fileName: string): string {
     return path.join(workspaceDir, fileName)
   } 
-}
-
-function initApp(application: Application, appSettings: AppSettings, cubismo: Cubismo, defaultTypes: any): void {
-
-  try {
-    const {modelStructure, applicationStructure} = defineAppStructure(
-          cubismo,
-          application, 
-          appSettings,
-          defaultTypes)
-
-    application.emit('appStructureLoaded', modelStructure, applicationStructure)
-    Logger.debug(`Application <${application.id}> has been initialized`)
-  } catch(error) {
-    Logger.error("Unsuccessful attempt to define application structure", error)
-    undefined;
-  }
 }
 
 function onStart(application: Application) {
