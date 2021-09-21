@@ -5,6 +5,7 @@ import Cubismo     from '../../cubismo/Cubismo'
 import Application from './Application'
 import { AppSettings } from './Application'
 import Cube        from '../Cube'
+import { ApplicationSettings } from '../../cubismo/types'
 
 
 enum MetaDataClasses {
@@ -44,7 +45,7 @@ export declare type ApplicationStructure = {
 export default function defineAppStructure(
         cubismo : Cubismo,
         application: Application, 
-        settings : AppSettings,
+        settings : ApplicationSettings,
         metaDataStructure: any
       ): IModelStructure {
   
@@ -57,11 +58,11 @@ export default function defineAppStructure(
     childrenAlias: "next"
   });
 
-  appTree.forEach(appLevel => {
+  for(let appLevel of appTree) {
 
     if(appLevel.ext.includes('.map')) {
       // skip file
-      return
+      continue;
     }
     
     if (appLevel.next) {
@@ -70,7 +71,7 @@ export default function defineAppStructure(
       if (!Utils.find(appLevel.next, {
           fullName: cubeModuleFile
         })) {
-        return
+          continue;
       }
  
     const _cube = new Cube(
@@ -88,27 +89,27 @@ export default function defineAppStructure(
 
     applicationStructure.cubes[appLevel.name] = { filename: path.join(appLevel.fullPath, cubeModuleFile), classes: {} };
 
-    appLevel.next.forEach(cubeLevel => {
+    for(let cubeLevel of appLevel.next) {
 
       if(cubeLevel.ext.includes('.map')) {
         // skip file
-        return
+        continue;
       }
 
       if(cubeLevel.name === 'Types') {
-        return;
+        continue;
       }
       
         const className = cubeLevel.fullName
         if(!cubeLevel.isDirectory) {
-          return
+          continue
         }
 
         let classModuleFile = cubeLevel.fullName + '.js'
 
         const classDefinition = metaDataStructure[className]
         if(!classDefinition) {
-          return Logger.error(`Application <${application.id}> doesn't has a Data Class definition for ${className}`)
+          throw new Error(`Application <${application.id}> doesn't has a Data Class definition for ${className}`);
         }
 
         const _metaDataClass = new classDefinition.classMaker(
@@ -126,11 +127,11 @@ export default function defineAppStructure(
 
         applicationStructure.cubes[appLevel.name].classes[cubeLevel.name] = { filename: path.join(cubeLevel.fullPath, classModuleFile), objects: {} };
 
-        cubeLevel.next.forEach(classLevel => {
+        for(let classLevel of cubeLevel.next) {
 
           if(classLevel.ext.includes('.map') || classLevel.fullName.includes('.d')) {
             // skip file
-            return
+            continue;
           }
 
           if(classLevel.dirName === 'Modules') {
@@ -144,7 +145,7 @@ export default function defineAppStructure(
                   classLevel.fullName)
             _cube['Modules'].addObject(_metaDataObject, classLevel.fullPath);
             applicationStructure.cubes[appLevel.name].classes[cubeLevel.name].objects[classLevel.name] = { filename: classLevel.fullPath };
-            return
+            continue;
           }
 
           let objectName: string
@@ -187,7 +188,7 @@ export default function defineAppStructure(
                       values)
                 _cube['Enums'].addObject(_metaDataObject, moduleFileName);
                 
-                return
+                continue;
               }
 
               modelStructure[key] = {
@@ -208,10 +209,10 @@ export default function defineAppStructure(
               // }
             }
           }
-        })
-      })
+        }
+      }
     }
- });
+ };
 
  return { modelStructure, applicationStructure };
 }
