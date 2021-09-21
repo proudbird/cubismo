@@ -2,7 +2,12 @@ import MetaDataObject from '../../classes/MetaDataObject'
 import path from 'path'
 import ModelGenerator from '../../database/ModelGenerator'
 
-export default function defineModelStructure(cubismo, application, connection, appModelDefinition, metaDataStructure) {
+export default async function defineModelStructure(
+  cubismo, 
+  application, 
+  connection, 
+  appModelDefinition, 
+  metaDataStructure): Promise<any> {
 
   const modelGenerator = new ModelGenerator();
  
@@ -51,7 +56,7 @@ export default function defineModelStructure(cubismo, application, connection, a
   });
   
   modelGenerator.once("modelStructureReady", (result) => {
-    application.emit('modelStructureLoaded', result);
+    return result;
   });
 
   modelGenerator.define(cubismo, application, connection, appModelDefinition, metaDataStructure)

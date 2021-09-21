@@ -1,6 +1,5 @@
 import EventEmitter from 'events'
 import path from 'path'
-import loadModule from '../loadModule'
 
 import DBDriver from '../../database/DBDriver';
 import Query from '../../database/queries/Query';
@@ -19,7 +18,6 @@ import Enums    from '../Enums'
 import Enum     from '../Enum'
 import CatalogInstance from '../CatalogInstance'
 import Collections    from '../Collections'
-import Collection     from '../Collection'
 import CollectionItem from '../CollectionItem'
 import { MetaDataClassDefinition } from '../MetaData'
 import { MetaDataClassDefinitions } from '../MetaData'
@@ -28,7 +26,6 @@ import defineAppStructure   from './defineAppStructure'
 import defineModelStructure from './defineModelStructure'
 import syncDBStructure from '../../database/syncDBStructure'
 
-import { Sequelize } from 'sequelize'
 import { ConnectionConfig } from '../../database/types'
 
 import addElement from '../addElement'
@@ -36,26 +33,14 @@ import getListOfCubes from './getListOfCubes';
 import loadMetaDataModules from './loadMetaDataModules';
 import initSystemTables from './initSystemTables';
 import { Users } from '../../database/system/users';
-import { resolve } from 'path/posix';
-import { ApplicationSettings } from 'cubismo/types';
-
+import { ApplicationSettings } from '../../cubismo/types';
 
 let workspaceDir: string;
 
-export type AppSettings = {
-  id       : string,
-  dirname  : string,
-  //filename : string,
-  dbconfig : ConnectionConfig,
-  workspace: string
-}
-
-
-
-export default class Application extends EventEmitter implements IApplication  {
+export default class Application implements IApplication  {
 
   #id       : string
-  #settings : AppSettings
+  #settings : ApplicationSettings
   #cubismo  : Cubismo
   #cubes    : Cubes
   #elements : Map<string, [Cube, string]>
@@ -67,12 +52,10 @@ export default class Application extends EventEmitter implements IApplication  {
   users: Users;
   Query: Query
 
-  constructor(settings: ApplicationSettings, cubismo: Cubismo, onReady: Function) {
-
-    super()
-      
+  constructor(id: string, settings: ApplicationSettings, cubismo: Cubismo, onReady: Function) {
+    
     this.#settings = settings
-    this.#id       = settings.id
+    this.#id       = id
     this.#cubismo  = cubismo
     this.#elements = new Map()
     this.#cache    = new Map()
@@ -96,22 +79,28 @@ export default class Application extends EventEmitter implements IApplication  {
 
     const ready = new Promise(async (resolve, reject) => {
       
+      let modelStructure;
+      let applicationStructure;
       try {
-        const {modelStructure, applicationStructure} = defineAppStructure(
+        const result = defineAppStructure(
           cubismo,
           this, 
           settings,
           defaultTypes);
+
+        modelStructure = result.modelStructure;
+        applicationStructure = result.applicationStructure; 
         
         await initSystemTables(this, this.#dbDriver);
-        defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure, defaultTypes);
+        await defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure, defaultTypes);
         await syncDBStructure(this, this.#dbDriver);
         loadMetaDataModules(cubismo, this, applicationStructure); 
-        onStart(this);
-        resolve({ error: null, appData:  });
+        resolve({ error: null, mdStructure: applicationStructure }); 
       } catch (error) {
         reject({ error: new Error(`Can't initialize application '${this.#id}': ${error.message}`)});
       }
+
+      onStart(this);
     });
 
     onReady(ready);

@@ -35,7 +35,7 @@ export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataO
     me: context
   };
 
-  const cubes = cubismo.applicationCubes.get(application.id); 
+  const cubes = cubismo.applications.get(application.id).cubes; 
   for(let index in cubes) {
     const cubeName = cubes[index];
     const cube = application.cubes[cubeName];

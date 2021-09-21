@@ -40,7 +40,7 @@ async function runServer() {
 
   process.env.NODE_ENV = process.env.NODE_ENV || "production";
 
-  cubismo = new Cubismo(port, __dirname, sekretKey)
+  cubismo = new Cubismo(__dirname, sekretKey);
   await cubismo.start(applicationId)
   message = `port ${port}`
   // notifier.notify({

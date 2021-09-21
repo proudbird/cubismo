@@ -2,7 +2,7 @@ import Application from '../classes/application/Application'
 import DBDriver from './DBDriver'
 import { DataBaseModel, DataBaseModels, DataBaseSchema, TableFieldRawAttributes } from './types'
 
-export default async function syncDBStructure(application: Application, dbDriver: DBDriver) {
+export default async function syncDBStructure(application: Application, dbDriver: DBDriver): Promise<void> {
 
     const qi = dbDriver.connection.getQueryInterface()
 
@@ -144,7 +144,7 @@ export default async function syncDBStructure(application: Application, dbDriver
               await qi.createTable(change.tableName, change.attributes, change.options)
               Logger.debug(`New metadata object is created: ${change.model.name}`)
             } catch (error) {
-              return Logger.error(`Unsuccessful attempt to create new object: ${change.model.name}`)
+              return Logger.error(`Unsuccessful attempt to create new object: ${change.model.name}`, error);
             }
             break
           case 'addColumn':
@@ -152,7 +152,7 @@ export default async function syncDBStructure(application: Application, dbDriver
               await qi.addColumn(change.tableName, change.key, change.attribute)
               Logger.debug(`New attribute '${change.key}' added to the object '${change.model.name}'`)
             } catch (error) {
-              return Logger.error(`Unsuccessful attempt to add attribute '${change.key}' to the object '${change.model.name}'`)
+              return Logger.error(`Unsuccessful attempt to add attribute '${change.key}' to the object '${change.model.name}'`, error)
             }
             break
           case 'changeColumn':
@@ -160,7 +160,7 @@ export default async function syncDBStructure(application: Application, dbDriver
               await qi.changeColumn(change.tableName, change.key, change.attribute)
               Logger.debug(`Attribute ${change.key} has been changed in object ${change.model.name}`)
             } catch (error) {
-              return Logger.error(`Unsuccessful attempt to change attribute '${change.key}' to the object '${change.model.name}'`, new Error(`Unsuccessful attempt to change attribute '${change.key}' to the object '${change.model.name}'`))
+              return Logger.error(`Unsuccessful attempt to change attribute '${change.key}' to the object '${change.model.name}'`, error);
             }
             break
         }
@@ -174,7 +174,7 @@ export default async function syncDBStructure(application: Application, dbDriver
           await qi.removeColumn(fieldsToDelete[fieldName], fieldName)
           Logger.debug(`Column '${fieldName}' has been remowed from table '${fieldsToDelete[fieldName]}'`)
         } catch (error) {
-          return Logger.error(`Unsuccessful attempt to remowed column '${fieldName}' from table '${fieldsToDelete[fieldName]}': ${error}`)
+          return Logger.error(`Unsuccessful attempt to remowed column '${fieldName}' from table '${fieldsToDelete[fieldName]}'`, error)
         }
       }
 
@@ -184,7 +184,7 @@ export default async function syncDBStructure(application: Application, dbDriver
           await qi.dropTable(tableName)
           Logger.debug(`Table '${tableName}' has been dropped`)
         } catch (error) {
-          return Logger.error(`Unsuccessful attempt to dropp table '${tableName}': ${error}`)
+          return Logger.error(`Unsuccessful attempt to dropp table '${tableName}'`, error)
         }
       }
     }
@@ -203,7 +203,6 @@ export default async function syncDBStructure(application: Application, dbDriver
        fieldsToDelete[key] = tableName 
       }
     }
-    await compareTables(dbDriver.connection.models, dbSchema)
-    await executeChanges(dbSchema)
-    application.emit('dataBaseSynchronized', 1)
+    await compareTables(dbDriver.connection.models, dbSchema);
+    await executeChanges(dbSchema);
 }
