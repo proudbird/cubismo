@@ -1,35 +1,24 @@
 import { MetaDataClassDefinitions } from '../classes/MetaData';
 import Application from '../classes/application/Application';
+import { ConnectionConfig } from '../database/types';
 
 export declare type CubismoSettings = {
   port: number
 }
 
 export declare type Applications = {
-  application: Application,
-  settings   : ApplicationSettings,
-  cubes      : string[],
-  mdStructure: MetaDataClassDefinitions,
-  enums      : EnumStore,
+  application : Application,
+  settings   ?: ApplicationSettings,
+  cubes      ?: string[],
+  mdStructure?: MetaDataClassDefinitions,
+  enums      ?: EnumStore,
   [key: string]: any
 }
 
 export declare type ApplicationSettings = {
   dirname: string,
   workspace: string,
-  dbconfig: {
-      database: string,
-      username: string,
-      password: string,
-      options: {
-          host: string,
-          dialect: string,
-          logging: string,
-          operatorsAliases: number,
-          charset: string,
-          collate: string
-      }
-  }
+  dbconfig: ConnectionConfig
 }
 
 declare interface Enum {
