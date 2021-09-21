@@ -1,8 +1,10 @@
+import { EnumStore } from '../cubismo/types'
 import Cubismo        from '../cubismo/Cubismo'
 import Application    from './Application/Application'
 import Cube           from './Cube'
 import { MetaDataObjectDefinition } from './MetaData'
 
+const store: WeakMap<Application, EnumStore> = new WeakMap();
 
 class EnumValue {
   #id   : string
@@ -62,8 +64,7 @@ export default class Enum {
     this.#type          = type
     this.#modelId       = modelId
 
-    const appData = this.#cubismo.applications.get(this.#application.id);
-    const store = appData.enums || {};
+    const enumStore = store.get(application) || {};
     const enumValues = {};
 
     values.forEach(value => {
@@ -77,8 +78,8 @@ export default class Enum {
       enumValues[value.id] = enumValue;
     })
 
-    store[this.#modelId] = enumValues;
-    appData.enums = store;
+    enumStore[this.#modelId] = enumValues;
+    store.set(application, enumStore);
   }
 
   get type(): string {
