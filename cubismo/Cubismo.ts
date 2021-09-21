@@ -80,6 +80,7 @@ export default class Cubismo {
     return new Promise<Application>((resolve, reject) => {
       
       let application: Application;
+      let cubes: string[];
       
       async function onReady(ready: Promise<{ error: Error, mdStructure: MetaDataClassDefinitions }>) {
         const result = await ready;
@@ -101,8 +102,9 @@ export default class Cubismo {
 
       try { 
         application = new Application(id, settings, self, onReady);
+        cubes = getListOfCubes(settings.dirname);
         // we register application to prevent loading another instance of one
-        applications.set(id, { application });
+        applications.set(id, { application, settings, cubes });
       } catch(error) {
         return reject(error);
       }
