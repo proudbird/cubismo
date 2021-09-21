@@ -27,7 +27,7 @@
     "./package-lock.json",
     "./addIns/1C/package.json",
     "./addIns/1C/package-lock.json",
-    "./applications.json"
-, "../../apps/index/Mail/Modules/Postman.ts"  ],
+    "./applications.json",
+    "./settings.json"],
   "exclude": ["node_modules"]
 }
