@@ -35,6 +35,8 @@ export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataO
     me: context
   };
 
+  // TODO: maybe it is better to call cubes from var Cubes, so we don't need to preload
+  // cube modules
   const cubes = cubismo.applications.get(application.id).cubes; 
   for(let index in cubes) {
     const cubeName = cubes[index];
