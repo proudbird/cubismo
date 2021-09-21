@@ -97,6 +97,8 @@ function log(type: MessageType, format: string, message: string, error?: any): v
      */
     static error(message: string, error?: Error): void {
       
+      log(MessageType.ERROR, MessageFormat.FgRed + MessageFormat.Bright, message);
+      error = error || new Error();
       tslog.prettyError(error)
       return
 

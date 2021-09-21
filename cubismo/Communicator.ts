@@ -3,10 +3,10 @@ import path from 'path'
 import http from 'http'
 import { Server as SocketIO, Socket } from 'socket.io'
 
-import { ApplicationProperties} from './Cubismo'
+import { Applications} from './types'
 
 export default class Communicator extends SocketIO {
-  constructor(httpServer: http.Server, applications: Map<string, ApplicationProperties>) {
+  constructor(httpServer: http.Server, applications: Map<string, Applications>) {
     super(httpServer)
 
     this.on('connection', async function(socket: Socket) {
@@ -23,8 +23,8 @@ export default class Communicator extends SocketIO {
       try {
         const config = await getAppWindowConfig(applicationProperties.dirname)
         socket.emit('window', config)
-      } catch(err) {
-        Logger.error(`Unsuccessful attempt to load window config for the application '${process.env.APP}': ${err}`)
+      } catch(error) {
+        Logger.error(`Unsuccessful attempt to load window config for the application '${process.env.APP}'`, error)
       }
 
       socket.on('componentEvent', async function(message, callback) {
