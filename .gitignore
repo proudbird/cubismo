@@ -4,3 +4,4 @@ node_modules
 .gitignor
 addIns/1C/node_modules
 applications.json
+workspace.code-workspace
