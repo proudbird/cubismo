@@ -19,10 +19,10 @@ declare type ConnectionConfig = {
   Pwd: string
 }
 
-export default class OneC extends AddIn {
+export default class OneC { //extends AddIn {
 
   constructor(cubismo: Cubismo) {
-    super('OneC', cubismo)
+    //super('OneC', cubismo)
   }
 
   async connect(conf: ConnectionConfig): Promise<any> {
