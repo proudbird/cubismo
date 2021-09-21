@@ -1,70 +1,37 @@
 {
-  "name": "optima.tools",
-  "defaults": {
-      "application": {
-          "root": "C:\\ITProjects\\cubismo\\apps",
-          "workspaces": "C:\\ITProjects\\cubismo\\workspaces"
-      },
-      "database": {
-          "host": "127.0.0.1",
-          "name": "optioma",
-          "username": "optima",
-          "password": "<35{%rta)9^vjNuc"
+  "marketplaces": {
+    "dirname": "c:\\ITProjects\\cubismo\\apps\\_orlix",
+    "workspace": "c:\\ITProjects\\cubismo\\workspace",
+    "dbconfig": {
+      "database": "optima",
+      "username": "optima",
+      "password": "<35{%rta)9^vjNuc",
+      "options": {
+        "host": "127.0.0.1",
+        "dialect": "postgres",
+        "logging": false,
+        "operatorsAliases": 1,
+        "charset": "utf8",
+        "collate": "utf8_general_ci"
       }
-  },
-  "templates": {
-      "optima": {
-          "dirname": "c:\\ITProjects\\cubismo\\apps\\optima\\_build"
-      }
-  },
-  "postman": {
-    "pool": false,
-    "host": "mailbe05.hoster.by",
-    "port": 465,
-    "secure": true,
-    "auth": {
-      "user": "noreply@optima.tools",
-      "pass": "kY9BYebFb78m9K8"
-    },
-    "tls": {
-      "rejectUnauthorized": true
     }
   },
-  "applications": {
-      "marketplaces": {
-          "dirname": "c:\\ITProjects\\cubismo\\apps\\_orlix",
-          "workspace": "c:\\ITProjects\\cubismo\\workspace",
-          "dbconfig": {
-              "database": "optima",
-              "username": "optima",
-              "password": "<35{%rta)9^vjNuc",
-              "options": {
-                  "host": "127.0.0.1",
-                  "dialect": "postgres",
-                  "logging": false,
-                  "operatorsAliases": 1,
-                  "charset": "utf8",
-                  "collate": "utf8_general_ci"
-              }
-          }
-      },
-      "optima": {
-          "dirname": "c:\\ITProjects\\cubismo\\apps\\optima\\_build",
-          "workspace": "c:\\ITProjects\\cubismo\\workspace",
-          "dbconfig": {
-              "database": "optima",
-              "username": "optima",
-              "password": "<35{%rta)9^vjNuc",
-              "options": {
-                  "host": "127.0.0.1",
-                  "port": 5432,
-                  "dialect": "postgres",
-                  "logging": false,
-                  "operatorsAliases": 1,
-                  "charset": "utf8",
-                  "collate": "utf8_general_ci"
-              }
-          }
+  "optima": {
+    "dirname": "c:\\ITProjects\\cubismo\\apps\\optima\\_build",
+    "workspace": "c:\\ITProjects\\cubismo\\workspace",
+    "dbconfig": {
+      "database": "optima",
+      "username": "optima",
+      "password": "<35{%rta)9^vjNuc",
+      "options": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "dialect": "postgres",
+        "logging": false,
+        "operatorsAliases": 1,
+        "charset": "utf8",
+        "collate": "utf8_general_ci"
       }
+    }
   }
 }
