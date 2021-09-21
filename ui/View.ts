@@ -16,7 +16,7 @@ import initView from './initView'
 
 export default class View extends EventEmitter {
     
-  #id      : SID
+  #id      : string
   #name    : string
   #params  : any
   #options : any
@@ -61,7 +61,7 @@ export default class View extends EventEmitter {
     views[this.#id] = this
   }
 
-  get id(): SID {
+  get id(): string {
     return this.#id
   }
 
@@ -96,8 +96,8 @@ export default class View extends EventEmitter {
         )
 
       initView(this, config, this.#options)
-    }catch(err) {
-      Logger.error(`Unsuccessful attempt to load view config: ${err}`)
+    }catch(error) {
+      Logger.error(`Unsuccessful attempt to load view config`, error)
     }
   }
 }
