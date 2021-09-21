@@ -3,7 +3,6 @@ import catalogist from 'catalogist'
 
 import Cubismo     from '../../cubismo/Cubismo'
 import Application from './Application'
-import { AppSettings } from './Application'
 import Cube        from '../Cube'
 import { ApplicationSettings } from '../../cubismo/types'
 
