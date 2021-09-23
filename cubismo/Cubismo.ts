@@ -94,7 +94,8 @@ export default class Cubismo {
             settings, 
             cubes: getListOfCubes(settings.dirname),  
             mdStructure: result.mdStructure,
-            enums: {}  
+            enums: {},
+            workspace: settings.workspace  
           });
           resolve(application);
         }
