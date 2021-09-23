@@ -5,10 +5,13 @@ import SysTray from 'systray'
 import notifier from 'node-notifier'
 import Cubismo from './cubismo/Cubismo'
 import './common/Utils'
+import dotenv from "dotenv";
 
 
 import puppeteer from 'puppeteer'
 import { xor } from 'lodash'
+
+dotenv.config();
 
 let cubismo: Cubismo
 let sekretKey: string

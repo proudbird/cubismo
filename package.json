@@ -37,6 +37,7 @@
     "catalogist": "^1.0.4",
     "deepdash": "^5.3.9",
     "demander": "0.0.1",
+    "dotenv": "^9.0.2",
     "express": "^4.17.1",
     "fs-extra": "^9.1.0",
     "moment": "^2.29.1",
