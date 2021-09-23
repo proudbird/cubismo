@@ -146,7 +146,11 @@ function adoptOptions(options: any, model: any) {
         })
 
         if(!found) {
-          adopted = `${fieldId}_${model.application.lang}`
+          if(langs.includes(model.application.lang)) {
+            adopted = `${fieldId}_${model.application.lang}`
+          } else {
+            adopted = `${fieldId}_${langs[0]}`
+          }
         }
       }
 
