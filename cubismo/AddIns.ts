@@ -4,6 +4,8 @@ import catalogist from 'catalogist'
 
 import OneC from '../addIns/1C/index'
 import Cubismo from './Cubismo'
+import Application from '../classes/application/Application'
+import Mail from '../addIns/Mail'
 
 
 const AddIns = {}
@@ -34,7 +36,12 @@ export async function loadAddIns(cubismo: Cubismo): Promise<void> {
 
     const addIn = new OneC(cubismo);
     cubismo.addIns.set('OneC', addIn);
-    AddIns['OneC'] = addIn
+    AddIns['OneC'] = addIn;
+
+    const addInMail = new Mail(cubismo);
+    cubismo.addIns.set('Mail', addInMail);
+    AddIns['Mail'] = addInMail;
+
     resolve()
 
     // addInDirTree.forEach(async (addInLevel) => {
