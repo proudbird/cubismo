@@ -1,7 +1,7 @@
 import StringDefinition from "../StringDefinition";
 import DataTypeDefinition from "../DataTypeDefinition";
 import { RangeErrors } from "../../errors/Errors";
-import { TestValidity, ValidityRule } from "../Validators";
+import { TestValidity } from "../Validators";
 import DataType from "../DataType";
 
 type MetaDataType = '';
@@ -78,7 +78,7 @@ class TableColumnCollection {
   }
 
   remove(index: number): void {
-    TestValidity(index, ValidityRule.less(this.#columns.length), `Can't remove column from table`);
+    TestValidity(index, 'less', this.#columns.length, `Can't remove column from table`);
 
     this.#columns.splice(index, 1);
   }
@@ -107,7 +107,7 @@ class TableColumn {
   }
 
   constructor(name: string, type: DataTypeDefinition | DataType<MetaDataType>, title: string, index: number) {
-    TestValidity(name, ValidityRule.identificator, `Can't add column with name ${name}`);
+    TestValidity(name, 'identificator', `Can't add column with name ${name}`);
 
     this.#name = name;
     this.#title = title;

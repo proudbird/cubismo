@@ -1,15 +1,18 @@
 import { RangeErrors } from "../errors/Errors";
+import validator from "validator";
 
-export function TestValidity<RuleTest extends ValidityRuleTest>(value: any, rule: RuleTest, errorAnnotation: string): void {
-  const testResult = rule.test(value);
+export function TestValidity(value: any, rule: RuleTest, etalon: any, errorAnnotation?: string): void {
+  if(!errorAnnotation) {
+    errorAnnotation = etalon;
+  }
+  const tester = new RuleMap[rule](etalon);
+  const testResult = tester.test(value);
   if(testResult.error) {
     throw new Error(`${errorAnnotation} (${testResult.error})`)
   }
 }
 
-interface ValidityRuleTest {
-  test(value: any): TestResult;
-}
+export declare type RuleTest = 'email' | 'identificator' | 'positive' | 'less';
 
 type TestResult = {
   error: null | string
@@ -17,7 +20,12 @@ type TestResult = {
 
 class PositiveValidityRuleTest {
 
-  static test(value: number): TestResult {
+  etalon: number;
+  constructor(etalon: number) {
+    this.etalon = etalon;
+  }
+
+  test(value: any): TestResult {
     let error = null;
     if(value < 0) {
       error = RangeErrors.CAN_NOT_BE_NEGATIVE;
@@ -33,7 +41,7 @@ class LessValidityRuleTest {
     this.etalon = etalon;
   }
 
-  test(value: number): TestResult {
+  test(value: any): TestResult {
     let error = null;
     if(value > this.etalon) {
       error = RangeErrors.MAX_LENGTH_EXCEEDED;
@@ -44,14 +52,40 @@ class LessValidityRuleTest {
 
 class IdentificatorValidityRuleTest {
 
-  static test(value: string): TestResult {
+  etalon: number;
+  constructor(etalon: number) {
+    this.etalon = etalon;
+  }
+
+  test(value: any): TestResult {
     let error = null;
-    if(startsFromDigit(value)) {
-      error = new SyntaxError(`Value can't start with digit`);
+    if(!value) {
+      error = new SyntaxError(`Value can't be empty`);
+    } else {
+      if(startsFromDigit(value)) {
+        error = new SyntaxError(`Value can't start with digit`);
+      }
+      if(containsSpecialCharacters(value)) {
+        error = new SyntaxError(`Value can't contain special characters`);
+      }
     }
-    if(containsSpecialCharacters(value)) {
-      error = new SyntaxError(`Value can't contain special characters`);
+    return { error };
+  }
+}
+
+class EmailValidityRuleTest {
+
+  etalon: number;
+  constructor(etalon: number) {
+    this.etalon = etalon;
+  }
+
+  test(value: any): TestResult {
+    let error = null;
+    if(!validator.isEmail(value)) {
+      error = new SyntaxError(`Value has wrong format`);
     }
+
     return { error };
   }
 }
@@ -64,13 +98,19 @@ function containsSpecialCharacters(value: string) {
   return !value.match('^[a-zA-Z_0-9]*$');
 }
 
-export class ValidityRule {
+// export class ValidityRule {
 
-  static identificator: ValidityRuleTest = IdentificatorValidityRuleTest;
-  static positive: ValidityRuleTest = PositiveValidityRuleTest;
+//   static identificator: ValidityRuleTest = IdentificatorValidityRuleTest;
+//   static positive: ValidityRuleTest = PositiveValidityRuleTest;
+//   static email: ValidityRuleTest = EmailValidityRuleTest;
+//   static less(etalon: number): ValidityRuleTest {
+//     return new LessValidityRuleTest(etalon);
+//   }
+// }
 
-  static less(etalon: number): ValidityRuleTest {
-    return new LessValidityRuleTest(etalon);
-  }
+const RuleMap = {
+  'email'         : EmailValidityRuleTest,
+  'identificator' : IdentificatorValidityRuleTest,
+  'positive'      : PositiveValidityRuleTest,
+  'less'          : LessValidityRuleTest
 }
-

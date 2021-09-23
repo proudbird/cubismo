@@ -1,6 +1,9 @@
 import deepdash from 'deepdash'
 import _ from "lodash"
-import ShortId from "shortid"
+import ShortId from "shortid";
+import moment  from "moment";
+import CodeGenerator from 'node-code-generator';
+import { TestValidity } from "./Validators"
 
 global["Utils"] = _
 
@@ -20,6 +23,17 @@ function sid () {
   return id.replace(/$/g, "0");
 } _.mixin({ 'shortId': sid }, { 'chain': false });
   _.mixin({ 'sid': sid }, { 'chain': false }); // alias
+
+  _.mixin({ moment: moment }, { chain: false });
+
+  function generateCode(mask: string): string {
+    const generator = new CodeGenerator();
+    const code = generator.generateCodes('######', 1, {})[0];
+    return code;
+  }
+  _.mixin({ generateCode: generateCode }, { chain: false });
+
+  _.mixin({ testValidity: TestValidity }, { chain: false });
 
 function traverse(original, fn) {
     const copy = _.cloneDeep(original);
