@@ -1,0 +1,15 @@
+{
+  "name": "cubismo-addin-mail",
+  "addInName": "Mail",
+  "version": "0.0.1",
+  "description": "cubismo AddIn to work with e-mails",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "cubismo",
+  "license": "MIT",
+  "dependencies": {
+    "nodemailer": "^6.6.3"
+  }
+}

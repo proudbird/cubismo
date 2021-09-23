@@ -34,6 +34,10 @@ import loadMetaDataModules from './loadMetaDataModules';
 import initSystemTables from './initSystemTables';
 import { Users } from '../../database/system/users';
 import { ApplicationSettings } from '../../cubismo/types';
+import { fstat } from 'fs-extra';
+import { settings } from 'cluster';
+import FS from '../../common/FS';
+import Dictionary from '../../common/Dictionary';
 
 let workspaceDir: string;
 
@@ -47,10 +51,14 @@ export default class Application implements IApplication  {
   #cache    : Map<string, [number, any]>
   #mdClasses: MetaDataClassDefinitions
   #dbDriver : DBDriver
-  #views    : View[]
+  #views    : View[];
+  #api      : Map<string, Function>;
   #workspace: string
+  #dictionary: Dictionary;
   users: Users;
   Query: Query
+
+  public fs: FS;
 
   constructor(id: string, settings: ApplicationSettings, cubismo: Cubismo, onReady: Function) {
     
@@ -62,7 +70,13 @@ export default class Application implements IApplication  {
     this.#dbDriver = new DBDriver(settings.dbconfig);
     this.#settings = settings
     this.#mdClasses= new Map()
-    this.#cubes    = new Cubes(cubismo, this)
+    this.#cubes    = new Cubes(cubismo, this);
+
+    this.#api      = new Map();
+    this.#dictionary = new Dictionary(settings);
+
+
+    this.fs = new FS(this.#settings.workspace);
 
     this.#workspace = workspaceDir = settings.workspace;
 
@@ -144,8 +158,21 @@ export default class Application implements IApplication  {
 
   get lang(): string {
       return process.env.USERLANG || 'ru'
-  }  
+  } 
+
+  translate(article: string, locale?: string): string {
+    locale = locale || 'ru';
+    return this.#dictionary.translate(article, locale);
+  }
   
+  setApiHandler(request: string, handler: Function): void {
+    this.#api.set(request, handler);
+  }
+
+  getApiHandler(request: string): Function {
+    return this.#api.get(request);
+  }
+
   workspace(fileName: string): string {
     return path.join(workspaceDir, fileName)
   } 

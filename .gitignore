@@ -2,6 +2,7 @@
 node_modules
 .npmignore
 .gitignor
+.env
 addIns/1C/node_modules
 applications.json
 workspace.code-workspace

@@ -28,6 +28,7 @@
     "./addIns/1C/package.json",
     "./addIns/1C/package-lock.json",
     "./applications.json",
-    "./settings.json"],
+    "./settings.json",
+    "./vocabulary.json"],
   "exclude": ["node_modules"]
 }

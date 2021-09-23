@@ -1,4 +1,21 @@
 {
+  "index": {
+    "dirname": "c:\\ITProjects\\cubismo\\apps\\index\\_build",
+    "workspace": "c:\\ITProjects\\cubismo\\workspace\\index",
+    "dbconfig": {
+      "database": "index",
+      "username": "optima",
+      "password": "<35{%rta)9^vjNuc",
+      "options": {
+        "host": "127.0.0.1",
+        "dialect": "postgres",
+        "logging": false,
+        "operatorsAliases": 1,
+        "charset": "utf8",
+        "collate": "utf8_general_ci"
+      }
+    }
+  },
   "marketplaces": {
     "dirname": "c:\\ITProjects\\cubismo\\apps\\_orlix",
     "workspace": "c:\\ITProjects\\cubismo\\workspace",

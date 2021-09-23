@@ -12,6 +12,7 @@ export declare type Applications = {
   cubes      ?: string[],
   mdStructure?: MetaDataClassDefinitions,
   enums      ?: EnumStore,
+  workspace  ?: string,
   [key: string]: any
 }
 
