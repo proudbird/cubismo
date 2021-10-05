@@ -33,7 +33,7 @@ import getListOfCubes from './getListOfCubes';
 import loadMetaDataModules from './loadMetaDataModules';
 import initSystemTables from './initSystemTables';
 import { Users } from '../../database/system/users';
-import { ApplicationSettings } from '../../cubismo/types';
+import { ApplicationSettings, Environments } from '../../cubismo/types';
 import { fstat } from 'fs-extra';
 import { settings } from 'cluster';
 import FS from '../../common/FS';
@@ -55,19 +55,20 @@ export default class Application implements IApplication  {
   #api      : Map<string, Function>;
   #workspace: string
   #dictionary: Dictionary;
-  users: Users;
+  env: Environments;
+  #users: Users;
   Query: Query
 
   public fs: FS;
 
-  constructor(id: string, settings: ApplicationSettings, cubismo: Cubismo, onReady: Function) {
+  constructor(id: string, settings: ApplicationSettings, env: Environments, cubismo: Cubismo, onReady: Function) {
     
     this.#settings = settings
     this.#id       = id
     this.#cubismo  = cubismo
     this.#elements = new Map()
     this.#cache    = new Map()
-    this.#dbDriver = new DBDriver(settings.dbconfig);
+    this.#dbDriver = new DBDriver(settings.dbConfig);
     this.#settings = settings
     this.#mdClasses= new Map()
     this.#cubes    = new Cubes(cubismo, this);
@@ -79,6 +80,8 @@ export default class Application implements IApplication  {
     this.fs = new FS(this.#settings.workspace);
 
     this.#workspace = workspaceDir = settings.workspace;
+
+    this.env = env || {};
 
     this.Query = new Query(this, this.#dbDriver.connection);
 
@@ -109,12 +112,11 @@ export default class Application implements IApplication  {
         await defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure, defaultTypes);
         await syncDBStructure(this, this.#dbDriver);
         loadMetaDataModules(cubismo, this, applicationStructure); 
+        await onStart(this);
         resolve({ error: null, mdStructure: applicationStructure }); 
       } catch (error) {
         reject({ error: new Error(`Can't initialize application '${this.#id}': ${error.message}`)});
       }
-
-      onStart(this);
     });
 
     onReady(ready);
@@ -176,16 +178,24 @@ export default class Application implements IApplication  {
   workspace(fileName: string): string {
     return path.join(workspaceDir, fileName)
   } 
+
+  get users() {
+    if(!this.#users) {
+      this.#users = new Users(this.#dbDriver.connection);
+    }
+
+    return this.#users;
+  }
 }
 
-function onStart(application: Application) {
+async function onStart(application: Application) {
   if(application['onStart']) {
-    application['onStart']();
+    await application['onStart']();
   }
 
   for(let cube of application.cubes) {
     if(cube['onStart']){
-      cube['onStart']();
+      await cube['onStart']();
     }
   }
 }

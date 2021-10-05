@@ -5,8 +5,13 @@ import EventEmitter from 'events'
 import http         from 'http'
 import express  from 'express'
 import bodyParserFrom1C from "bodyparser-1c-internal";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken"
 import Cubismo from './Cubismo'
 import Application from '../classes/application/Application';
+import { NewApplicationParameters } from './types'
+import auth from "./Authenication";
+import access from "./AdminAccess";
 
 
 export default class Router extends EventEmitter {
@@ -53,37 +58,142 @@ export default class Router extends EventEmitter {
     router.get('/ping', function(req, res, next) {
       Logger.debug('checking instance')
       res.send({server: 'cubismo', hostname: os.hostname()})
-    })
-    router.get('/applist', function(req, res, next) {
-      self.emit('applist', function(list: any) {
-        res.send(list)
-      })
-    })
-    router.post('/stop', function(req, res, next) {
-      Logger.info(`request on stopping server`)
-      self.emit('stop', res, req.query.key)
-    })
-
-    router.post('/add_app', function(req, res, next) {
-      self.emit('addApplication', req.body, function(result) {
-        if(result.error) {
-          res.statusCode = result.statusCode;
-        }
-        res.send(result);
-      })
     });
 
-    router.all('/app/:applicationId/api/*', async (req, res, next) => {
-      const request = req.params[0];
+    router.get('/applist', function(req, res, next) {
+      const list = []
+      const appList = self.#cubismo.getAppSettings();
+      for(let key in appList) {
+        list.push({ id: key, value: key })
+      }
+      res.send(list);
+    });
+
+    router.post('/stop', access, function(req, res, next) {
+
+      Logger.info(`Request on stopping server`);
+      try {
+        self.#cubismo.stop(req.query.key as string);
+        res.send({ error: false });
+      } catch (error) {
+        res.status(500);
+        res.send({ error: true, message: error.message });
+      }
+    });
+
+    router.post('/add_app', access, async function(req, res, next) {
+
+      Logger.info(`Request on adding new application`);
+
+      try {
+        await self.#cubismo.addApplication(req.body as any as NewApplicationParameters);
+        res.send({ error: false });
+      } catch (error) {
+        res.status(500);
+        res.send({ error: true, message: error.message });
+      }
+    });
+
+    router.post('/reset_password', access, async (req, res, next) => {
+
+      const { applicationId, login, password } = req.body;
+
+      if(!applicationId || !login || !password) {
+        res.status(400).send({ error: true, message: `Missing params` });
+      }
+
+      let application: Application;
+      try {
+        application = await this.#cubismo.runApplication(applicationId);
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
+
+      try {
+        const user = await application.users.findOne({ where: { login }});
+        if(user) {
+          user.password = password;
+          await user.save();
+          res.status(200).send({ error: false });
+        } else {
+          res.status(400).send({ error: true, message: `User with login ${login} not found` });
+        }
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
+    });
+
+    router.post('/app/:applicationId/login', async (req, res, next) => {
+      const { login, password } = req.body;
+
+      if(!login || !password) {
+        res.status(400).send({ error: true, message: `Both login and password are required` });
+      }
+
+      let application: Application;
+      try {
+        const applicationId = req.params.applicationId
+        application = await this.#cubismo.runApplication(applicationId);
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
+
+      try {
+        const user = await application.users.findOne({ where: { login }});
+        if(user && (user.testPassword(password))) {
+          const token = jwt.sign(
+            { userId: user.id, login },
+            process.env.TOKEN_KEY,
+            {
+              expiresIn: "7d",
+            }
+          );
+          res.status(200).send({ error: false, data: token });
+        } else {
+          res.status(400).send({ error: true, message: `Invalid Credentials` });
+        }
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
+    });
+    
+    router.post('/app/:applicationId/check_authentication', authControl, async (req, res) => {
+
+      // if we assed authenication, so we just send OK
+      res.status(200).send({ error: false });
+    });
+
+    async function authControl(req, res, next) {
+      
+      let application: Application;
+      try {
+        const applicationId = req.params.applicationId
+        application = await self.#cubismo.runApplication(applicationId);
+      } catch (error) {
+        return res.status(500).send({ error: true, message: error.message });
+      }
+
+      auth(application, req, res, next);
+    }
+
+    router.all('/app/:applicationId/api/*', authControl, async (req, res, next) => {
 
       const applicationId = req.params.applicationId
       const application = await this.#cubismo.runApplication(applicationId);
+
+      const request = req.params[0];
+
       const handler = application.getApiHandler(request);
-      if(handler) {
-        handler(req, res);
-      } else {
+      if(!handler) {
         Logger.debug(`API request '${request}' is not registered`);
-        next();
+        return next();
+      }
+
+      const commonHandler = application.getApiHandler('*');
+      if(commonHandler) {
+        commonHandler(req, res, handler);
+      } else {
+        handler(req, res, next);
       }
     });
 
@@ -95,155 +205,6 @@ export default class Router extends EventEmitter {
     })
   }
 }
-
-// this.#router.on("connect", async function(res, applicationId) {
-//   let application: Application
-//   try {
-//     Logger.debug(self.path)
-//     application = await self.runApplication(applicationId)
-//     res.send(windowTemplate())
-//     setTimeout(onSessionStart, 1000, application)
-//   } catch(err) {
-//     Logger.error(`Unsuccessful attempt to run application '${applicationId}': ${err}`)
-//   }
-// })
-
-// this.#router.on('applist', async function(callback) {
-//   const list = []
-//   const settings = await self.getAppSettings()
-//   for(let key in settings) {
-//     list.push({ id: key, value: key })
-//   }
-//   callback(list)
-// })
-
-// this.#router.on('stop', async function(res, key) {
-//   function exit() {
-//     process.exit()
-//   }
-//   if(key === SECRET_KEY) {
-//     res.send({ error: false })
-//     Logger.info(`cubismo server is stopped`)
-//     // we need some delay to show notification
-//     setTimeout(exit, 500)
-//   } else {
-//     res.send({ error: true, errorMessage: `Wrong key` })
-//     Logger.info(`wrong key`)
-//   }
-// });
-
-// this.#router.on('get_access_code', async function(data, callback) {
-//   if(!validator.isEmail(data.email)) {
-//     return callback({ error: true, message: `Wrong email adress '${data.email}'`, statusCode: 421 });
-//   }
-//   if(!validator.isAlphanumeric(data.companyName) || !data.companyName.match(/^[a-z]/i)) {
-//     return callback({ error: true, message: `Company name may be consist of latin leters and digits and can start from letter only`, statusCode: 422 });
-//   }
-//   if(!validator.isAlphanumeric(data.login) || !data.login.match(/^[a-z]/i)) {
-//     return callback({ error: true, message: `Login may be consist of latin leters and digits and can start from letter only`, statusCode: 423 });
-//   }
-//   const accessCode = Verification.generateCode(data.email);
-//   try {
-//     const args = { accessCode, companyName: data.companyName };
-//     const text = await self.mail.template('verify.txt', args);
-//     const html = await self.mail.template('verify.html', args);
-//     const info = await self.mail.send({
-//       from: `${self.settings.name} <${self.settings.postman.auth.user}>`,
-//       to: data.email,
-//       subject: `Одноразовый код доступа к ${self.settings.name}`,
-//       text,
-//       html
-//     }); 
-//     callback({ error: false });
-//   } catch (error) {
-//     callback({ error: true, message: `Can't send access code to ${data.email}`, statusCode: 500 });
-//   }
-// });
-
-// this.#router.on('addApplication', async (params, callback) => {
-
-//   if(this.settings.applications[params.name]) {
-//     const error = new Error(`Applicaton with name '${params.name}' allready exists`);
-//     Logger.warn(error.message);
-//     return callback({ error: true, message: error.message, statusCode: 409 });
-//   }
-
-//   const appDirname = pathJoin(this.settings.defaults.application.root, params.name);
-//   const appWorkspace = pathJoin(this.settings.defaults.application.workspaces, params.name);
-//   const databaseName = 'db_' + Utils.sid().toLowerCase();
-//   const username = "optima";
-//   const password = "<35{%rta)9^vjNuc";
-
-//   let error = await initApplicationSpace(
-//     this.settings.templates.optima.dirname, 
-//     appDirname, 
-//     appWorkspace
-//     );
-//   if(error) {
-//     Logger.warn(error.message);
-//     return callback({ error: true, message: error.message, statusCode: 500 });
-//   }
-//   error = await initDatabase(this.settings.defaults.database, databaseName, username, password);
-//   if(error) {
-//     Logger.warn(error.message);
-//     return callback({ error: true, message: error.message, statusCode: 500 });
-//   }
-
-//   const settings: AppSettings = {
-//     id: params.name,
-//     dirname:  appDirname,
-//     workspace: appWorkspace,
-//     dbconfig: {
-//       database: databaseName,
-//       username: username,
-//       password: password,
-//       options: {
-//         host: "127.0.0.1",
-//         dialect: "postgres",
-//         logging: false
-//       }
-//     }
-//   };
-
-//   const self = this;
-//   async function end() {
-//     try{
-//       self.settings.applications[params.name] = settings;
-//       fs.writeFileSync(self.settings, JSON.stringify(self.settings));
-
-//       const application = await self.runApplication(params.name);
-//       const newUser = application.users.new();
-//       newUser.name     = params.username;
-//       newUser.login    = params.login;
-//       newUser.email    = params.email;
-//       newUser.password = params.password;
-//       await newUser.save();
-//     } catch(error) {
-//       return callback({ error: true, message: error.message, statusCode: 500 });
-//     }
-
-//     callback({ error: false });
-//   }
-
-//   setTimeout(end, 1000*3); 
-// })
-
-// this.#router.on('api', async function(applicationId, params, body, method, callback) {
-//   let application: Application;
-//   try {
-//     application = await self.runApplication(applicationId);
-//   } catch(err) {
-//     Logger.error(`Unsuccessful attempt to run application '${applicationId}': ${err}`)
-//   }
-
-//   try {
-//     //application;
-//   } catch(err) {
-//     Logger.error(`Unsuccessful attempt to run application '${applicationId}': ${err}`)
-//   }
-
-//   callback({ error: false });
-// });
 
 function windowTemplate() {
   const fileName = path.join(__dirname, '../client/window.html')

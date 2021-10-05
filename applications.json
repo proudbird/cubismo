@@ -2,7 +2,7 @@
   "index": {
     "dirname": "c:\\ITProjects\\cubismo\\apps\\index\\_build",
     "workspace": "c:\\ITProjects\\cubismo\\workspace\\index",
-    "dbconfig": {
+    "dbConfig": {
       "database": "index",
       "username": "optima",
       "password": "<35{%rta)9^vjNuc",
@@ -19,7 +19,7 @@
   "marketplaces": {
     "dirname": "c:\\ITProjects\\cubismo\\apps\\_orlix",
     "workspace": "c:\\ITProjects\\cubismo\\workspace",
-    "dbconfig": {
+    "dbConfig": {
       "database": "optima",
       "username": "optima",
       "password": "<35{%rta)9^vjNuc",
@@ -36,7 +36,7 @@
   "optima": {
     "dirname": "c:\\ITProjects\\cubismo\\apps\\optima\\_build",
     "workspace": "c:\\ITProjects\\cubismo\\workspace",
-    "dbconfig": {
+    "dbConfig": {
       "database": "optima",
       "username": "optima",
       "password": "<35{%rta)9^vjNuc",

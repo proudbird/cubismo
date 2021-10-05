@@ -1,8 +1,15 @@
 import { Sequelize, DataTypes, ModelCtor, Model, FindOptions } from "sequelize";
+import bcrypt from "bcryptjs";
 
 export const config = {
   modelName: '_users',
   attributes: {
+    id: {
+      type        : DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey  : true,
+      unique      : true
+    },
     name: {
       type: DataTypes.STRING(50),
       allowNull: false
@@ -43,12 +50,12 @@ export class Users {
     return (this.#model.build() as unknown as User);
   } 
 
-  async findOne(options: FindOptions) {
-    return this.#model.findOne(options);
+  async findOne(options: FindOptions): Promise<User> {
+    return this.#model.findOne(options) as unknown as User;
   }
 
-  async findAll(options: FindOptions) {
-    return this.#model.findAll(options);
+  async findAll(options: FindOptions): Promise<User[]> {
+    return this.#model.findAll(options)  as unknown as User[];
   }
 }
 
@@ -60,6 +67,10 @@ class User {
   constructor(model: ModelCtor<Model>, record: Model) {
     this.#model = model;
     this.#record = record;
+  }
+
+  get id(): string {
+    return this.#record.id;
   }
 
   get name(): string {
@@ -86,12 +97,14 @@ class User {
     this.#record.login = value;
   }
 
-  get password(): string {
-    return this.#record.password;
+  set password(value: string) {
+    this.#record.password = bcrypt.hashSync(value, 10);
   }
 
-  set password(value: string) {
-    this.#record.password = value;
+
+  testPassword(value: string): boolean {
+
+    return bcrypt.compareSync(value, this.#record.password);
   }
 
   save(): Promise<User> {

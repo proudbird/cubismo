@@ -1,31 +1,31 @@
+import { ConnectionConfig } from "../database/types";
 import { Client } from "pg";
 
-export default async function initDatabase(defaults, database: string, username: string, password: string): Promise<undefined | Error>  {
+export default async function initDatabase(config: any): Promise<void>  {
   
   try {
+
     const client = new Client({
-      user: defaults.username,
-      host: defaults.host,
-      database: defaults.database,
-      password: defaults.password,
-      port: 5432,
-    })
+      user: process.env.CON_USERNAME,
+      host: process.env.CON_HOST,
+      database: process.env.CON_DATABASE,
+      password: process.env.CON_PASSWORD,
+      port: process.env.CON_PORT
+    });
     client.connect()
 
     let queryString = 
       `SELECT EXISTS ( 
-        SELECT datname FROM pg_catalog.pg_database WHERE datname = '${database.toLowerCase()}'
+        SELECT datname FROM pg_catalog.pg_database WHERE datname = '${config.database.toLowerCase()}'
       )`;
       const exists = await client.query(queryString);
       if(exists.rows[0].exists) {
-          return new Error(`Can't create database '${database}', because it allready exists`);
+        throw new Error(`Can't create database '${config.database}', because it allready exists`);
       }
 
-      queryString = `CREATE DATABASE ${database}`;
-      const result = client.query(queryString);
+      queryString = `CREATE DATABASE ${config.database}`;
+      const result = await client.query(queryString);
   } catch(error) {
-    return new Error(`Can't create database '${database}': ${error}`);
+    throw new Error(`Can't create database '${config.database}': ${error}`);
   }
-
-  return undefined;
 }

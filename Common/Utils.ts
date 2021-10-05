@@ -4,6 +4,7 @@ import ShortId from "shortid";
 import moment  from "moment";
 import CodeGenerator from 'node-code-generator';
 import { TestValidity } from "./Validators"
+import * as bcrypt from "bcryptjs";
 
 global["Utils"] = _
 
@@ -26,14 +27,16 @@ function sid () {
 
   _.mixin({ moment: moment }, { chain: false });
 
-  function generateCode(mask: string): string {
+  function generateCode(mask: string, options?): string {
     const generator = new CodeGenerator();
-    const code = generator.generateCodes('######', 1, {})[0];
+    const code = generator.generateCodes(mask, 1, options)[0];
     return code;
   }
   _.mixin({ generateCode: generateCode }, { chain: false });
 
   _.mixin({ testValidity: TestValidity }, { chain: false });
+
+  global["Utils"]['bcrypt'] = bcrypt;
 
 function traverse(original, fn) {
     const copy = _.cloneDeep(original);

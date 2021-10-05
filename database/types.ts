@@ -5,7 +5,7 @@ import Sequelize from 'sequelize'
 import { Model } from 'sequelize'
 
 export type ConnectionConfig = Sequelize.ConnectionOptions 
-        &{ options: Sequelize.Options }
+        &{ options?: Sequelize.Options }
 
 export type DataTypeConfig = {
   type          : Sequelize.DataTypes.AbstractDataTypeConstructor 
