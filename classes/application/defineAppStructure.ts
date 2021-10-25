@@ -5,6 +5,7 @@ import Cubismo     from '../../cubismo/Cubismo'
 import Application from './Application'
 import Cube        from '../Cube'
 import { ApplicationSettings } from '../../cubismo/types'
+import { MetaDataTypes } from '../../common/Types'
 
 
 enum MetaDataClasses {
@@ -187,6 +188,9 @@ export default function defineAppStructure(
                       values)
                 _cube['Enums'].addObject(_metaDataObject, moduleFileName);
                 
+                const modelName = [_cube.name, classDefinition.type, definition.name].join(".")
+                MetaDataTypes.storeTypeById(definition.id, modelName);
+        
                 continue;
               }
 

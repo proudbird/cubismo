@@ -1,6 +1,7 @@
 import EventEmitter from 'events'
 import { Sequelize, DataTypes } from 'sequelize'
-import { AttributeOptions, CatalogAtrributes } from './types'
+import { AttributeOptions, CatalogAtrributes, RegistratorAtrributes } from './types'
+import { MetaDataTypes } from '../common/Types'
 
 export default class ModelGenerator extends EventEmitter {
 
@@ -248,9 +249,9 @@ export default class ModelGenerator extends EventEmitter {
       return { attributes: attributeOptions.attributes, belongsTo: attributeOptions.belongsTo }
     }
 
-    function defineRecorderAttributes(model) {
+    function defineRegistratorAttributes(model) {
 
-      const attributes = {
+      const attributes: RegistratorAtrributes = {
         // field 'id', 'dropped' and 'Date' are must be
         id: {
           type        : DataTypes.UUID,
@@ -269,6 +270,14 @@ export default class ModelGenerator extends EventEmitter {
         Date: {
           type        : DataTypes.DATE,
           defaultValue: DataTypes.NOW
+        }
+      }
+
+      if (model.numberLenght > 0) {
+        attributes.Number = {
+          type         : model.numberType == "INTEGER" ? DataTypes.INTEGER : DataTypes.STRING(model.numberLenght),
+          autoIncrement: false,
+          unique       : model.uniqueCode
         }
       }
 
@@ -303,12 +312,15 @@ export default class ModelGenerator extends EventEmitter {
       let modelName
       if (model.class === "Collections") {
         modelName = [model.ownerModelName, model.name].join(".")
+        //MetaDataTypes.storeTypeById(model.ownerModel.id, modelName);
       } else {
         modelName = [model.cube, model.class, model.name].join(".")
+        MetaDataTypes.storeTypeById(model.id, modelName);
       }
       if (connection.models[modelName]) {
         return connection.models[modelName]
       }
+
 
       let attributeOptions: AttributeOptions = { attributes: undefined, belongsTo: undefined}
       // didn't find the model - so, let's build it!
@@ -316,8 +328,8 @@ export default class ModelGenerator extends EventEmitter {
         case "Catalogs":
           attributeOptions = defineCatalogAttributes(model)
           break
-        case "Recorders":
-          attributeOptions = defineRecorderAttributes(model)
+        case "Registrators":
+          attributeOptions = defineRegistratorAttributes(model)
           break;
         case "Collections":
           attributeOptions = defineCollectionAttributes(model)
@@ -340,15 +352,23 @@ export default class ModelGenerator extends EventEmitter {
 
       const _model = connection.define(modelName, attributeOptions.attributes, config) as any
       connection.models[model.id] = _model;
-      _model['modelName'] = model.name
-      _model['cubismo'] = cubismo
-      _model['application'] = application
-      _model['cube'] = application[model.cube] || model.ownerModel.cube
-      _model['class'] = model.class
-      _model['owners'] = []
-      _model['definition'] = model
+
+      let _cube;
+      if(!application[model.cube] && !model.ownerModel) {
+        throw new Error(`Can't find cube '${model.cube}', setted in model ${_model.name}`);
+      } else {
+        _cube = application[model.cube] || model.ownerModel.cube;
+      }
+
+      _model['modelName'] = model.name;
+      _model['cubismo'] = cubismo;
+      _model['application'] = application;
+      _model['cube'] = _cube;
+      _model['class'] = model.class;
+      _model['owners'] = [];
+      _model['definition'] = model;
       if(model.ownerModel) {
-        _model['ownerModel'] = model.ownerModel
+        _model['ownerModel'] = model.ownerModel;
       }
 
       if (Array.isArray(attributeOptions.belongsTo) && attributeOptions.belongsTo.length) {

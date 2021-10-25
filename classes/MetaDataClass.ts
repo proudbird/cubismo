@@ -67,6 +67,7 @@ export default class MetaDataClass {
     Object.defineProperty(this, element.name, {
       enumerable: true,
       get() {
+        console.log(`123`)
         const value = this.#elements.get(element.name)
         loadModule(value[1], element.type, element.name, this, element, this.#cache)
         return value[0]

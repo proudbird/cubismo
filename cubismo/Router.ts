@@ -9,7 +9,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken"
 import Cubismo from './Cubismo'
 import Application from '../classes/application/Application';
-import { NewApplicationParameters } from './types'
+import { Applications, NewApplicationParameters } from './types'
 import auth from "./Authenication";
 import access from "./AdminAccess";
 
@@ -24,7 +24,7 @@ export default class Router extends EventEmitter {
     this.#cubismo = cubismo;
   }
 
-  async run (port: number): Promise<void> {
+  async run (port: number, host: string): Promise<void> {
 
     const self = this
     const router = express();
@@ -140,6 +140,7 @@ export default class Router extends EventEmitter {
 
       try {
         const user = await application.users.findOne({ where: { login }});
+        Logger.debug(`We found user ${user.login}`);
         if(user && (user.testPassword(password))) {
           const token = jwt.sign(
             { userId: user.id, login },
@@ -148,6 +149,7 @@ export default class Router extends EventEmitter {
               expiresIn: "7d",
             }
           );
+          Logger.debug(`We granted user ${user.login} with token`);
           res.status(200).send({ error: false, data: token });
         } else {
           res.status(400).send({ error: true, message: `Invalid Credentials` });
@@ -157,49 +159,76 @@ export default class Router extends EventEmitter {
       }
     });
     
-    router.post('/app/:applicationId/check_authentication', authControl, async (req, res) => {
+    router.post('/app/:applicationId/check_authentication', async (req, res, next) => {
 
-      // if we assed authenication, so we just send OK
-      res.status(200).send({ error: false });
+      function handler(req, res) {
+        res.status(200).send({ error: false });
+      }
+
+      authControl(req, res, next, handler);
     });
 
-    async function authControl(req, res, next) {
+    async function authControl(req, res, next, handler) {
       
       let application: Application;
       try {
         const applicationId = req.params.applicationId
         application = await self.#cubismo.runApplication(applicationId);
+        Logger.debug(`Application is running: ${application.id}`);
       } catch (error) {
+        Logger.warn(`Error on running app: ${error.message}`);
         return res.status(500).send({ error: true, message: error.message });
       }
 
-      auth(application, req, res, next);
+      Logger.debug(`Going to authenication`);
+      await auth(application, req, res, next, handler);
     }
 
-    router.all('/app/:applicationId/api/*', authControl, async (req, res, next) => {
+    router.all('/app/:applicationId/api/*', async (req, res, next) => {
 
       const applicationId = req.params.applicationId
-      const application = await this.#cubismo.runApplication(applicationId);
+      let application: Application;
+      try {
+        application = await this.#cubismo.runApplication(applicationId);
+      } catch (error) {
+        return res.status(404).send({ error: true, message: error.message });
+      }
 
       const request = req.params[0];
 
-      const handler = application.getApiHandler(request);
-      if(!handler) {
+      if(!application.getApiHandler(request)) {
         Logger.debug(`API request '${request}' is not registered`);
         return next();
       }
 
+      const { handler, needAuthenication } = application.getApiHandler(request);
+
       const commonHandler = application.getApiHandler('*');
       if(commonHandler) {
-        commonHandler(req, res, handler);
+        commonHandler.handler(req, res, handler);
       } else {
-        handler(req, res, next);
+
+        if(needAuthenication) {
+          try {
+            Logger.debug(`Going to handler`);
+            authControl(req, res, next, handler);
+          } catch (error) {
+            res.status(500).send({ error: true, message: error.message });
+          }
+        } else {
+          try {
+            Logger.debug(`Going to next`);
+            handler(req, res, next);
+          } catch (error) {
+            res.status(500).send({ error: true, message: error.message });
+          }
+        }
       }
     });
 
     return new Promise((resolve, reject) => {
-      this.server = router.listen(port, function() {  
-        Logger.info(`cubismo server is listening at port ${port}`)
+      this.server = router.listen(port, host, function() {  
+        Logger.info(`cubismo server is listening at ${host}:${port}`)
         resolve()
       })
     })

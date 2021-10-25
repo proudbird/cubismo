@@ -11,12 +11,15 @@ import Modules     from '../Modules'
 import Module      from '../Module'
 import Catalogs    from '../Catalogs'
 import Catalog     from '../Catalog'
+import CatalogInstance from '../CatalogInstance'
+import Registrators    from '../Registrators'
+import Registrator     from '../Registrator'
+import RegistratorInstance from '../RegistratorInstance'
 import DataSets    from '../DataSets'
 import DataSet     from '../DataSet'
 import DataSetRecord from '../DataSetRecord'
 import Enums    from '../Enums'
 import Enum     from '../Enum'
-import CatalogInstance from '../CatalogInstance'
 import Collections    from '../Collections'
 import CollectionItem from '../CollectionItem'
 import { MetaDataClassDefinition } from '../MetaData'
@@ -52,12 +55,13 @@ export default class Application implements IApplication  {
   #mdClasses: MetaDataClassDefinitions
   #dbDriver : DBDriver
   #views    : View[];
-  #api      : Map<string, Function>;
+  #api      : Map<string, { handler: Function, needAuthenication: boolean }>;
   #workspace: string
   #dictionary: Dictionary;
   env: Environments;
   #users: Users;
   Query: Query
+  #defaultLang: string;
 
   public fs: FS;
 
@@ -80,6 +84,7 @@ export default class Application implements IApplication  {
     this.fs = new FS(this.#settings.workspace);
 
     this.#workspace = workspaceDir = settings.workspace;
+    this.#defaultLang = settings.defaultLang || 'en';
 
     this.env = env || {};
 
@@ -89,6 +94,7 @@ export default class Application implements IApplication  {
       Cube    : addMetaDataClassDefinition(this.#mdClasses, 'Cube'    , 'Cube'   , Cube   ),
       Modules : addMetaDataClassDefinition(this.#mdClasses, 'Modules' , 'Module' , Modules , Module),
       Catalogs: addMetaDataClassDefinition(this.#mdClasses, 'Catalogs', 'Catalog', Catalogs, Catalog, CatalogInstance),
+      Registrators: addMetaDataClassDefinition(this.#mdClasses, 'Registrators', 'Registrator', Registrators, Registrator, RegistratorInstance),
       DataSets: addMetaDataClassDefinition(this.#mdClasses, 'DataSets', 'DataSet', DataSets, DataSet, DataSetRecord),
       Enums   : addMetaDataClassDefinition(this.#mdClasses, 'Enums'   , 'Enum'   , Enums   , Enum),
       Collections: addMetaDataClassDefinition(this.#mdClasses, 'Collections', 'Collection', undefined, Collections, CollectionItem)
@@ -115,7 +121,8 @@ export default class Application implements IApplication  {
         await onStart(this);
         resolve({ error: null, mdStructure: applicationStructure }); 
       } catch (error) {
-        reject({ error: new Error(`Can't initialize application '${this.#id}': ${error.message}`)});
+        error.message = `Can't initialize application '${this.#id}': ${error.message}`
+        reject({ error });
       }
     });
 
@@ -162,16 +169,21 @@ export default class Application implements IApplication  {
       return process.env.USERLANG || 'ru'
   } 
 
+  get defaultLang(): string {
+    return this.#defaultLang;
+} 
+
   translate(article: string, locale?: string): string {
     locale = locale || 'ru';
     return this.#dictionary.translate(article, locale);
   }
   
-  setApiHandler(request: string, handler: Function): void {
-    this.#api.set(request, handler);
+  setApiHandler(request: string, handler: Function, needAuthenication: boolean = true ): void {
+    Logger.debug(`Need auth ${needAuthenication}`)
+    this.#api.set(request, { handler, needAuthenication });
   }
 
-  getApiHandler(request: string): Function {
+  getApiHandler(request: string): { handler: Function, needAuthenication: boolean } {
     return this.#api.get(request);
   }
 

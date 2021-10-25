@@ -102,6 +102,8 @@ function buildSQLStatement(query: QueryStatement, schema: QuerySchema): string {
       defineJoinFields(value.statement, value.model, schema);
   });
 
+  schema.groupBy = query.groupBy;
+
   result = buildSQLQueryString(schema);
 
   return result;
@@ -186,21 +188,33 @@ function isSubquery(query: QueryStatement): boolean {
 
 function defineFields(query: QueryStatement, schema: QuerySchema): void {
 
+  if(!query.select) {
+    return;
+  }
+
   const selectFields = query.select.split(',');
 
   for (let fieldStatement of selectFields) {
     fieldStatement = fieldStatement.trim();
-    defineField(fieldStatement, schema);
+    if(fieldStatement) {
+      defineField(fieldStatement, schema);
+    }
   }
 }
 
 function defineJoinFields(query: JoinStatement, joinModel: DataBaseModel, schema: QuerySchema): void {
 
+  if(!query.select) {
+    return;
+  }
+
   const selectFields = query.select.split(',');
 
   for (let fieldStatement of selectFields) {
     fieldStatement = fieldStatement.trim();
-    defineJoinField(fieldStatement, joinModel, schema, query);
+    if(fieldStatement) {
+      defineJoinField(fieldStatement, joinModel, schema, query);
+    }
   }
 }
 
@@ -239,6 +253,9 @@ function addFieldDefinition(fieldName: string, alias: string, model: DataBaseMod
       fieldId = fieldId + '_' + lang;
     }
     dataType = 'STRING';
+  } else if (fieldName === 'id') {
+    fieldId = 'id';
+    dataType = 'STRING ';
   } else if (fieldName === 'Reference') {
     fieldId = 'id';
     dataType = 'FK';
@@ -672,6 +689,10 @@ function buildSQLQueryString(schema: QuerySchema): string {
     result += ` WHERE ${buildWhereClause(schema)}`;
   }
 
+  if(schema.groupBy) {
+    result += ` GROUP BY ${schema.groupBy.join(', ')}`;
+  }
+
   return result;
 }
 
@@ -716,15 +737,35 @@ function getComperisonValue(condition: ConditionDefinition): string {
     value = condition.etalon.value[0];
     result = `${value}`;
     if(condition.field.dataType === 'FK') {
-      result = `'${value.id}'`;
+      if(Array.isArray(value)) {
+        result = getComperisonValueFromCollection(value);
+      } else {
+        result = `'${value.id}'`;
+      }
     } else {
       if(typeof value === 'string') {
-        result = `'${result}'`;
+        result = `'${value}'`;
+      } if(Array.isArray(value)) {
+        let values: string[] = [];
+        for(let val of value) {
+          values.push(`'${val}'`);
+        }
+        result = values.join(", ");
       }
     }
   }
 
   return result;
+}
+
+function getComperisonValueFromCollection(values: {id: string}[]): string {
+
+  let result: string[] = [];
+  for(let value of values) {
+    result.push(`'${value.id}'`);
+  }
+
+  return result.join(", ");
 }
 
 function buildOperationComparison(condition: ConditionDefinition): string {

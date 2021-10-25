@@ -4,7 +4,7 @@
   "scripts": {
     "build": "tsc --build tsconfig.json",
     "postbuild": "cd ../../dist/server && npm ci --production && cd ../../dist/server/addIns/1C && npm ci --production",
-    "watch": "tsc --build tsconfig.json -w",
+    "watch_cubismo": "tsc --build tsconfig.json -w",
     "debug": "nodemon ../../dist/server start.js",
     "dev": "concurrently --kill-others \"npm run watch\" \"npm run watch-web\"",
     "test": "mocha -r ts-node/register test/**/*.ts"

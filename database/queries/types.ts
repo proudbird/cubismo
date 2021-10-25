@@ -69,7 +69,8 @@ export declare type QuerySchema = {
   where?: BooleanConditionDefinition | ConditionDefinition,
   tables: TablesMap,
   models: DataBaseModels,
-  sources: Map<string, SourceDefinition>
+  sources: Map<string, SourceDefinition>,
+  groupBy?: string[]
 }
 
 export declare type FieldDefinition = {

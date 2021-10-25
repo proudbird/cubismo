@@ -63,7 +63,7 @@ export default class Cubismo {
 
     await loadAddIns(this);
 
-    this.router.run(this.settings.port);
+    this.router.run(this.settings.port, this.settings.host);
   }
 
   stop(key: string): void {
@@ -107,6 +107,8 @@ export default class Cubismo {
       throw new Error(`Can't initialize new application space: ${error}`);
     }
     
+    const defaultLang = params.defaultLang || 'en';
+
     const database  = Utils.get(params, 'dbConfig.database') || Utils.get(params, 'dbConfig.options.database') || 'db_' + Utils.sid().toLowerCase();
     const host      = Utils.get(params, 'dbConfig.host') || Utils.get(params, 'dbConfig.options.host') || this.settings.defaults.database.host;
     const port      = Utils.get(params, 'dbConfig.port') || Utils.get(params, 'dbConfig.options.port') || this.settings.defaults.database.port;
@@ -133,7 +135,8 @@ export default class Cubismo {
     const settings: ApplicationSettings = {
       dirname,
       workspace,
-      dbConfig
+      dbConfig,
+      defaultLang
     };
  
     try {
@@ -267,6 +270,7 @@ function initSettings(): CubismoSettings {
 
   const settings: CubismoSettings = {
     port: Number(process.env.PORT) || 21021,
+    host: process.env.HOST || '127.0.0.1',
     connection: {
       host: process.env.CON_HOST,
       port: Number(process.env.CON_PORT),

@@ -5,6 +5,7 @@ import Sequelize from 'sequelize';
 
 export declare type CubismoSettings = {
   port: number,
+  host: string,
   connection: {
     host: string,
     port: number,
@@ -45,7 +46,8 @@ export declare type Applications = {
 export declare type ApplicationSettings = {
   dirname: string,
   workspace: string,
-  dbConfig: any
+  dbConfig: any,
+  defaultLang: string;
 }
 
 declare interface Enum {
@@ -69,7 +71,8 @@ export declare type NewApplicationParameters = {
     login: string,    
     email: string,    
     password: string
-  }
+  },
+  defaultLang: string
 }
 
 export declare type Environments = {

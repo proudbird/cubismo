@@ -3,6 +3,8 @@ import Cube from '../classes/Cube'
 import Cubismo from '../cubismo/Cubismo'
 import Sequelize from 'sequelize'
 import { Model } from 'sequelize'
+import Instance from '../classes/Instance'
+import Enum, { EnumValue } from '../classes/Enum'
 
 export type ConnectionConfig = Sequelize.ConnectionOptions 
         &{ options?: Sequelize.Options }
@@ -34,13 +36,19 @@ export type DataBaseModel = Model & {
   definition: ModelDefinition,
   name: string,
   modelName: string,
-  cubismo: Cubismo,
-  application: Application,
-  cube: Cube,
-  class: string,
-  owners: DataBaseModel[],
-  ownerModel: DataBaseModel
+  cubismo?: Cubismo,
+  application?: Application,
+  cube?: Cube,
+  class?: string,
+  owners?: DataBaseModel[],
+  ownerModel?: DataBaseModel
+  associations: ModelAssociations
+}
 
+export interface ModelAssociations {
+  [name: string]: {
+    target: DataBaseModel
+  }
 }
 
 export type DataBaseModels = {
@@ -65,7 +73,7 @@ export type DataBaseColumnDefinition = {
   length      : number | null
 }
 
-export type ModelDefinition = {
+export type ModelDefinitionBase = {
   id: string,
   name: string,
   cube: string,
@@ -73,6 +81,12 @@ export type ModelDefinition = {
   tableId: string,
   title: string,
   description: string,
+  attributes: {
+    [name: string]: ModelAttributeDefinition
+  }
+}
+
+export type CatalogModelDefinition = ModelDefinitionBase & {
   multilevel: true,
   multievelType: string,
   numberOfLevels: number,
@@ -84,8 +98,17 @@ export type ModelDefinition = {
   nameLang: string[],
   template: string,
   owners: string[],
-  attributes: {
-    [name: string]: ModelAttributeDefinition
+  collections: CollectionSDefinition
+}
+
+export type CollectionSDefinition = {
+  [id: string]: {
+    name: string,
+    class: string,
+    tableId: string,
+    attributes: {
+      [name: string]: ModelAttributeDefinition
+    }
   }
 }
 
@@ -94,8 +117,10 @@ export type ModelAttributeDefinition = {
   title?: string,
   description?: string,
   type: {
-    dataType: string,
+    dataType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM' | 'FK',
     lang?: string[],
+    length?: number,
+    scale?: number,
     reference?: {
       cube?: string,
       class?: string,
@@ -117,8 +142,21 @@ export type CatalogAtrributes = {
   Name?    : DataTypeConfig
 }
 
+export type RegistratorAtrributes = {
+  id       : DataTypeConfig,
+  dropped  : DataTypeConfig,
+  booked?  : DataTypeConfig,
+  Date?    : DataTypeConfig,
+  Number?  : DataTypeConfig
+}
+
 export type AttributeOptions = {
   attributes: any,
   belongsTo: any
 }
 
+export type Value<T extends Instance> = string | number | boolean | Date | EnumValue | Promise<T>;
+
+export type ModelDefinition = CatalogModelDefinition;
+
+export type SaveOptions = Sequelize.Transactionable;

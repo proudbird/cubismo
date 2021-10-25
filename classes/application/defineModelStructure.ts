@@ -17,41 +17,53 @@ export default async function defineModelStructure(
     let classDefinition = metaDataStructure[model.class];
     let maker = classDefinition.objectMaker;
 
-    metaDataObject = new maker(
-          cubismo,
-          application,
-          model.cube,
-          classDefinition.type,
-          model.modelName,
-          path.basename(moduleFile),
-          moduleFile,
-          model,
-          classDefinition.instanceMaker);
-    application[model.cube.name][model.class].addObject(metaDataObject, moduleFile);
+    if(!model.cube) {
+      throw new Error(`Model is not defined`); 
+    }
 
-    if(model.collections) {
-      classDefinition = metaDataStructure['Collections'];
-      maker     = classDefinition.objectMaker;
-      model.collections.forEach(collection => {
-        metaDataObject = new maker(
-              cubismo,
-              application,
-              model.cube,
-              classDefinition,
-              collection.modelName,
-              undefined,
-              undefined,
-              collection,
-              classDefinition.instanceMaker);
-        
-        const owner = application[model.cube.name][model.class][model.modelName];
-        Object.defineProperty(owner, collection.modelName, {
-          enumerable: true,
-          get() {
-            return metaDataObject
-          }
-        })
-      });
+    try {
+      metaDataObject = new maker(
+            cubismo,
+            application,
+            model.cube,
+            classDefinition.type,
+            model.modelName,
+            path.basename(moduleFile),
+            moduleFile,
+            model,
+            classDefinition.instanceMaker);
+      application[model.cube.name][model.class].addObject(metaDataObject, moduleFile);
+    } catch (error) {
+      throw new Error(`Model is not defined`); 
+    }
+
+    try {
+      if(model.collections) {
+        classDefinition = metaDataStructure['Collections'];
+        maker     = classDefinition.objectMaker;
+        model.collections.forEach(collection => {
+          metaDataObject = new maker(
+                cubismo,
+                application,
+                model.cube,
+                classDefinition,
+                collection.modelName,
+                undefined,
+                undefined,
+                collection,
+                classDefinition.instanceMaker);
+          
+          const owner = application[model.cube.name][model.class][model.modelName];
+          Object.defineProperty(owner, collection.modelName, {
+            enumerable: true,
+            get() {
+              return metaDataObject
+            }
+          })
+        });
+      }
+    } catch (error) {
+      throw new Error(`Model is not defined`); 
     }
   });
   
@@ -59,5 +71,5 @@ export default async function defineModelStructure(
     return result;
   });
 
-  modelGenerator.define(cubismo, application, connection, appModelDefinition, metaDataStructure)
+    modelGenerator.define(cubismo, application, connection, appModelDefinition, metaDataStructure)
 }

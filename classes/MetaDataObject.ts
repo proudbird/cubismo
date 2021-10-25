@@ -50,26 +50,22 @@ export default class MetaDataObject {
         return model.bulkBuild(values, options)
       }
       
-      if(values && values['dataValues']) {
+      if(values && values['_record']) {
         return values
       } else {
         const record = new model(values, options);
         record.collections = model.collections;
-        const self =  new maker(model, record);
-        recordsMap.set(self, record);
-        return self;
+        return new maker(model, record);
       }      
     }
 
-    model.beforeBulkCreate((records, options) => {
+    model.beforeBulkCreate((items, options) => {
 
-      for(let i=0; i<records.length; i++) {
-        if(records[i]['dataValues']) {
-          records[i] = recordsMap.get(records[i])
-        }
+      for(let i=0; i < items.length; i++) {
+        const record = items[i]._record();
+        items[i] = record;
       }
-      return records
-    })
+    });
 
     model.afterFind((records, options) => {
 

@@ -50,5 +50,23 @@
         "collate": "utf8_general_ci"
       }
     }
+  },
+  "orlix_": {
+    "dirname": "c:\\ITProjects\\cubismo\\apps\\orlix",
+    "workspace": "c:\\ITProjects\\cubismo\\workspaces\\orlix",
+    "dbConfig": {
+      "database": "db_prbry6yrf0",
+      "username": "optima",
+      "password": "<35{%rta)9^vjNuc",
+      "options": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "dialect": "postgres",
+        "logging": false,
+        "operatorsAliases": 1,
+        "charset": "utf8",
+        "collate": "utf8_general_ci"
+      }
+    }
   }
 }

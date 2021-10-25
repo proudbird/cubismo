@@ -5,21 +5,26 @@ import Cube           from './Cube'
 import { MetaDataObjectDefinition } from './MetaData'
 
 const store: WeakMap<Application, EnumStore> = new WeakMap();
+const valueStore: Map<string, { [id: string]: EnumValue }> = new Map();
 
-class EnumValue {
-  #id   : string
-  #name : string
-  #title: string
+export class EnumValue {
+
+  #id   : string;
+  #name : string;
+  #title: string;
+  #modelName: string;
 
   constructor(
     id   : string,
     name : string,
     title: string,
+    modelName: string
   ) {
     
-    this.#id    = id
-    this.#name  = name
-    this.#title = title
+    this.#id    = id;
+    this.#name  = name;
+    this.#title = title;
+    this.#modelName = modelName;
   }
 
   get id(): string {
@@ -32,6 +37,14 @@ class EnumValue {
 
   get title(): string {
     return this.#title
+  }
+
+  type(): string {
+    return this.#modelName;
+  }
+
+  toString(): string {
+    return this.#title;
   }
 }
 
@@ -68,7 +81,8 @@ export default class Enum {
     const enumValues = {};
 
     values.forEach(value => {
-      const enumValue = new EnumValue(value.id, value.name, value.title);
+      const modelName = `${cube.name}.${type.type}.${name}`
+      const enumValue = new EnumValue(value.id, value.name, value.title, modelName);
       Object.defineProperty(this, value.name, {
         value     : enumValue,
         writable  : false,
@@ -80,6 +94,7 @@ export default class Enum {
 
     enumStore[this.#modelId] = enumValues;
     store.set(application, enumStore);
+    valueStore.set(this.#modelId, enumValues);
   }
 
   get type(): string {
@@ -88,5 +103,20 @@ export default class Enum {
 
   get name(): string {
     return this.#name
+  }
+
+  static getValue(modelId: string, id: string): EnumValue {
+
+    const values = valueStore.get(modelId);
+    if(!values) {
+      throw new Error(`Can't find Enum model with ID '${modelId}'`);
+    }
+
+    const value = values[id];
+    if(!value) {
+      throw new Error(`Can't find Enum value with ID '${id}'`);
+    }
+
+    return value;
   }
 }
