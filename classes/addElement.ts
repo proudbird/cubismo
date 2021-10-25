@@ -40,7 +40,11 @@ export default function addElement<T extends ICube | IMetaDataClass | IMetaDataO
     get() {
       const value = elements.get(element.name)
       if(process.env.NODE_ENV === "production") {
-        if(!(element.name === 'Modules' || element.name === 'Catalogs' || element.name === 'DataSets' || element.name === 'Enums')) {
+        if(!(element.name === 'Modules' 
+        || element.name === 'Catalogs' 
+        || element.name === 'Registrators' 
+        || element.name === 'DataSets' 
+        || element.name === 'Enums')) {
           loadModule(value[1], element.type, element.name, self, application, element, cache, cubismo);
         }
       }
