@@ -5,6 +5,12 @@ import MetaDataObject from './MetaDataObject'
 import { MetaDataObjectDefinition } from './MetaData'
 import { Model } from 'sequelize/types'
 import MetaDataInstance from './MetaDataInstance'
+import Collection from './Collection'
+import Instance from './Instance'
+
+export type InstanceCollections = {
+  [key: string]: Collection<Instance>
+}
 
 export default class Collections extends MetaDataObject {
 
