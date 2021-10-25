@@ -1,4 +1,4 @@
-import winax from 'winax';
+//import winax from 'winax';
 import {Converter} from "converter-1c-internal";
 import bodyParser from "bodyparser-1c-internal";
 import Cubismo from '../../cubismo/Cubismo'
@@ -30,53 +30,53 @@ export default class OneC { //extends AddIn {
     return new Promise((resolve, reject) => {
       
       let connection: any
-      let activeX: winax.Object
+      //let activeX: winax.Object
 
-      try {
-        activeX = new winax.Object(conf.ProgID)
-      } catch(error) {
-        if(error.message.includes('Недопустимая строка с указанием класса')) {
-          error = new Error(`${error}It looks like ProgID of COM-class is incorrect, or COM-class is not registered `)
-        }
-        return reject(error)
-      }
+      // try {
+      //   activeX = new winax.Object(conf.ProgID)
+      // } catch(error) {
+      //   if(error.message.includes('Недопустимая строка с указанием класса')) {
+      //     error = new Error(`${error}It looks like ProgID of COM-class is incorrect, or COM-class is not registered `)
+      //   }
+      //   return reject(error)
+      // }
 
-      if(conf.ProgID.includes('V8')) {
+      // if(conf.ProgID.includes('V8')) {
         
-        let conStr: string
-        if(conf.File) {
-          conStr = `File="${conf.File}";Usr=${conf.Usr};Pwd=${conf.Pwd}`
-        } else if(conf.Srvr) {
-          conStr = `Srvr="${conf.Srvr}";Ref="${conf.Ref}";Usr=${conf.Usr};Pwd=${conf.Pwd}`
-        } else {
-          return reject(new Error(`Connection string doesn't has neither 'File' Nnr 'Srvr' parametrs`))
-        }
+      //   let conStr: string
+      //   if(conf.File) {
+      //     conStr = `File="${conf.File}";Usr=${conf.Usr};Pwd=${conf.Pwd}`
+      //   } else if(conf.Srvr) {
+      //     conStr = `Srvr="${conf.Srvr}";Ref="${conf.Ref}";Usr=${conf.Usr};Pwd=${conf.Pwd}`
+      //   } else {
+      //     return reject(new Error(`Connection string doesn't has neither 'File' Nnr 'Srvr' parametrs`))
+      //   }
 
-        try {
-          connection = activeX.Connect(conStr)
-        } catch(error) {
-          if(error.message.includes('Connect Ошибка')) {
-            error = new Error(`${error}Check wether path to the base, user name, or password are correct`)
-          }
-          return reject(error)
-        }
+      //   // try {
+      //   //   connection = activeX.Connect(conStr)
+      //   // } catch(error) {
+      //   //   if(error.message.includes('Connect Ошибка')) {
+      //   //     error = new Error(`${error}Check wether path to the base, user name, or password are correct`)
+      //   //   }
+      //   //   return reject(error)
+      //   // }
 
-        if(!connection) {
-          return reject(new Error(`Attempt to connect to 1C with '${conf.ProgID}' faild`))
-          // TODO: to add possible reasons
-        }
+      //   if(!connection) {
+      //     return reject(new Error(`Attempt to connect to 1C with '${conf.ProgID}' faild`))
+      //     // TODO: to add possible reasons
+      //   }
   
-        let result
-        if(conf.ProgID.includes('Application')) {
-          result = activeX
-        } else {
-          result = connection
-        }
+      //   let result
+      //   if(conf.ProgID.includes('Application')) {
+      //     result = activeX
+      //   } else {
+      //     result = connection
+      //   }
 
-        resolve(result)
-      } else {
+      //   resolve(result)
+      // } else {
 
-      }
+      // }
     })
   }
 
