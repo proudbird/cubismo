@@ -1,11 +1,9 @@
 .dist
 .vscode
-node_modules
 .npmignore
-.gitignor
+.gitignore
 .env
-addIns/1C/node_modules
-applications.json
-workspace.code-workspace
-coverage
 .nyc_output
+node_modules
+addIns/1C/node_modules
+coverage
