@@ -8,3 +8,4 @@ addIns/1C/node_modules
 applications.json
 workspace.code-workspace
 coverage
+.nyc_output
