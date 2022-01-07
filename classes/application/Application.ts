@@ -1,14 +1,19 @@
 import EventEmitter from 'events'
 import path from 'path'
 
+import iconv from 'iconv-lite';
+
 import DBDriver from '../../database/DBDriver';
 import Query from '../../database/queries/Query';
 
-import Cubismo     from '../../cubismo/Cubismo'
+import Cubismo     from '../../core/Cubismo'
 import Cubes       from '../Cubes'
 import Cube        from '../Cube'
 import Modules     from '../Modules'
 import Module      from '../Module'
+import Constants from '../Constants';
+import Constant from '../Constant';
+import ConstantValue from '../ConstantValue';
 import Catalogs    from '../Catalogs'
 import Catalog     from '../Catalog'
 import CatalogInstance from '../CatalogInstance'
@@ -36,11 +41,11 @@ import getListOfCubes from './getListOfCubes';
 import loadMetaDataModules from './loadMetaDataModules';
 import initSystemTables from './initSystemTables';
 import { Users } from '../../database/system/users';
-import { ApplicationSettings, Environments } from '../../cubismo/types';
+import { ApplicationSettings, Environments } from '../../core/types';
 import { fstat } from 'fs-extra';
-import { settings } from 'cluster';
 import FS from '../../common/FS';
 import Dictionary from '../../common/Dictionary';
+import i18next from 'i18next';
 
 let workspaceDir: string;
 
@@ -72,7 +77,7 @@ export default class Application implements IApplication  {
     this.#cubismo  = cubismo
     this.#elements = new Map()
     this.#cache    = new Map()
-    this.#dbDriver = new DBDriver(settings.dbConfig);
+    this.#dbDriver = new DBDriver(settings.connection);
     this.#settings = settings
     this.#mdClasses= new Map()
     this.#cubes    = new Cubes(cubismo, this);
@@ -93,6 +98,7 @@ export default class Application implements IApplication  {
     const defaultTypes = {
       Cube    : addMetaDataClassDefinition(this.#mdClasses, 'Cube'    , 'Cube'   , Cube   ),
       Modules : addMetaDataClassDefinition(this.#mdClasses, 'Modules' , 'Module' , Modules , Module),
+      Constants: addMetaDataClassDefinition(this.#mdClasses, 'Constants', 'Constant', Constants, Constant, Constant),
       Catalogs: addMetaDataClassDefinition(this.#mdClasses, 'Catalogs', 'Catalog', Catalogs, Catalog, CatalogInstance),
       Registrators: addMetaDataClassDefinition(this.#mdClasses, 'Registrators', 'Registrator', Registrators, Registrator, RegistratorInstance),
       DataSets: addMetaDataClassDefinition(this.#mdClasses, 'DataSets', 'DataSet', DataSets, DataSet, DataSetRecord),
@@ -117,11 +123,13 @@ export default class Application implements IApplication  {
         await initSystemTables(this, this.#dbDriver);
         await defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure, defaultTypes);
         await syncDBStructure(this, this.#dbDriver);
+        await initInternationalization(this.lang);
         loadMetaDataModules(cubismo, this, applicationStructure); 
         await onStart(this);
         resolve({ error: null, mdStructure: applicationStructure }); 
       } catch (error) {
-        error.message = `Can't initialize application '${this.#id}': ${error.message}`
+        const convertedMessage = iconv.decode(error.message, 'win1251');
+        error.message = `Can't initialize application '${this.#id}': ${convertedMessage}`
         reject({ error });
       }
     });
@@ -179,7 +187,6 @@ export default class Application implements IApplication  {
   }
   
   setApiHandler(request: string, handler: Function, needAuthenication: boolean = true ): void {
-    Logger.debug(`Need auth ${needAuthenication}`)
     this.#api.set(request, { handler, needAuthenication });
   }
 
@@ -201,13 +208,17 @@ export default class Application implements IApplication  {
 }
 
 async function onStart(application: Application) {
-  if(application['onStart']) {
-    await application['onStart']();
-  }
 
   for(let cube of application.cubes) {
-    if(cube['onStart']){
+    if(cube['onStart']) {
       await cube['onStart']();
     }
   }
+}
+
+async function initInternationalization(lang: string) {
+
+  i18next.init({
+    lng: lang
+  });
 }

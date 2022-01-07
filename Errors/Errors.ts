@@ -1,3 +1,10 @@
+export class CubismoError extends Error {
+
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export class RangeErrors {
 
   static MAX_LENGTH_EXCEEDED = new RangeError("Max string length exceeded");

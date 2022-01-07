@@ -99,20 +99,35 @@ export default class CatalogInstance extends Instance {
 
   // @ts-ignore
   get Parent(): Promise<CatalogInstance> {
-    return this.getValue('Parent') as Promise<CatalogInstance>;
+    return this.#record.getDataValue('parentId') as Promise<CatalogInstance>;
   }
 
   set Parent(value: CatalogInstance) {
-    this.setValue('Parent', value);
+        
+    try {
+      this.#record.setDataValue('parentId', value.id);
+      this.#record.setDataValue('level', value.getLevel() + 1);
+    } catch (error) {
+      throw new Error(`Can't set '${this.#model.name}' property 'Parent' with value '${value}': ${error}`);
+    }
   }
 
   // @ts-ignore
   get Owner(): Promise<CatalogInstance> {
-    return this.getValue('Owner') as Promise<CatalogInstance>;
+    return this.#record.getDataValue('ownerId') as Promise<CatalogInstance>;
   }
 
   set Owner(value: CatalogInstance) {
-    this.setValue('Owner', value);
+    
+    try {
+      this.#record.setDataValue('ownerId', value.id);
+    } catch (error) {
+      throw new Error(`Can't set '${this.#model.name}' property 'Owner' with value '${value}': ${error}`);
+    }
+  }
+
+  getLevel(): number {
+    return this.#record.getDataValue('level') as number;
   }
   
   toString(): string {

@@ -5,23 +5,24 @@ import EventEmitter from 'events'
 import http         from 'http'
 import express  from 'express'
 import bodyParserFrom1C from "bodyparser-1c-internal";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken"
 import Cubismo from './Cubismo'
 import Application from '../classes/application/Application';
 import { Applications, NewApplicationParameters } from './types'
 import auth from "./Authenication";
-import access from "./AdminAccess";
+import chalk from 'chalk';
+import hyperlinker from 'hyperlinker';
+
 
 
 export default class Router extends EventEmitter {
 
-  #cubismo: Cubismo;
+  public cubismo: Cubismo;
   public server: http.Server
 
   constructor(cubismo: Cubismo) {
     super();
-    this.#cubismo = cubismo;
+    this.cubismo = cubismo;
   }
 
   async run (port: number, host: string): Promise<void> {
@@ -30,7 +31,12 @@ export default class Router extends EventEmitter {
     const router = express();
     router.use(express.json());
     router.use(bodyParserFrom1C);
-    router.use(express.static(path.join(__dirname, '../client/')))
+    router.use(express.static(path.join(__dirname, '../client/')));
+
+    router.all('*', (req, res, next) => {
+      Logger.debug(req.body);
+      next()
+    } )
 
     router.get('/app/:applicationId', async (req, res, next) => {
 
@@ -41,7 +47,7 @@ export default class Router extends EventEmitter {
         } else {
           let application: Application;
           try {
-            application = await this.#cubismo.runApplication(applicationId);
+            application = await this.cubismo.runApplication(applicationId);
             res.send(windowTemplate())
             setTimeout(onSessionStart, 1000, application)
           } catch(error) {
@@ -60,20 +66,20 @@ export default class Router extends EventEmitter {
       res.send({server: 'cubismo', hostname: os.hostname()})
     });
 
-    router.get('/applist', function(req, res, next) {
-      const list = []
-      const appList = self.#cubismo.getAppSettings();
-      for(let key in appList) {
-        list.push({ id: key, value: key })
-      }
-      res.send(list);
-    });
+    // router.get('/applist', function(req, res, next) {
+    //   const list = []
+    //   const appList = self.cubismo.getAppSettings();
+    //   for(let key in appList) {
+    //     list.push({ id: key, value: key })
+    //   }
+    //   res.send(list);
+    // });
 
-    router.post('/stop', access, function(req, res, next) {
+    router.post('/stop', this.cubismo.access.bind(this.cubismo), function(req, res, next) {
 
       Logger.info(`Request on stopping server`);
       try {
-        self.#cubismo.stop(req.query.key as string);
+        self.cubismo.stop(req.query.key as string);
         res.send({ error: false });
       } catch (error) {
         res.status(500);
@@ -81,12 +87,12 @@ export default class Router extends EventEmitter {
       }
     });
 
-    router.post('/add_app', access, async function(req, res, next) {
+    router.post('/add_app', this.cubismo.access.bind(this.cubismo), async function(req, res, next) {
 
       Logger.info(`Request on adding new application`);
 
       try {
-        await self.#cubismo.addApplication(req.body as any as NewApplicationParameters);
+        await self.cubismo.addApplication(req.body as any as NewApplicationParameters);
         res.send({ error: false });
       } catch (error) {
         res.status(500);
@@ -94,7 +100,7 @@ export default class Router extends EventEmitter {
       }
     });
 
-    router.post('/reset_password', access, async (req, res, next) => {
+    router.post('/reset_password', this.cubismo.access.bind(this.cubismo), async (req, res, next) => {
 
       const { applicationId, login, password } = req.body;
 
@@ -104,7 +110,7 @@ export default class Router extends EventEmitter {
 
       let application: Application;
       try {
-        application = await this.#cubismo.runApplication(applicationId);
+        application = await this.cubismo.runApplication(applicationId);
       } catch (error) {
         res.status(500).send({ error: true, message: error.message });
       }
@@ -133,7 +139,7 @@ export default class Router extends EventEmitter {
       let application: Application;
       try {
         const applicationId = req.params.applicationId
-        application = await this.#cubismo.runApplication(applicationId);
+        application = await this.cubismo.runApplication(applicationId);
       } catch (error) {
         res.status(500).send({ error: true, message: error.message });
       }
@@ -144,7 +150,7 @@ export default class Router extends EventEmitter {
         if(user && (user.testPassword(password))) {
           const token = jwt.sign(
             { userId: user.id, login },
-            process.env.TOKEN_KEY,
+            self.cubismo.settings.tokenKey,
             {
               expiresIn: "7d",
             }
@@ -165,15 +171,15 @@ export default class Router extends EventEmitter {
         res.status(200).send({ error: false });
       }
 
-      authControl(req, res, next, handler);
+      authControl(self.cubismo.settings.tokenKey, req, res, next, handler);
     });
 
-    async function authControl(req, res, next, handler) {
+    async function authControl(tokenKey: string, req, res, next, handler) {
       
       let application: Application;
       try {
         const applicationId = req.params.applicationId
-        application = await self.#cubismo.runApplication(applicationId);
+        application = await self.cubismo.runApplication(applicationId);
         Logger.debug(`Application is running: ${application.id}`);
       } catch (error) {
         Logger.warn(`Error on running app: ${error.message}`);
@@ -181,7 +187,7 @@ export default class Router extends EventEmitter {
       }
 
       Logger.debug(`Going to authenication`);
-      await auth(application, req, res, next, handler);
+      await auth(application, tokenKey, req, res, next, handler);
     }
 
     router.all('/app/:applicationId/api/*', async (req, res, next) => {
@@ -189,7 +195,7 @@ export default class Router extends EventEmitter {
       const applicationId = req.params.applicationId
       let application: Application;
       try {
-        application = await this.#cubismo.runApplication(applicationId);
+        application = await this.cubismo.runApplication(applicationId);
       } catch (error) {
         return res.status(404).send({ error: true, message: error.message });
       }
@@ -198,7 +204,7 @@ export default class Router extends EventEmitter {
 
       if(!application.getApiHandler(request)) {
         Logger.debug(`API request '${request}' is not registered`);
-        return next();
+        return res.status(404).send({ error: true, message: `NotFound`});
       }
 
       const { handler, needAuthenication } = application.getApiHandler(request);
@@ -211,7 +217,7 @@ export default class Router extends EventEmitter {
         if(needAuthenication) {
           try {
             Logger.debug(`Going to handler`);
-            authControl(req, res, next, handler);
+            authControl(self.cubismo.settings.tokenKey, req, res, next, handler);
           } catch (error) {
             res.status(500).send({ error: true, message: error.message });
           }
@@ -227,8 +233,20 @@ export default class Router extends EventEmitter {
     });
 
     return new Promise((resolve, reject) => {
-      this.server = router.listen(port, host, function() {  
-        Logger.info(`cubismo server is listening at ${host}:${port}`)
+      this.server = router.listen(port, host, async function() {  
+        const link = `http://${host}:${port}`;
+        const raw = `cubismo server is listening at ${link}`;
+        const message = `${chalk.green.bold(`cubismo`)} server is listening at ${chalk.blue.underline(hyperlinker(link, link))}`;
+        const border = '════════════════════════════════════════════════════════════════════'
+          .slice(0, raw.length + 4);
+        const space = '                                                                      '
+          .slice(0, raw.length);
+        console.log('');
+        console.log(`╔${border}╗`);
+        console.log(`║  ${space}  ║`);
+        console.log(`║  ${message}  ║`);
+        console.log(`║  ${space}  ║`);
+        console.log(`╚${border}╝`);
         resolve()
       })
     })

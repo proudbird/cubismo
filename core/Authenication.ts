@@ -1,7 +1,7 @@
 import Application from "../classes/application/Application";
 import jwt from "jsonwebtoken"
 
-export default async function Authenticate(application: Application, req, res, next, handler) {
+export default async function Authenticate(application: Application, tokenKey: string, req, res, next, handler) {
 
   Logger.debug(`Trying to authenicate`);
 
@@ -15,7 +15,7 @@ export default async function Authenticate(application: Application, req, res, n
 
   try {
     Logger.debug(`Trying to detect user`);
-    const decoded = jwt.verify(token, process.env.TOKEN_KEY) as any;
+    const decoded = jwt.verify(token, tokenKey) as any;
     let user = await application.users.findOne({ where: { id: decoded.userId }})
     if(!user) {
       return res.status(401).send("Invalid Token. User not found");

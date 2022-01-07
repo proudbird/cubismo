@@ -1,10 +1,11 @@
 import loadModule from "../loadModule";
-import { existsSync } from "fs";
-import { join } from "path";
+import { existsSync, readFileSync } from "fs";
+import { join, dirname } from "path";
 
-import Cubismo from "../../cubismo/Cubismo";
+import Cubismo from "../../core/Cubismo";
 import Application from "./Application";
 import { ApplicationStructure } from "./defineAppStructure";
+import i18next from "i18next";
 
 const LoadableMetaDataClasses = [
   'Modules',
@@ -16,15 +17,15 @@ const LoadableMetaDataClasses = [
 
 export default function loadMetaDataModules(cubismo: Cubismo, application: Application, applicationStructure: ApplicationStructure) {
 
-  loadModule(
-    join(applicationStructure.dirname, 'Application.js'), 
-    'Application', 
-    application.id, 
-    application, 
-    application, 
-    application, 
-    undefined, 
-    cubismo);
+  // loadModule(
+  //   join(applicationStructure.dirname, 'Application.js'), 
+  //   'Application', 
+  //   application.id, 
+  //   application, 
+  //   application, 
+  //   application, 
+  //   undefined, 
+  //   cubismo);
                
   for (let cubeName in applicationStructure.cubes) {
     const cubeStructure = applicationStructure.cubes[cubeName];
@@ -40,6 +41,8 @@ export default function loadMetaDataModules(cubismo: Cubismo, application: Appli
         cube,
         undefined,
         cubismo);
+
+        initInternationalization(cubeName, dirname(cubeStructure.filename));
     }
   
     const metaDataClasses = cubeStructure.classes;
@@ -64,7 +67,7 @@ export default function loadMetaDataModules(cubismo: Cubismo, application: Appli
       const metaDataObjects = metaDataClasses[className].objects;
       for(let objectName in metaDataObjects) {
        const objectFileName = metaDataObjects[objectName].filename;
-       if (existsSync(objectFileName)) {
+       if (className === 'Modules' && existsSync(objectFileName)) {
          const metaDataObject = metaDataClass[objectName];
          loadModule(
            objectFileName,
@@ -79,4 +82,23 @@ export default function loadMetaDataModules(cubismo: Cubismo, application: Appli
       }
     }
   }
+}
+
+function initInternationalization(cubeName: string, cubeDir: string) {
+
+  const vocabulary = getVocabulary(cubeDir);
+  for(let lang in vocabulary) {
+    i18next.addResources(lang, cubeName, vocabulary[lang]);
+  }
+}
+
+function getVocabulary(cubeDir: string): any {
+
+  const vocabularyFileName = join(cubeDir, 'vocabulary.json');
+  let vocabulary: any = {};
+  if(existsSync(vocabularyFileName)) {
+    vocabulary = JSON.parse(readFileSync(vocabularyFileName, 'utf-8'));
+  }
+
+  return vocabulary;
 }

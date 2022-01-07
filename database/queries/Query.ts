@@ -5,8 +5,11 @@ import Application from '../../classes/application/Application';
 import QuerySelectItem from '../QuerySelectItem';
 
 import QueryError from "./QueryError";
-import { QueryStatement, QuerySchema, SourceDefinition, TableDefinition, FieldDefinition, LeftJoinStatement, JoinStatement, InnerJoinStatement, RightJoinStatement, FullJoinStatement, JoinType, ConditionStatement, ComparisonOperatorType, BooleanStatement, BooleanConditionDefinition, ConditionDefinition, BitwiseOperatorType, ValueDefinition } from "./types";
+import { QueryStatement, QuerySchema, SourceDefinition, TableDefinition, FieldDefinition, LeftJoinStatement, JoinStatement, InnerJoinStatement, RightJoinStatement, FullJoinStatement, JoinType, ConditionStatement, ComparisonOperatorType, BooleanStatement, BooleanConditionDefinition, ConditionDefinition, BitwiseOperatorType, ValueDefinition, SourceType, QuerySource, QueryDataSource, QueryDataSources, QueryDataSourceAttributes, QueryDataSourceAttribute, QueryDataSourceDefinition } from "./types";
 import { DataBaseModel, ModelAttributeDefinition, DataBaseTableDefinition, DataBaseModels } from "../types";
+import DataTable from "../../common/DataCollections/DataSet";
+import e, { application } from 'express';
+import { writeFileSync } from 'fs';
 
 
 export default class Query {
@@ -43,11 +46,13 @@ export default class Query {
     
     try {
       const select = [];
-      const models = ((this.#driver.models as unknown) as DataBaseModels)
-      const query = await buildSQLQuery(models, options);
+      const models = ((this.#driver.models as unknown) as QueryDataSources)
+      const query = await buildSQLQuery(this.#application, models, options);
+      writeFileSync('c:\\ITProjects\\cubismo\\workspaces\\optima\\sql.txt', query.sql)
       const result = await this.#driver.query(query.sql, queryModel);
       if(result && result[0]) {
         const data: [] = result[0];
+        //let fieldsMap = query.fieldsMap.
         for(let index in data) {
           const record = data[index];
           const selectItem = new QuerySelectItem(record, query.fieldsMap);
@@ -66,19 +71,29 @@ export default class Query {
   }
 }
 
-function buildSQLQuery(models: DataBaseModels, query: QueryStatement): { sql: string, fieldsMap: Map<string, FieldDefinition> } {
+function buildSQLQuery(application: Application, models: QueryDataSources, query: QueryStatement): { sql: string, fieldsMap: Map<string, FieldDefinition> } {
 
-  let schema: QuerySchema = { fields: new Map, from: {}, joins: {}, tables: {}, models: models, sources: new Map() };
+  let schema: QuerySchema = { 
+    application, 
+    fields: new Map, 
+    additionalfields: new Map, 
+    from: {}, 
+    joins: {}, 
+    tables: {}, 
+    models: models, 
+    sources: new Map(), 
+    tempSources: [] };
 
-  return { sql: buildSQLStatement(query, schema), fieldsMap: schema.fields};
+  const sql = buildSQLStatement(query, schema);
+
+  return { sql, fieldsMap: schema.fields};
 
 }
 
-function buildSQLStatement(query: QueryStatement, schema: QuerySchema): string {
+function buildSQLStatement(query: QueryStatement, schema: QuerySchema, mainSchema?: QuerySchema): string {
 
   let result: string;
   defineFrom(query, schema);
-  defineFields(query, schema);
   
   const joins: Map<InnerJoinStatement | 
   LeftJoinStatement  | 
@@ -86,15 +101,19 @@ function buildSQLStatement(query: QueryStatement, schema: QuerySchema): string {
   FullJoinStatement, { 
     statement: JoinStatement,
     joinType: JoinType,
-    model: DataBaseModel 
+    model: QueryDataSource 
   }
   > = new Map();
   
-  for(let join of query.joins) {
-    const { statement, joinType } = getJoinStatement(join);
-    const joinModel = defineJoinFrom(statement, joinType, schema);
-    joins.set(join, { statement, joinType, model: joinModel });
+  if(query.joins?.length) {
+    for(let join of query.joins) {
+      const { statement, joinType } = getJoinStatement(join);
+      const joinModel = defineJoinFrom(statement, joinType, schema);
+      joins.set(join, { statement, joinType, model: joinModel });
+    }
   }
+
+  defineFields(query, schema);
   
   defineConditions(query.where, undefined, undefined, schema);
   
@@ -146,10 +165,17 @@ function defineFrom(query: QueryStatement, schema: QuerySchema): void {
   schema.sources.set(from.alias, from);
 }
 
-function defineJoinFrom(query: JoinStatement, joinType: JoinType, schema: QuerySchema): DataBaseModel {
+function defineJoinFrom(query: JoinStatement, joinType: JoinType, schema: QuerySchema): QueryDataSource {
 
     const joinFrom = getFrom(query, schema);
-    addJoin(joinFrom.model, joinType, schema, query);
+    const joinTables = addJoin(joinFrom.model, joinType, schema, query);
+
+    for(let joinTableId in joinTables) {
+      const joinTable = joinTables[joinTableId];
+      if(joinTable.model.modelName !== joinFrom.model.modelName) {
+        addSubQueryAttributes(joinFrom.model, joinTable.model);
+      }
+    }
 
     return joinFrom.model;
 }
@@ -158,7 +184,7 @@ function getFrom(query: QueryStatement | JoinStatement, schema: QuerySchema): So
 
   let name: string;
   let alias: string;
-  let fromModel: DataBaseModel;
+  let fromModel: QueryDataSource;
 
   if(typeof query.from === 'string') {
     const statement = getNameAndAlias(query.from);
@@ -169,10 +195,146 @@ function getFrom(query: QueryStatement | JoinStatement, schema: QuerySchema): So
       throw new QueryError(`Can not find sourse table '${name}', described in 'FROM' clause`);
     }
   } else if(isSubquery((query.from as QueryStatement))) {
-    throw new QueryError(`Selection from subquery is not realized yet`);
+    const from = query.from['from'];
+    let childSchema: QuerySchema = { 
+      application: schema.application, 
+      fields: new Map, 
+      additionalfields: new Map, 
+      from: {}, 
+      joins: {}, 
+      tables: {}, 
+      models: schema.models, 
+      sources: new Map() };
+    childSchema.mainSchema = schema.mainSchema || schema;
+    childSchema.alias = query.from['as'];
+    schema.childSchema = childSchema;
+    //@ts-ignore
+    const sql = buildSQLStatement(query.from, childSchema);
+    const dataSource = (from || from[0])[0];
+    const tableId = 'temp_' + Utils.sid();
+
+    alias = tableId;
+    fromModel = {
+      tableName: alias,
+      definition: {
+        id: alias,
+        tableId,
+        attributes: defineDataTableAttributes(dataSource)
+      },
+      name: alias,
+      modelName: alias,
+      application: schema.application,
+      dataSource: dataSource,
+      alias: query.from['as'],
+      sql
+    }
+    schema.models[childSchema.alias] = fromModel;
+    schema.tables[childSchema.alias] = { name: alias, alias: query.from['as'], tableId: tableId };
+
+  } else if(query.from instanceof DataTable || (Array.isArray(query.from) && query.from[0] instanceof DataTable)) {
+    const tableId = 'temp_' + Utils.sid();
+    alias = Array.isArray(query.from) && query.from.length > 1 ? query.from[1] : tableId;
+    fromModel = {
+      tableName: alias,
+      definition: {
+        id: alias,
+        tableId,
+        attributes: defineDataTableAttributes((query.from || query.from[0])[0])
+      },
+      name: alias,
+      modelName: alias,
+      application: schema.application,
+      dataSource: (query.from || query.from[0])[0]
+    }
+    schema.models[alias] = fromModel;
+    schema.mainSchema = schema.mainSchema || schema;
+    schema.mainSchema.tempSources.push(fromModel);
   }
 
   return getSourceDefinition(fromModel, alias);
+}
+
+function defineDataTableAttributes(source: DataTable): QueryDataSourceAttributes {
+  
+  const attributes: QueryDataSourceAttributes = {};
+  for(let columnDescriptor of source.columns) {
+    attributes[columnDescriptor.name] = {
+      fieldId: columnDescriptor.name,
+      type: {
+        dataType: columnDescriptor.dataType,
+        length: columnDescriptor.length,
+        scale: columnDescriptor.scale
+      }
+    }
+  }
+
+  return attributes; 
+} 
+
+function addSubQueryAttributes(source: QueryDataSource, target: QueryDataSource): void {
+  
+  target.definition.joinedAttributes = {};
+  for(let attributeName in source.definition.attributes) {
+    const attribute = source.definition.attributes[attributeName];
+    target.definition.joinedAttributes[attributeName] = {
+      fieldId: attribute.fieldId,
+      type: {
+        dataType: attribute.type.dataType,
+        length: attribute.type.length,
+        scale: attribute.type.scale
+      }
+    }
+  }
+
+  if(source.definition.codeLenght) {
+    target.definition.joinedAttributes['Code'] = {
+      fieldId: 'Code',
+      type: {
+        dataType: source.definition.codeType,
+        length: source.definition.codeLenght
+      }
+    }
+  }
+
+  if(source.definition.nameLenght) {
+    let fieldId = 'Name';
+    if (source.definition.nameLang && source.definition.nameLang.length) {
+      fieldId = fieldId + '_' + source.application.lang;
+    }
+    target.definition.joinedAttributes[fieldId] = {
+      fieldId: fieldId,
+      type: {
+        dataType: 'STRING',
+        length: source.definition.nameLenght
+      }
+    }
+  }
+
+  if(source.definition.multilevel) {
+    target.definition.joinedAttributes['Parent'] = {
+      fieldId: 'parentId',
+      type: {
+        dataType: 'FK',
+        reference: {
+          cube: source.definition.cube,
+          class: source.definition.class,
+          modelId: source.definition.id
+        }
+      }
+    }
+  }
+} 
+
+function getDataTableAttributeType(type: string): 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' {
+
+  const map = {
+    'S': 'STRING',
+    'N': 'NUMBER',
+    'B': 'BOOLEAN',
+    'D': 'DATE'
+  }
+
+  return map[type];
 }
 
 function isSubquery(query: QueryStatement): boolean {
@@ -188,8 +350,8 @@ function isSubquery(query: QueryStatement): boolean {
 
 function defineFields(query: QueryStatement, schema: QuerySchema): void {
 
-  if(!query.select) {
-    return;
+  if(!query.select || query.select === '*') {
+    return defineAllFields(schema);
   }
 
   const selectFields = query.select.split(',');
@@ -202,10 +364,44 @@ function defineFields(query: QueryStatement, schema: QuerySchema): void {
   }
 }
 
-function defineJoinFields(query: JoinStatement, joinModel: DataBaseModel, schema: QuerySchema): void {
+function defineAllFields(schema: QuerySchema): void {
+  
+  const definition = schema.from.model.definition;
+  if(definition.class) { 
+    defineField('Reference', schema); 
+  }
 
-  if(!query.select) {
-    return;
+  if(definition.nameLenght) {
+    defineField('Name', schema);
+  }
+  if(definition.codeLenght) {
+    defineField('Code', schema);
+  }
+  if(definition.multilevel) {
+    defineField('Parent', schema);
+  }
+  
+  for(let attributeName in definition.attributes) {
+    defineField(attributeName, schema);
+  }
+
+  if(schema.childSchema) {
+    schema.childSchema.fields.forEach(field => {
+      const additionalFiels = {...field}
+      //if(!schema.fields.get(field.alias)) {
+        additionalFiels.alias = field.alias;
+        additionalFiels.fieldId = field.alias;
+        additionalFiels.tableId = schema.childSchema.alias;
+        schema.additionalfields.set(additionalFiels.alias, additionalFiels);
+      //}
+    })
+  }
+}
+
+function defineJoinFields(query: JoinStatement, joinModel: QueryDataSource, schema: QuerySchema): void {
+
+if(!query.select || query.select === '*') {
+    return defineAllJoinFields(joinModel, schema, query);
   }
 
   const selectFields = query.select.split(',');
@@ -229,7 +425,7 @@ function defineField(fieldStatement: string, schema: QuerySchema): void {
   }
 }
 
-function defineJoinField(fieldStatement: string, joinModel: DataBaseModel, schema: QuerySchema, query: JoinStatement): void {
+function defineJoinField(fieldStatement: string, joinModel: QueryDataSource, schema: QuerySchema, query: JoinStatement): void {
 
   const { name, alias } = getNameAndAlias(fieldStatement);
 
@@ -240,14 +436,34 @@ function defineJoinField(fieldStatement: string, joinModel: DataBaseModel, schem
   }
 }
 
-function addFieldDefinition(fieldName: string, alias: string, model: DataBaseModel, schema: QuerySchema): void {
+function defineAllJoinFields(joinModel: QueryDataSource, schema: QuerySchema, query: JoinStatement): void {
+
+  const definition = joinModel.definition;
+  if(definition.nameLenght) {
+    addFieldDefinition('Name', 'Name', joinModel, schema);
+  }
+  if(definition.codeLenght) {
+    addFieldDefinition('Code', 'Code', joinModel, schema);
+  }
+  if(definition.multilevel) {
+    addFieldDefinition('Parent', 'Parent', joinModel, schema);
+  }
+  
+  for(let attributeName in definition.attributes) {
+    addFieldDefinition(attributeName, attributeName, joinModel, schema);
+  }
+}
+
+function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSource, schema: QuerySchema): void {
   
   let fieldId = fieldName;
   let dataType: string;
+  let length: number;
+  let scale: number;
 
   const lang = model.application.lang;
   const modelDefinition = model.definition;
-  let referenceModelId = modelDefinition.id;;
+  let referenceModelId = modelDefinition.id;
   if (fieldName === 'Name') {
     if (modelDefinition.nameLang && modelDefinition.nameLang.length) {
       fieldId = fieldId + '_' + lang;
@@ -282,17 +498,22 @@ function addFieldDefinition(fieldName: string, alias: string, model: DataBaseMod
       }
     }
     dataType = attribute.type.dataType;
+    length = attribute.type.length;
+    scale = attribute.type.scale;
   }
 
-
-  schema.fields.set(alias.toLocaleLowerCase(), {
+  const fieldDefinition = {
     name: fieldName,
     alias,
     tableId: modelDefinition.tableId,
     model: schema.models[referenceModelId],
     fieldId,
-    dataType
-  });
+    dataType,
+    length,
+    scale
+  }
+
+  schema.fields.set(alias.toLocaleLowerCase(), fieldDefinition);
 }
 
 function getNameAndAlias(sourceStatement: string): { name: string, alias: string} {
@@ -343,17 +564,17 @@ function determineJoins(fieldName: string, alias: string, schema: QuerySchema, q
 function addReferenceJoin(
   attributeName: string, 
   fieldName: string, 
-  mainModel: DataBaseModel, 
+  mainModel: QueryDataSource, 
   schema: QuerySchema, 
   level: number, 
   trackLength: number,
   parentField?: FieldDefinition
-): { mainModel: DataBaseModel, parentField: FieldDefinition } {
+): { mainModel: QueryDataSource, parentField: FieldDefinition } {
 
   const modelDefinition = mainModel.definition;
-  let attribute: ModelAttributeDefinition;
+  let attribute: QueryDataSourceAttribute;
   let referenceModelId: string;
-  let referenceModel: DataBaseModel;
+  let referenceModel: QueryDataSource;
 
   const lang = mainModel.application.lang;
   
@@ -427,7 +648,7 @@ function addReferenceJoin(
     referenceModelId = attribute.type.reference.modelId;
   }
   
-  referenceModel = ((mainModel.sequelize.models[referenceModelId] as unknown) as DataBaseModel);
+  referenceModel = ((schema.models[referenceModelId] as unknown) as QueryDataSource);
   if(!referenceModel) {
     throw new QueryError(`Can not find sourse table with ID '${referenceModelId}' as reference table, described id fielad '${fieldName}'`);
   }
@@ -488,13 +709,13 @@ function addReferenceJoin(
   return { mainModel: referenceModel, parentField: leftTableReferenceField };
 }
 
-function getAttributeDefinition(attributeName: string, model: DataBaseModel): 
-  { dataType: string, fieldId: string, referenceModel?: DataBaseModel,  } {
+function getAttributeDefinition(attributeName: string, model: QueryDataSource, schema: QuerySchema): 
+  { dataType: string, fieldId: string, referenceModel?: QueryDataSource,  } {
 
   const modelDefinition = model.definition;
   let attribute: ModelAttributeDefinition;
   let referenceModelId: string;
-  let referenceModel: DataBaseModel;
+  let referenceModel: QueryDataSource;
   
   const lang = model.application.lang;
   
@@ -575,7 +796,7 @@ function getAttributeDefinition(attributeName: string, model: DataBaseModel):
 
     if(attribute.type.dataType === 'FK') {
       referenceModelId = attribute.type.reference.modelId;
-      referenceModel = ((model.sequelize.models[referenceModelId] as unknown) as DataBaseModel);
+      referenceModel = ((schema.models[referenceModelId] as unknown) as QueryDataSource);
       if(!referenceModel) {
         throw new QueryError(`Can not find sourse table with ID '${referenceModelId}' as reference table, described id field '${attributeName}'`);
       }
@@ -586,11 +807,11 @@ function getAttributeDefinition(attributeName: string, model: DataBaseModel):
 }
 
 function addJoin(
-  rigthModel: DataBaseModel, 
+  rigthModel: QueryDataSource, 
   joinType: JoinType,
   schema: QuerySchema, 
   query: JoinStatement
-): void {
+): { leftTable, rigthTable } {
 
   const onLeftTrack = query.on[0].split('.');
   const leftModelAlias = onLeftTrack[0];
@@ -601,15 +822,21 @@ function addJoin(
   
   const leftSource = {...schema.sources.get(leftModelAlias)};
   const leftModel = leftSource.model;
-  if(!leftModel) {
+  if(!leftModel) { 
     throw new QueryError(`Can not find sourse table with alias '${leftModelAlias}' as reference table`);
   }
   
   const leftTable = (leftSource as TableDefinition & { on: FieldDefinition});
-  const rigthTable = (getSourceDefinition(rigthModel, rigthModelAlias) as TableDefinition & { on: FieldDefinition});
+  let rigthTable;
+  if(rigthModel.sql) {
+    const model = schema.models[rigthModelAlias];
+    rigthTable = (getSourceDefinition(model, rigthModelAlias) as TableDefinition & { on: FieldDefinition});
+  } else {
+    rigthTable = (getSourceDefinition(rigthModel, rigthModelAlias) as TableDefinition & { on: FieldDefinition});
+  }
 
   const onLeftFieldName = onLeftTrack[1];
-  const leftOnField = getAttributeDefinition(onLeftFieldName, leftModel);
+  const leftOnField = getAttributeDefinition(onLeftFieldName, leftModel, schema);
   const leftTableReferenceField = {
     name: onLeftFieldName,
     tableId: leftModel.definition.tableId,
@@ -618,10 +845,19 @@ function addJoin(
     dataType: leftOnField.dataType
   }
   
-  const rigthOnField = getAttributeDefinition(onRigthFieldName, rigthModel);
+  let rigthOnField;
+  let tableId;
+  if(rigthModel.sql) {
+    rigthOnField = schema.childSchema.fields.get(onRigthFieldName.toLocaleLowerCase());
+    tableId = schema.childSchema.alias;
+    rigthTable.tableId = tableId;
+  } else { 
+    rigthOnField = getAttributeDefinition(onRigthFieldName, rigthModel, schema);
+    tableId = rigthModel.definition.tableId;
+  }
   const rigthTableReferenceField = {
     name: onRigthFieldName,
-    tableId: rigthModel.definition.tableId,
+    tableId: tableId,
     model: rigthOnField.referenceModel,
     fieldId: rigthOnField.fieldId,
     dataType: rigthOnField.dataType
@@ -643,9 +879,11 @@ function addJoin(
   schema.tables[rigthTable.tableId] = rigthTable;
 
   schema.sources.set(rigthTable.alias, rigthTable);
+
+  return { leftTable, rigthTable };
 }
 
-function getSourceDefinition(model: DataBaseModel, alias?: string): SourceDefinition {
+function getSourceDefinition(model: QueryDataSource, alias?: string): SourceDefinition {
   
   return {
     name: model.modelName,
@@ -657,31 +895,78 @@ function getSourceDefinition(model: DataBaseModel, alias?: string): SourceDefini
 
 function buildSQLQueryString(schema: QuerySchema): string {
 
+  let result = '';
+  
+  if(schema.tempSources) {
+    for(let source of schema.tempSources) {
+      const attributes = source.definition.attributes;
+      const columns = describeColumns(attributes);
+      const tableId = source.definition.tableId;
+      result += `CREATE TEMP TABLE ${tableId} (${columns.join(', ')});\n`;
+      const insertions = defineInsertions(attributes, source.dataSource);
+      if(insertions.length) {
+        result += `INSERT INTO ${tableId} VALUES ${insertions.join(', ')};\n`;
+      }
+    }
+  }
+
   let fields = [];
 
   schema.fields.forEach((fieldDefinition) => {
     const tableId = fieldDefinition.tableId;
     const tableDefinition = schema.tables[tableId];
     const tableAlias = tableDefinition.alias;
-    fields.push(`${tableAlias}."${fieldDefinition.fieldId}" AS ${fieldDefinition.alias}`);
+    if((fieldDefinition.model && fieldDefinition.model.dataSource) || !fieldDefinition.model) { 
+      fields.push(`${tableAlias}.${fieldDefinition.fieldId} AS ${fieldDefinition.alias}`);
+    } else {
+      fields.push(`${tableAlias}."${fieldDefinition.fieldId}" AS ${fieldDefinition.alias}`);
+    }
   })
 
-  let result = `SELECT ${fields.join(', ')} `;
-  result += ` FROM "${schema.from.tableId}" ${schema.from.alias} `;
+  schema.additionalfields.forEach((fieldDefinition) => {
+    if(!schema.fields.get(fieldDefinition.alias.toLocaleLowerCase())) {
+      const tableId = fieldDefinition.tableId;
+      const tableDefinition = schema.tables[tableId];
+      const tableAlias = tableDefinition.alias;
+      fields.push(`${tableAlias}.${fieldDefinition.fieldId} AS ${fieldDefinition.alias}`);
+      schema.fields.set(fieldDefinition.alias.toLocaleLowerCase(), fieldDefinition);
+    }
+  })
+
+  result = result + `SELECT ${fields.join(', ')} `; 
+  if (schema.from.model.dataSource) {
+    result += ` FROM ${schema.from.tableId} ${schema.from.alias} `;// if table created dynamically we don't need brackets
+  } else if(schema.from.model.sql) {
+    result += ` FROM "(${schema.from.model.sql})" ${schema.from.alias} `;
+  } else {
+    result += ` FROM "${schema.from.tableId}" ${schema.from.alias} `;
+  }
 
   for(let key in schema.joins) {
     const joins = schema.joins[key];
     for(let join of joins) {
-      result += `${join.joinType} "${join.rigthTable.tableId}" ${join.rigthTable.alias} `;
+      if(join.rigthTable.model.sql) {
+        result += `${join.joinType} (${join.rigthTable.model.sql}) ${join.rigthTable.alias} `;
+      } else {
+        result += `${join.joinType} "${join.rigthTable.tableId}" ${join.rigthTable.alias} `;
+      }
 
       let leftCast = '';
       let rigthCast = '';
+      let quoteL = '"';
+      let quoteR = '"';
       if(join.leftTable.on.dataType === 'FK' && join.rigthTable.on.dataType !== 'FK') {
         leftCast = '::"varchar"';
       } else if(join.rigthTable.on.dataType === 'FK' && join.leftTable.on.dataType !== 'FK') {
         rigthCast = '::"varchar"';
       }
-      result += `ON ${join.leftTable.alias}."${join.leftTable.on.fieldId}"${leftCast} = ${join.rigthTable.alias}."${join.rigthTable.on.fieldId}"${rigthCast} `
+      if (join.leftTable.model.dataSource) {
+        quoteL = '';
+      }
+      if (join.rigthTable.model.dataSource) {
+        quoteR = '';
+      }
+      result += `ON ${join.leftTable.alias}.${quoteL+join.leftTable.on.fieldId+quoteL+leftCast} = ${join.rigthTable.alias}.${quoteR+join.rigthTable.on.fieldId+quoteR+rigthCast} `
     }
   }
 
@@ -694,6 +979,88 @@ function buildSQLQueryString(schema: QuerySchema): string {
   }
 
   return result;
+}
+
+function describeColumns(attributes): string[] {
+
+  const columns = [];
+  for(let attributeName in attributes) {
+    const field = attributes[attributeName];
+    columns.push(describeColumn(field as QueryDataSourceAttribute));
+  }
+
+  return columns;
+}
+
+function describeColumn(field: QueryDataSourceAttribute) {
+  let definition;
+  const type = describeType(field);
+  definition = `${field.fieldId} ${type}`;
+
+  return definition;
+}
+
+function describeType(field: QueryDataSourceAttribute) {
+  switch (field.type.dataType) {
+      case 'STRING':
+          return `VARCHAR(${field.type.length})`;
+      case 'NUMBER':
+          return `NUMERIC(${field.type.length},${field.type.scale})`;
+      case 'BOOLEAN':
+          return `BOOLEAN`;
+      case 'DATE':
+          return `TIMESTAMP`;
+  }
+}
+
+function defineInsertions(fields, source: DataTable) {
+  
+  const insertions = [];
+  for(let entry of source) {
+    const values = defineValues(fields, entry);
+    insertions.push(`(${values.join(', ')})`);
+  };
+
+  return insertions;
+}
+
+function defineValues(fields, entry) {
+
+  const values = [];
+  for(let fieldName in fields) {
+    const field = fields[fieldName];
+    const value = adoptValue(Utils.get(entry, field.fieldId), field.type.dataType);
+    switch (field.type.dataType) {
+      case 'STRING':
+        values.push(`'${value || ''}'`);
+        break;
+      case 'DATE':
+        values.push(`'${(value || new Date(1, 1, 1, 0 , 0, 0, 0)).toISOString()}'`);
+        break;
+      default:
+        values.push(value);
+    } 
+  };
+
+  return values;
+}
+
+function adoptValue(value, dataType) {
+
+  switch (dataType) {
+    case 'STRING':
+      return value || '';
+    case 'NUMBER':
+      value = Number(value);
+      if(Utils.isNaN(value)) {
+        value = 'NULL';
+      }
+      return value;
+    case 'BOOLEAN':
+      return Boolean(value);
+    case 'DATE':
+      return value || new Date(1, 1, 1, 0 , 0, 0, 0);
+  } 
 }
 
 function buildWhereClause(schema: QuerySchema): string {
@@ -719,8 +1086,8 @@ const operationBuilders = {
   'BETWEEN': buildOperationBetween,
   'LIKE': buildOperationComparison,
   'IN': buildOperationIn,
-  'IS NULL': buildOperationBoolean,
-  'IS NOT NULL': buildOperationBoolean,
+  'IS NULL': buildOperationIsNull,
+  'IS NOT NULL': buildOperationIsNotNull,
   'IS TRUE': buildOperationBoolean,
   'IS FALSE': buildOperationBoolean
 }
@@ -745,7 +1112,9 @@ function getComperisonValue(condition: ConditionDefinition): string {
     } else {
       if(typeof value === 'string') {
         result = `'${value}'`;
-      } if(Array.isArray(value)) {
+      } else if(Utils.isDate(value)) {
+        result = `'${value.toISOString()}'`;
+      } else if(Array.isArray(value)) {
         let values: string[] = [];
         for(let val of value) {
           values.push(`'${val}'`);
@@ -796,6 +1165,20 @@ function buildOperationIn(condition: ConditionDefinition): string {
   return result;
 }
 
+function buildOperationIsNull(condition: ConditionDefinition): string {
+
+  let result = `${condition.field.tableAlias}."${condition.field.fieldId}" IS NULL`;
+
+  return result;
+}
+
+function buildOperationIsNotNull(condition: ConditionDefinition): string {
+
+  let result = `${condition.field.tableAlias}."${condition.field.fieldId}" IS NOT NULL`;
+
+  return result;
+}
+
 function buildOperation(condition: BooleanConditionDefinition | ConditionDefinition): string {
 
   let result: string[] = [];
@@ -834,6 +1217,7 @@ const ComparisonOperators = {
   between: ComparisonOperatorType.BEETWEN,
   like: ComparisonOperatorType.LIKE,
   in: ComparisonOperatorType.IN,
+  isNull: ComparisonOperatorType.IS_NULL
 };
 
 function defineConditions(
@@ -867,22 +1251,34 @@ function defineConditions(
         }
 
         if(ComparisonOperators[operator]) { // it is a separete condition
-          const operation = condition[operator];
-          const filterFieldName = operation[0];
-          const filterFieldNameTrack = filterFieldName.split('.');
+          let operation;
+          let filterFieldName;
+          let filterFieldNameTrack;
+          let comparisonValue;
+
+          if(!Array.isArray(condition[operator])) {
+            operation = condition;
+            filterFieldName = condition[operator];
+            filterFieldNameTrack = filterFieldName.split('.');
+            comparisonValue = undefined;
+          } else {
+            operation = condition[operator];
+            filterFieldName = operation[0];
+            filterFieldNameTrack = filterFieldName.split('.');
+            comparisonValue = operation.splice(1, operation.length - 1);
+          }
 
           const modelAlias = filterFieldNameTrack[0];
           const source = schema.sources.get(modelAlias);
           if(!source) {
             throw new Error(`Can not find source with alias '${modelAlias}' for condition '${filterFieldName}'`);
           }
-          let mainModel: DataBaseModel = source.model;
+          let mainModel: QueryDataSource = source.model;
 
           const depth = filterFieldNameTrack.length;
           //for(let i = 0; i < depth; i++) {
             const filterField = filterFieldNameTrack[1];
             const level = 2;
-            const comparisonValue = operation.splice(1, operation.length - 1);
             const conditionDefinition = addCondition(filterField, filterFieldNameTrack, comparisonValue, operator, level, depth, mainModel, schema);
             (parentConditionBlock as ConditionDefinition[]).push(conditionDefinition);
           //}
@@ -907,17 +1303,17 @@ function addCondition(
       operator: string, 
       level: number,
       depth: number,
-      mainModel: DataBaseModel, 
+      mainModel: QueryDataSource, 
       schema: QuerySchema): ConditionDefinition {
 
   let fieldDefinition;
   let conditionDefinition: ConditionDefinition;
   let fieldId: string;
   let dataType: string;          
-  let referenceModel: DataBaseModel;
+  let referenceModel: QueryDataSource;
   let tableAlias: string;
 
-  ({ fieldId, dataType, referenceModel } = getAttributeDefinition(filterField, mainModel));
+  ({ fieldId, dataType, referenceModel } = getAttributeDefinition(filterField, mainModel, schema));
 
   if(level < depth) {
 
@@ -937,7 +1333,9 @@ function addCondition(
     };
     
     const subQuerySchema: QuerySchema = {
+      application: schema.application,
       fields: new Map([['id', fieldDefinition]]),
+      additionalfields: new Map(),
       from: subQuerySourceDefinition,
       tables: { [subQuerySourceDefinition.tableId]: subQuerySourceDefinition },
       models: schema.models,

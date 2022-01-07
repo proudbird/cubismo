@@ -1,4 +1,5 @@
 import * as TSLogger from "tslog";
+import moment from "moment";
 
 const tslog: TSLogger.Logger = new TSLogger.Logger();
 
@@ -41,7 +42,7 @@ enum MessageFormat {
 function log(type: MessageType, format: string, message: string, error?: any): void {
 
     const log = [];
-    const timestamp = new Date().toLocaleString();
+    const timestamp = moment().format('YYYY-MM-DD hh:mm:ss.SSS');
     log.push("[" + timestamp);
     log.push(type + "]");
     log.push(message);
@@ -117,4 +118,5 @@ function log(type: MessageType, format: string, message: string, error?: any): v
     }
 }
 
+//@ts-ignore
 global["Logger"]  = Logger;

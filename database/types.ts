@@ -1,13 +1,13 @@
 import Application from '../classes/application/Application'
 import Cube from '../classes/Cube'
-import Cubismo from '../cubismo/Cubismo'
+import Cubismo from '../core/Cubismo'
 import Sequelize from 'sequelize'
 import { Model } from 'sequelize'
 import Instance from '../classes/Instance'
 import Enum, { EnumValue } from '../classes/Enum'
 
-export type ConnectionConfig = Sequelize.ConnectionOptions 
-        &{ options?: Sequelize.Options }
+export type ConnectionConfig = Sequelize.Options 
+        &{ options?: Sequelize.Options } &{dialect?: Sequelize.Dialect}
 
 export type DataTypeConfig = {
   type          : Sequelize.DataTypes.AbstractDataTypeConstructor 
@@ -33,6 +33,9 @@ export type DataBaseModel = Model & {
   fieldRawAttributesMap: [TableFieldRawAttributes],
   options        : {}
   findOne: Function,
+  findOrCreate: Function,
+  build: Function,
+  create: Function,
   definition: ModelDefinition,
   name: string,
   modelName: string,
@@ -131,6 +134,10 @@ export type ModelAttributeDefinition = {
   toolTip?: string,
   belonging?: string,
   required?: boolean
+}
+
+export type ConstantAtrributes = {
+  id       : DataTypeConfig
 }
 
 export type CatalogAtrributes = {

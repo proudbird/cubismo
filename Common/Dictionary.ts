@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import { ApplicationSettings } from "../cubismo/types";
+import { ApplicationSettings } from "../core/types";
 
 export default class Dictionary {
   
@@ -9,7 +9,7 @@ export default class Dictionary {
   constructor(settings: ApplicationSettings) {
 
 
-    const appDir = settings.dirname;
+    const appDir = settings.workspace;
     const vocabularyFileName = join(appDir, 'vocabulary.json');
     if(existsSync(vocabularyFileName)) {
       this.#vocabulary = JSON.parse(readFileSync(vocabularyFileName, 'utf-8'));

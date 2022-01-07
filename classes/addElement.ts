@@ -1,4 +1,4 @@
-import Cubismo from '../cubismo/Cubismo'
+import Cubismo from '../core/Cubismo'
 import { fstat, watch } from 'fs'
 import loadModule from './loadModule'
 
@@ -41,6 +41,7 @@ export default function addElement<T extends ICube | IMetaDataClass | IMetaDataO
       const value = elements.get(element.name)
       if(process.env.NODE_ENV === "production") {
         if(!(element.name === 'Modules' 
+        || element.name === 'Constants' 
         || element.name === 'Catalogs' 
         || element.name === 'Registrators' 
         || element.name === 'DataSets' 
