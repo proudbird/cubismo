@@ -1,8 +1,8 @@
 //import winax from 'winax';
 import {Converter} from "converter-1c-internal";
 import bodyParser from "bodyparser-1c-internal";
-import Cubismo from '../../cubismo/Cubismo'
-import { AddIn } from '../../cubismo/AddIns';
+import Cubismo from '../../core/Cubismo'
+import { AddIn } from '../../core/AddIns';
 
 
 delete global.ActiveXObject // we don't want someone else could create ActiveX objects - unsafe

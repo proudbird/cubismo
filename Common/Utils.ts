@@ -5,12 +5,14 @@ import moment  from "moment";
 import CodeGenerator from 'node-code-generator';
 import { TestValidity } from "./Validators"
 import * as bcrypt from "bcryptjs";
+import { Perform, PerformSync} from "./Perform";
 
+//@ts-ignore
 global["Utils"] = _
 
 deepdash(_) 
 
-function guid() {
+export function guid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     var r = Math.random() * 16 | 0,
       v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -18,7 +20,7 @@ function guid() {
   });
 } _.mixin({ 'guid': guid }, { 'chain': false });
 
-function sid () {
+export function sid () {
   ShortId.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$');
   let id = ShortId.generate();
   return id.replace(/$/g, "0");
@@ -27,7 +29,7 @@ function sid () {
 
   _.mixin({ moment: moment }, { chain: false });
 
-  function generateCode(mask: string, options?): string {
+  export function generateCode(mask: string, options?): string {
     const generator = new CodeGenerator();
     const code = generator.generateCodes(mask, 1, options)[0];
     return code;
@@ -36,9 +38,10 @@ function sid () {
 
   _.mixin({ testValidity: TestValidity }, { chain: false });
 
+  //@ts-ignore
   global["Utils"]['bcrypt'] = bcrypt;
 
-function traverse(original, fn) {
+  export function traverse(original, fn) {
     const copy = _.cloneDeep(original);
     fn(original);
     _['eachDeep'](copy, (value, key, parent, context) => {
@@ -46,3 +49,6 @@ function traverse(original, fn) {
       fn(node);
     });
   } _.mixin({ 'traverse': traverse }, { 'chain': false });
+
+  _.mixin({ 'perform': Perform }, { 'chain': false });
+  _.mixin({ 'performSync': PerformSync }, { 'chain': false });

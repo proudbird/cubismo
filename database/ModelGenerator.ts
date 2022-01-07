@@ -1,6 +1,6 @@
 import EventEmitter from 'events'
 import { Sequelize, DataTypes } from 'sequelize'
-import { AttributeOptions, CatalogAtrributes, RegistratorAtrributes } from './types'
+import { AttributeOptions, CatalogAtrributes, ConstantAtrributes, RegistratorAtrributes } from './types'
 import { MetaDataTypes } from '../common/Types'
 
 export default class ModelGenerator extends EventEmitter {
@@ -158,6 +158,30 @@ export default class ModelGenerator extends EventEmitter {
       }
 
       return { attributes: attributes, belongsTo: belongsTo }
+    }
+
+    function defineConstantAttributes(model) {
+
+      const belongsTo = []
+
+      const attributes: ConstantAtrributes = {
+        // field 'id' and 'dropped' are must be
+        id: {
+          type        : DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey  : true,
+          unique      : true
+        }
+      }
+
+      model.fieldId = `_value`;
+      const data = {
+        attributes: { value: model }
+      }
+
+      const attributeOptions = defineAttributeOptions(data, attributes);
+
+      return { attributes: attributeOptions.attributes, belongsTo: attributeOptions.belongsTo }
     }
 
     function defineCatalogAttributes(model) {
@@ -325,6 +349,9 @@ export default class ModelGenerator extends EventEmitter {
       let attributeOptions: AttributeOptions = { attributes: undefined, belongsTo: undefined}
       // didn't find the model - so, let's build it!
       switch (model.class) {
+        case "Constants":
+          attributeOptions = defineConstantAttributes(model)
+          break
         case "Catalogs":
           attributeOptions = defineCatalogAttributes(model)
           break

@@ -3,6 +3,7 @@ import Application from '../classes/application/Application';
 
 import DBDriver from './DBDriver';
 import { FieldDefinition } from './queries/types';
+import { DataBaseModel } from './types';
 
 export default class QuerySelectItem {
 
@@ -13,7 +14,7 @@ export default class QuerySelectItem {
       Object.defineProperty(this, attribute.alias, {
         get() {
           if(attribute.dataType === 'FK') {
-            const reference = attribute.model.findOne({ where: { id: record[key] } });
+            const reference = (attribute.model as unknown as DataBaseModel).findOne({ where: { id: record[key] } });
             return reference;
           } else {
             return record[key];

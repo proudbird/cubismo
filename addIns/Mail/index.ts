@@ -2,7 +2,7 @@ import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 import { join as pathJoin } from "path";
 import nodemailer from "nodemailer";
-import Cubismo from "../../cubismo/Cubismo";
+import Cubismo from "../../core/Cubismo";
 import Application from "../../classes/application/Application";
 
 export default class Mail {

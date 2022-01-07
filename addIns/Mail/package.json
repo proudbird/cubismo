@@ -10,6 +10,6 @@
   "author": "cubismo",
   "license": "MIT",
   "dependencies": {
-    "nodemailer": "^6.6.3"
+    "nodemailer": "^6.7.0"
   }
 }

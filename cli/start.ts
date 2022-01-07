@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs'
 import path    from 'path'
 import http    from 'http'
-import Cubismo from './cubismo/Cubismo'
-import './common/Utils'
+import Cubismo from '../core/Cubismo'
+import '../common/Utils'
 import dotenv from "dotenv";
+import { CubismoSettings } from '../core/types'
 
 dotenv.config();
 
@@ -38,7 +39,8 @@ async function runServer() {
 
   process.env.NODE_ENV = process.env.NODE_ENV || "production";
 
-  cubismo = new Cubismo(__dirname, sekretKey);
+  let config: CubismoSettings;
+  cubismo = new Cubismo(config, sekretKey);
   await cubismo.start(applicationId)
   message = `port ${port}`
 }

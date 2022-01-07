@@ -1,5 +1,5 @@
-import { EnumStore } from '../cubismo/types'
-import Cubismo        from '../cubismo/Cubismo'
+import { EnumStore } from '../core/types'
+import Cubismo        from '../core/Cubismo'
 import Application    from './Application/Application'
 import Cube           from './Cube'
 import { MetaDataObjectDefinition } from './MetaData'

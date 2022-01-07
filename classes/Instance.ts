@@ -72,7 +72,7 @@ export default class Instance {
     fieldId = element.fieldId;
     if (element.type.lang && element.type.lang.length) {
       lang = lang || this.#model.application.lang;
-      if(definition.nameLang.includes(lang)) {
+      if(element.type.lang.includes(lang)) {
         fieldId = `${fieldId}_${lang}`;
       } else {
         fieldId = `${fieldId}_${this.#model.application.defaultLang}`;
@@ -132,7 +132,16 @@ export default class Instance {
 
     switch (element.type.dataType) {
       case 'STRING':
-        value = value ? String(value).substr(0, element.type.length) : '';
+        if(value) {
+          if(value.toString) {
+            value = value.toString();
+          }
+          if(element.type.length) {
+            value = String(value).substr(0, element.type.length);
+          } 
+        } else {
+          value = '';
+        }
         break;
       case 'NUMBER':
         if(element.type.scale) {

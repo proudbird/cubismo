@@ -1,8 +1,10 @@
-import { DataBaseModel, DataBaseModels } from "../types";
+import { DataBaseModel, DataBaseModels, ModelDefinition } from "../types";
+import DataTable from "../../common/DataCollections/DataSet";
+import Application from "../../classes/application/Application";
 
 export declare type QueryStatement = {
-  select   : Fields,
-  from     : MetaDataObjectName| DataBaseModel | QueryStatement,
+  select   : Fields | '*',
+  from     : QueryFromStatement | [QueryFromStatement, string],
   distinct?: boolean,
   cases   ?: CaseStatement[],
   joins   ?: (InnerJoinStatement|LeftJoinStatement|RightJoinStatement|FullJoinStatement)[],
@@ -10,8 +12,11 @@ export declare type QueryStatement = {
   groupBy ?: GroupByStatement,
   orderBy ?: OrderByStatement,
   limit   ?: number,
-  offset  ?: number
+  offset  ?: number,
+  as      ?: string 
 }
+
+declare type QueryFromStatement = MetaDataObjectName | DataBaseModel | QueryStatement | DataTable;
 
 declare type Field = string;
 /**
@@ -63,24 +68,32 @@ declare type GroupByStatement = Field[];
 declare type OrderByStatement = Field[];
 
 export declare type QuerySchema = {
+  application: Application,
   fields: Map<string, FieldDefinition>,
+  additionalfields: Map<string, FieldDefinition>,
   from: SourceDefinition,
   joins?: JoinsMap,
   where?: BooleanConditionDefinition | ConditionDefinition,
   tables: TablesMap,
-  models: DataBaseModels,
+  models: QueryDataSources,
   sources: Map<string, SourceDefinition>,
-  groupBy?: string[]
+  groupBy?: string[],
+  tempSources?: QueryDataSource[],
+  mainSchema?: QuerySchema,
+  childSchema?: QuerySchema,
+  alias?: string
 }
 
 export declare type FieldDefinition = {
   name: string,
   alias?: string,
   tableId: string,
-  model: DataBaseModel,
+  model: QueryDataSource,
   fieldId: string,
   functioin?: QueryFunction,
-  dataType: string
+  dataType: string,
+  length?: number,
+  scale?: number,
 }
 
 declare type QueryFunction = 'MIN' | 'MAX' | 'COUNT' | 'AVG' | 'SUM';
@@ -89,7 +102,71 @@ export declare type SourceDefinition = {
   name?: string,
   alias?: string,
   tableId?: string,
-  model?: DataBaseModel
+  model?: QueryDataSource
+}
+
+// export interface QueryDataSource {
+//   columns: QueryDataSourceColumn[],
+//   records: QueryDataSourceRecord[]
+// }
+
+// export interface QueryDataSourceColumn {
+//   [name: string]: [
+//     /**  full path to the value of a data property, devided by '.' */
+//     path: string, 
+//     /** data type of the value */
+//     type: SQLNumericTypes | SQLCharacterTypes | SQLDateTimeTypes | SQLBooleanType,
+//     /** in case of numbers - the total count of significant digits in the whole number, 
+//      * that is, the number of digits to both sides of the decimal point; in case of strings - 
+//      * just the string length */
+//     length?: number,
+//     /** is the count of decimal digits in the fractional part, to the right of the decimal point */
+//     scale?: number
+//   ]
+// }
+
+export interface QueryDataSourceRecord {
+  [field: string]: any
+}
+
+export enum SQLNumericTypes {
+  SMALLINT = 	'SMALLINT',
+  INTEGER	 = 	'INTEGER',
+  BIGINT	 = 	'BIGINT',
+  DECIMAL	 = 	'DECIMAL',
+  NUMERIC	 = 	'NUMERIC',
+  REAL	   = 	'REAL',
+  FLOAT	   = 	'FLOAT'
+}
+
+export enum SQLCharacterTypes {
+  VARCHAR	= 	'VARCHAR',
+  CHAR	  = 	'CHAR',
+  TEXT	  = 	'TEXT',
+  BLOB 	  = 	'BLOB '
+}
+
+export enum SQLDateTimeTypes {
+  TIMESTAMP	= 	'TIMESTAMP',
+  DATE	    = 	'DATE',
+  TIME	    = 	'TIME'
+}
+
+export enum SQLBooleanType {
+  BOOLEAN	  = 	'BOOLEAN'
+}
+
+export declare type QuerySource = {
+  modelName: string,
+  tableName: string,
+  source: DataBaseModel | QueryDataSource,
+  type: SourceType
+}
+
+export enum SourceType {
+  DATA_BASE_MODEL,
+  QUERY_STATEMENT,
+  QUERY_DATA_SOURCE
 }
 
 export declare type ConditionDefinition = {
@@ -150,3 +227,52 @@ export enum JoinType {
 export declare type TableDefinition = SourceDefinition;
 
 declare type TablesMap = { [tableId: string]: TableDefinition }
+
+export interface QueryDataSource {
+  tableName   : string,
+  definition  : QueryDataSourceDefinition,
+  name        : string,
+  modelName   : string,
+  application?: Application,
+  dataSource ?: DataTable,
+  alias      ?: string,
+  sql        ?: string
+}
+
+export type QueryDataSources = {
+  [key: string]: QueryDataSource
+} 
+
+export interface QueryDataSourceDefinition {
+  id: string,
+  cube?: string,
+  class?: string,
+  tableId: string,
+  codeLenght?: number,
+  codeType?: 'STRING' | 'NUMBER',
+  nameLenght?: number,
+  nameLang?: string,
+  multilevel?: true,
+  owners?: string[],
+  attributes?: QueryDataSourceAttributes,
+  joinedAttributes?: QueryDataSourceAttributes
+}
+
+export type QueryDataSourceAttributes = { 
+  [name: string]: QueryDataSourceAttribute
+}
+
+export type QueryDataSourceAttribute = {
+  fieldId: string,
+  type: {
+    dataType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM' | 'FK',
+    lang?: string[],
+    length?: number,
+    scale?: number,
+    reference?: {
+      cube?: string,
+      class?: string,
+      modelId: string
+    }
+  }
+}

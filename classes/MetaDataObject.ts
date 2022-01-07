@@ -1,10 +1,13 @@
+import { existsSync } from 'fs'
 import { Model } from 'sequelize'
 
-import Cubismo     from '../cubismo/Cubismo'
+import Cubismo     from '../core/Cubismo'
 import Application from './Application/Application'
 import Cube        from './Cube'
 import { MetaDataObjectDefinition } from './MetaData'
 import MetaDataInstance from './MetaDataInstance'
+
+import loadModule from "./loadModule";
 
 const recordsMap = new WeakMap()
 
@@ -44,18 +47,33 @@ export default class MetaDataObject {
 
     const maker = this.#instanceMaker as any
 
-    model.build = function (values, options) {
+    model.build = (values, options) => {
 
       if (Array.isArray(values)) {
+        values = adoptValues(values, model);
         return model.bulkBuild(values, options)
       }
       
       if(values && values['_record']) {
         return values
       } else {
+        values = adoptValues(values, model);
         const record = new model(values, options);
         record.collections = model.collections;
-        return new maker(model, record);
+        const instanse = new maker(model, record);
+        const clas = this.#type;
+        if (existsSync(this.#filename)) {
+             loadModule(
+              this.#filename,
+              this.#type.type,
+               this.#name,
+               instanse,
+               application,
+               instanse,
+               undefined,
+               cubismo);
+           }
+        return instanse;
       }      
     }
 
@@ -78,7 +96,7 @@ export default class MetaDataObject {
     })
   }
 
-  get type(): string {
+  type(): string {
     return this.#type.type
   }
 
@@ -129,30 +147,6 @@ function adoptOptions(options: any, model: any) {
 
   if(options.where) {
 
-    function getAdoptedinLang(property: string, fieldId: string, langs: [string]): string {
-      
-      let adopted = property
-      if(langs && langs.length) {
-        let found = false
-        langs.forEach(lang => {
-          if(property === `${fieldId}_${lang}`) {
-            found = true
-            return
-          }
-        })
-
-        if(!found) {
-          if(langs.includes(model.application.lang)) {
-            adopted = `${fieldId}_${model.application.lang}`
-          } else {
-            adopted = `${fieldId}_${langs[0]}`
-          }
-        }
-      }
-
-      return adopted
-    }
-
     for(let property in options.where) {
       let adopted = property;
       let value = options.where[property];
@@ -160,7 +154,7 @@ function adoptOptions(options: any, model: any) {
         throw new Error(`Rigth side of 'where' option can not be empty`)
       }
       if(property.includes('Name')) {
-        adopted = getAdoptedinLang(property, 'Name', model.definition.nameLang)
+        adopted = getAdoptedinLang(property, 'Name', model.definition.nameLang, model.application.lang)
       } else if(property === 'Owner') {
         adopted = 'ownerId'
         const value = options.where[property]
@@ -191,7 +185,7 @@ function adoptOptions(options: any, model: any) {
               
               options.where[property] = newValue
             } else if(attribute.type.dataType === 'STRING') {
-              adopted = getAdoptedinLang(adopted, fieldId, model.definition.attributes[key].type.lang)
+              adopted = getAdoptedinLang(adopted, fieldId, model.definition.attributes[key].type.lang, model.application.lang)
             } else {
               // nothing to do
             }
@@ -207,4 +201,65 @@ function adoptOptions(options: any, model: any) {
     }
     return options
   }
+}
+
+function adoptValues(values, model) {
+
+  //TODO: if values ia an array so we need adopt an array
+  const adoptedValues = {};
+
+  for(let property in values) {
+    let adoptedAttribute = property;
+    let adoptedValue     = values[property];
+
+    if(property === 'Name') {
+      adoptedAttribute = getAdoptedinLang(property, 'Name', model.definition.nameLang, model.application.lang);
+    } else if(property === 'Owner') {
+      adoptedAttribute = 'ownerId';
+      adoptedValue = adoptedValue ? adoptedValue.id : null;
+    } else if(property === 'Parent') {
+      adoptedValues['level'] =  adoptedValue.getLevel() + 1;
+      adoptedAttribute = 'parentId';
+      adoptedValue = adoptedValue ? adoptedValue.id : null;
+    }
+
+    const attribute = model.definition.attributes[property];
+    if(attribute) {
+      const fieldId = attribute.fieldId;
+      adoptedAttribute = fieldId;
+      if(attribute.type.dataType === 'FK' || attribute.type.dataType === 'ENUM') {
+        adoptedValue = adoptedValue ? adoptedValue.id : null;
+      } else if(attribute.type.dataType === 'STRING') {
+        adoptedAttribute = getAdoptedinLang(adoptedAttribute, fieldId, attribute.type.lang, model.application.lang);
+      }
+    }
+
+    adoptedValues[adoptedAttribute] = adoptedValue;
+  }
+
+  return adoptedValues;
+}
+
+function getAdoptedinLang(property: string, fieldId: string, langs: [string], currentLang: string): string {
+      
+  let adopted = property
+  if(langs && langs.length) {
+    let found = false
+    langs.forEach(lang => {
+      if(property === `${fieldId}_${lang}`) {
+        found = true
+        return
+      }
+    })
+
+    if(!found) {
+      if(langs.includes(currentLang)) {
+        adopted = `${fieldId}_${currentLang}`
+      } else {
+        adopted = `${fieldId}_${langs[0]}`
+      }
+    }
+  }
+
+  return adopted
 }

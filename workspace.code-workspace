@@ -1,11 +1,19 @@
 {
 	"folders": [
-    {
-      "path": "."
-    },
-    {
-      "path": "..\\..\\apps\\_orlix"
-    }
-  ],
-  "settings": {}
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+	},
+	"launch": {
+		"configurations": [
+		],
+		"compounds": [{
+			"name": "Launch Server & Client",
+			"configurations": [
+				"cli", "Attach"
+			]
+		}]
+	}
 }

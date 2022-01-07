@@ -1,0 +1,16 @@
+{
+  "name": "cubismo-addin-mail",
+  "addInName": "Mail",
+  "version": "0.0.1",
+  "description": "cubismo AddIn to work with e-mails",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "cubismo",
+  "license": "MIT",
+  "dependencies": {
+    "bodyparser-1c-internal": "^0.0.3",
+    "converter-1c-internal": "^1.0.16"
+  }
+}

@@ -9,6 +9,7 @@ import Mail from '../addIns/Mail'
 
 
 const AddIns = {}
+//@ts-ignore
 global['AddIns'] = AddIns
 
 export class AddIn {

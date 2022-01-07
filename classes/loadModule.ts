@@ -1,7 +1,8 @@
-import fs     from 'fs'
-import demand from 'demander'
-import Import from '../cubismo/Import'
-import Cubismo from '../cubismo/Cubismo';
+import fs     from 'fs';
+import demand from 'demander';
+import Import from '../core/Import';
+import Cubismo from '../core/Cubismo';
+import i18next from 'i18next';
 
 export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataObject>(
     fileName   : string, 
@@ -50,6 +51,8 @@ export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataO
       for(let meteDataClassName in application.cubes[cube.name]) {
         params[meteDataClassName] = application.cubes[cube.name][meteDataClassName];
       }
+      params['Cube'] = cube;
+      params['t'] = translate(cube.name);
     }
   }
 
@@ -65,4 +68,11 @@ export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataO
   }
 
   return loaded
+}
+
+function translate(cubeName: string) {
+
+  return function(key: string) {
+    return i18next.t(key, { ns: cubeName });
+  }
 }

@@ -3,33 +3,29 @@ import Application from '../classes/application/Application';
 import { ConnectionConfig } from '../database/types';
 import Sequelize from 'sequelize';
 
+export type DatabaseOptions = Sequelize.Options
+
 export declare type CubismoSettings = {
   port: number,
   host: string,
-  connection: {
-    host: string,
-    port: number,
-    database: string,
-    username: string,
-    password: string
-  },
+  connection: Sequelize.Options,
+  apiKey?: string,
+  apiKeyHeader?: string,
+  tokenKey?: string,
+  cubes: string,
   defaults: {
-    applications: {
-      root: string,
-      workspaces: string
-    },
-    database: {
+    workspaces: string,
+    connection: {
       host: string,
       port: number,
-      database: string,
+      dialect: string,
+      database?: string,
       username: string,
       password: string
     }
   },
   templates: {
-    [id: string]: {
-      dirname: string
-    }
+    [id: string]: string[]
   }
 }
 
@@ -44,10 +40,10 @@ export declare type Applications = {
 }
 
 export declare type ApplicationSettings = {
-  dirname: string,
-  workspace: string,
-  dbConfig: any,
-  defaultLang: string;
+  workspace: string
+  defaultLang: string
+  connection: Sequelize.Options
+  cubes: string[]
 }
 
 declare interface Enum {
@@ -64,7 +60,8 @@ export declare type EnumStore = {
 
 export declare type NewApplicationParameters = {
   id: string,
-  dbConfig: ConnectionConfig,
+  workspace: string,
+  connection: ConnectionConfig,
   template: string,
   user: {
     name: string,
@@ -77,4 +74,18 @@ export declare type NewApplicationParameters = {
 
 export declare type Environments = {
   [key: string]: string | number
+}
+
+export interface IUser {
+
+  id: string;
+  get name(): string;
+  set name(value: string);
+  get login(): string;
+  set login(value: string);
+  get email(): string;
+  set email(value: string);
+  set password(value: string);
+  testPassword(value: string): boolean;
+  save(): Promise<IUser>;
 }

@@ -56,7 +56,32 @@ class CollectionItems<T extends Instance> {
       throw new Error(`Can't add item to '${this.#owner.type()}' collection '${this.#model.name}': ${error}`);
     }
   } 
+
+  async filter(conditions: Conditions<T>, handler: Function) {
+
+    for(let item of this) {
+      if(conditions) {
+        let fits = true;
+        for(let condition in conditions) {
+          if(Object.getOwnPropertyDescriptor(item, condition)) {
+            if(item[condition] !== conditions[condition]) {
+              fits = false;
+            }
+          }
+        }
+        if(fits) {
+          handler(item);
+        }
+      } else {
+        handler(item);
+      }
+    }
+  }
 }
+
+declare type Conditions<T> = {
+  [ptroperty in keyof T]: any;
+};
 
 export default class Collection<T extends Instance> {
 

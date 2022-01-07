@@ -51,6 +51,7 @@ static fatal(message: string, error?: Error | object): void
 
 declare interface IApplication {
   [key: string]: any
+  lang: string 
 }
 
 declare interface ICube {

@@ -1,3 +1,4 @@
+.dist
 .vscode
 node_modules
 .npmignore
@@ -6,3 +7,4 @@ node_modules
 addIns/1C/node_modules
 applications.json
 workspace.code-workspace
+coverage

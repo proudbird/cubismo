@@ -35,4 +35,13 @@ export default class FS {
       throw new Error(`Can't read file '${fileName}'`);
     }
   }
+  
+  writeFileSync(fileName: string, data: string, encoding?: 'utf-8'): void {
+    try {
+      encoding = encoding || 'utf-8';
+      fs.writeFileSync(path.join(this.#workspace, fileName), data, encoding);
+    } catch(error) {
+      throw new Error(`Can't write file '${fileName}'`);
+    }
+  }
 }
