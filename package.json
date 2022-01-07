@@ -50,6 +50,7 @@
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",
     "node-code-generator": "^1.0.3",
+    "nodemailer": "^6.7.2",
     "pg": "^8.6.0",
     "sequelize": "^6.6.2",
     "shortid": "^2.2.16",
