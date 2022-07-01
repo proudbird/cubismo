@@ -1,6 +1,6 @@
 # cubismo
 
-## Backend framework for rapid development of business applications
+## Backend framework for rapid development of business applications, based on microservices philosofy
 
 ### I believe that someday it will be ready for wide using, but now it is in develop progress...
 
