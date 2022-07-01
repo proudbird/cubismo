@@ -141,6 +141,7 @@ export default class Router extends EventEmitter {
       try {
         const user = await application.users.findOne({ where: { login } });
         Logger.debug(`We found user ${user.login}`);
+        Logger.debug(JSON.stringify(self.cubismo.settings));
         if (user && (user.testPassword(password))) {
           const token = jwt.sign(
             { userId: user.id, login },
