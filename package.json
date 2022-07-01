@@ -8,7 +8,8 @@
     "watch_cubismo": "tsc --build tsconfig.json -w",
     "lint": "eslint core/**",
     "test": "jest",
-    "start": "node .dist/cli/cli.js ../cubismo.apps"
+    "start": "node .dist/cli/cli.js ../cubismo.apps",
+    "add_index": "node addIndex.js ../cubismo.apps/cubismo.config ../cubismo.apps/index.config"
   },
   "repository": {
     "type": "git",
