@@ -1,7 +1,7 @@
 
 /// <reference types="sequelize" />
 
-declare const Utils: any;
+//declare const Utils: any;
 declare const AddIns: any;
 
 declare class Logger {

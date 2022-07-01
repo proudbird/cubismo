@@ -1,3 +1,5 @@
+import Utils from '../../common/Utils';
+
 export default class DataTable {
 
   #columns: DataTableColumns;

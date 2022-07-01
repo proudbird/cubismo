@@ -1,4 +1,5 @@
 import catalogist from "catalogist";
+import Utils from '../../common/Utils';
 
 export default function getListOfCubes(appDir: string): string[] {
 

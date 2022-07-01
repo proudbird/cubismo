@@ -1,11 +1,12 @@
 import { existsSync } from 'fs'
-import { Model } from 'sequelize'
 
 import Cubismo     from '../core/Cubismo'
 import Application from './Application/Application'
 import Cube        from './Cube'
 import { MetaDataObjectDefinition } from './MetaData'
 import MetaDataInstance from './MetaDataInstance'
+import Logger from '../common/Logger';
+import Utils from '../common/Utils';
 
 import loadModule from "./loadModule";
 

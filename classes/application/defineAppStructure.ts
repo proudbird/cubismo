@@ -116,6 +116,10 @@ function defineCubeStructure(
     if(cubeLevel.name === 'Types') {
       continue;
     }
+
+    if(cubeLevel.name === '_test') {
+      continue;
+    }
     
     const className = cubeLevel.fullName;
     if(!cubeLevel.isDirectory) {

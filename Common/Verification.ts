@@ -1,6 +1,8 @@
 import moment  from "moment";
 import CodeGenerator from 'node-code-generator';
 
+import Logger from './Logger';
+
 declare type AccessCode = {
   code: string,
   email: string,

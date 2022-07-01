@@ -4,6 +4,8 @@ import { RangeErrors } from "../../errors/Errors";
 import { TestValidity } from "../Validators";
 import DataType from "../DataType";
 
+import Utils from '../../common/Utils';
+
 type MetaDataType = '';
 
 export default class Table {

@@ -7,12 +7,19 @@ class CollectionItems<T extends Instance> {
   #model: DataBaseModel;
   #owner: T;
   #items: CollectionItem[];
+  #revoveAllCallback: Function;
 
-  constructor(model: DataBaseModel, owner: T, items: CollectionItem[], callback: Function) {
+  constructor(
+    model: DataBaseModel, 
+    owner: T, 
+    items: CollectionItem[], 
+    callback: Function, 
+    revoveAllCallback: Function) {
 
     this.#model = model;
     this.#owner = owner;
     this.#items = items; 
+    this.#revoveAllCallback = revoveAllCallback;
 
     const handler = (options: SaveOptions): CollectionItem => {
       
@@ -45,10 +52,13 @@ class CollectionItems<T extends Instance> {
   add(values: { [key: string]: Value<Instance> }): CollectionItem { 
     
     try {
-    const order  = this.#items.length + 1;
+      const order  = this.#items.length + 1;
       // @ts-ignore
       const record = new this.#model({ order, ownerId: this.#owner.id });
       const item   = new CollectionItem(this.#model, record);
+      for(let key in values) {
+        item[key] = values[key];
+      }
       this.#items.push(item);
       
       return item;
@@ -77,6 +87,11 @@ class CollectionItems<T extends Instance> {
       }
     }
   }
+
+  removeAll(): void {
+    this.#items = [];
+    this.#revoveAllCallback();
+  }
 }
 
 declare type Conditions<T> = {
@@ -88,7 +103,7 @@ export default class Collection<T extends Instance> {
   #model: DataBaseModel;
   #ownerRecord: any;
   #owner: T;
-  #items: CollectionItems<T>;
+  #items: [] | CollectionItems<T>;
   #createHandler: Function;
 
   constructor(owner: T, ownerRecord: any, model: DataBaseModel, callback: Function) {
@@ -117,14 +132,23 @@ export default class Collection<T extends Instance> {
 
   async items(): Promise<CollectionItems<T>> {
 
+    const factory = (items: any) => {
+      return new CollectionItems(this.#model, this.#owner, items, (handler: Function) => {
+        this.#createHandler = handler;
+      }, () => { this.#items = [] });
+    }
+
     try {
       if(this.#items) {
-        return this.#items;
+        if(this.#items?.length) {
+          return this.#items as CollectionItems<T>;
+        } else {
+          this.#items = factory([])
+          return this.#items;
+        }
       } else {
         const items = await this.#ownerRecord[`get${this.#model.modelName}`]();
-        this.#items = new CollectionItems(this.#model, this.#owner, items, (handler: Function) => {
-          this.#createHandler = handler;
-        });
+        this.#items = factory(items);
         return this.#items;
       }
     } catch (error) {

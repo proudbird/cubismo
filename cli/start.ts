@@ -5,6 +5,8 @@ import Cubismo from '../core/Cubismo'
 import '../common/Utils'
 import dotenv from "dotenv";
 import { CubismoSettings } from '../core/types'
+import Logger from '../common/Logger';
+import { guid } from '../common/Utils';
 
 dotenv.config();
 
@@ -157,7 +159,7 @@ export function initKey(): string {
     mkdirSync(cubismoFolder)
   }
   if(!existsSync(appListFile)) {
-    key = Utils.guid()
+    key = guid()
     writeFileSync(appListFile, key)
   } else {
     key = readFileSync(appListFile, 'utf-8')

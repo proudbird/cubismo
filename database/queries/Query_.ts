@@ -8,6 +8,7 @@ import { QueryStatement, QuerySchema, SourceDefinition, TableDefinition, FieldDe
 import { DataBaseModel, ModelAttributeDefinition, DataBaseTableDefinition, DataBaseModels } from "../types";
 import DataTable from "../../common/DataCollections/DataSet";
 import { writeFileSync } from 'fs';
+import Utils, { sid } from '../../common/Utils';
 
 
 export default class Query {
@@ -209,7 +210,7 @@ function getFrom(query: QueryStatement | JoinStatement, schema: QuerySchema): So
     //@ts-ignore
     const sql = buildSQLStatement(query.from, childSchema);
     const dataSource = (from || from[0])[0];
-    const tableId = 'temp_' + Utils.sid();
+    const tableId = 'temp_' + sid();
 
     alias = tableId;
     fromModel = {
@@ -230,7 +231,7 @@ function getFrom(query: QueryStatement | JoinStatement, schema: QuerySchema): So
     schema.tables[childSchema.alias] = { name: alias, alias: query.from['as'], tableId: tableId };
 
   } else if(query.from instanceof DataTable || (Array.isArray(query.from) && query.from[0] instanceof DataTable)) {
-    const tableId = 'temp_' + Utils.sid();
+    const tableId = 'temp_' + sid();
     alias = Array.isArray(query.from) && query.from.length > 1 ? query.from[1] : tableId;
     fromModel = {
       tableName: alias,
@@ -651,12 +652,12 @@ function addReferenceJoin(
     throw new QueryError(`Can not find sourse table with ID '${referenceModelId}' as reference table, described id fielad '${fieldName}'`);
   }
   
-  let leftTableAlias = 'l_' + Utils.sid();
+  let leftTableAlias = 'l_' + sid();
   let leftTableDefinition = schema.tables[mainModel.definition.tableId];
   if(leftTableDefinition) {
     leftTableAlias = leftTableDefinition.alias;
   }
-  let rigthTableAlias = 'r_' + Utils.sid();
+  let rigthTableAlias = 'r_' + sid();
   let rigthTableDefinition = schema.tables[referenceModel.definition.tableId];
   if(rigthTableDefinition) {
     rigthTableAlias = rigthTableDefinition.alias;

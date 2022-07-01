@@ -117,6 +117,3 @@ function log(type: MessageType, format: string, message: string, error?: any): v
         log(MessageType.FATAL, MessageFormat.FgRed + MessageFormat.Bright + MessageFormat.BgYellow, message, error);
     }
 }
-
-//@ts-ignore
-global["Logger"]  = Logger;

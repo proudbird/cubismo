@@ -3,6 +3,9 @@ import demand from 'demander';
 import Import from '../core/Import';
 import Cubismo from '../core/Cubismo';
 import i18next from 'i18next';
+import Logger from '../common/Logger';
+import Utils from '../common/Utils';
+import Dataroll from 'dataroll';
 
 export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataObject>(
     fileName   : string, 
@@ -30,6 +33,9 @@ export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataO
   }
 
   const params = { 
+    Logger,
+    Utils,
+    Dataroll,
     Application: application,
     Import,
     Workspace  : application.workspace,
@@ -67,7 +73,11 @@ export default function loadModule<T extends ICube | IMetaDataClass | IMetaDataO
     cache.set(fileName, [lastUpdated, loaded]);
   }
 
-  return loaded
+  for(let key in loaded) {
+    context[key] = loaded[key]; 
+  }
+
+  return context
 }
 
 function translate(cubeName: string) {

@@ -1,4 +1,6 @@
 
+import Logger from './Logger';
+
 global["isTypeOf"] = isTypeOf;
 
 const typesById: Map<string, string> = new Map();

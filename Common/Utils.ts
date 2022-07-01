@@ -7,8 +7,7 @@ import { TestValidity } from "./Validators"
 import * as bcrypt from "bcryptjs";
 import { Perform, PerformSync} from "./Perform";
 
-//@ts-ignore
-global["Utils"] = _
+export default _;
 
 deepdash(_) 
 
@@ -39,7 +38,7 @@ export function sid () {
   _.mixin({ testValidity: TestValidity }, { chain: false });
 
   //@ts-ignore
-  global["Utils"]['bcrypt'] = bcrypt;
+  //global["Utils"]['bcrypt'] = bcrypt;
 
   export function traverse(original, fn) {
     const copy = _.cloneDeep(original);
