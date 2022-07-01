@@ -31,7 +31,6 @@ if (!fs.existsSync(configPath)) {
   process.exit(0);
 }
 
-let content;
 let params;
 
 try {
