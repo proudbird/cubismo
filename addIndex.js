@@ -1,4 +1,5 @@
 const Cubismo = require( "./.dist/core/Cubismo");
+const path = require( "path");
 
 const configFile = process.argv[2];
 const configPath = path.join(__dirname, configFile);
