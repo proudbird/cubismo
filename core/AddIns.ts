@@ -1,32 +1,29 @@
-import EventEmmiter from 'events'
-import path from 'path'
-import catalogist from 'catalogist'
+import EventEmmiter from 'events';
+import path from 'path';
+import catalogist from 'catalogist';
 
-import OneC from '../addIns/1C/index'
-import Cubismo from './Cubismo'
-import Application from '../classes/application/Application'
-import Mail from '../addIns/Mail'
+import OneC from '../addIns/1C/index';
+import Cubismo from './Cubismo';
+import Application from '../classes/application/Application';
+import Mail from '../addIns/Mail';
 
-
-const AddIns = {}
-//@ts-ignore
-global['AddIns'] = AddIns
+const AddIns = {};
+// @ts-ignore
+global.AddIns = AddIns;
 
 export class AddIn {
-
-  #name: string
+  #name: string;
 
   constructor(name, cubismo) {
-    this.#name = name
+    this.#name = name;
   }
 
   get name(): string {
-    return this.#name
+    return this.#name;
   }
 }
 
 export async function loadAddIns(cubismo: Cubismo): Promise<void> {
-
   return new Promise(async (resolve) => {
     // const addInDir = path.join(__dirname, 'addIns')
     // const addInDirTree = catalogist.treeSync(addInDir, {
@@ -34,19 +31,20 @@ export async function loadAddIns(cubismo: Cubismo): Promise<void> {
     //   childrenAlias: "next"
     // })
 
-
     const addIn = new OneC(cubismo);
     cubismo.addIns.set('OneC', addIn);
-    AddIns['OneC'] = addIn;
+    // @ts-ignore
+    AddIns.OneC = addIn;
 
     const addInMail = new Mail(cubismo);
     cubismo.addIns.set('Mail', addInMail);
-    AddIns['Mail'] = addInMail;
+    // @ts-ignore
+    AddIns.Mail = addInMail;
 
-    resolve()
+    resolve();
 
     // addInDirTree.forEach(async (addInLevel) => {
-      
+
     //   if (addInLevel.next) {
     //     if (!Utils.find(addInLevel.next, { fullName: 'package.json' })) {
     //       return // nothing to do
@@ -60,5 +58,5 @@ export async function loadAddIns(cubismo: Cubismo): Promise<void> {
     //     resolve()
     //   }
     // })
-  })
+  });
 }

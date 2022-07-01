@@ -1,4 +1,5 @@
 import Application from '../classes/application/Application'
+import Logger from '../common/Logger';
 import DBDriver from './DBDriver'
 import { DataBaseModel, DataBaseModels, DataBaseSchema, TableFieldRawAttributes } from './types'
 

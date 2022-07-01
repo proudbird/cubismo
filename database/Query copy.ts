@@ -2,6 +2,7 @@ import { Sequelize } from 'sequelize';
 import Application from '../classes/application/Application';
 
 import QuerySelectItem from '../database/QuerySelectItem';
+import Utils, { sid } from '../common/Utils';
 
 import DBDriver from '../database/DBDriver';
 import { unwatchFile } from 'fs';
@@ -84,7 +85,7 @@ async function buildSQLQuery(driver, query, subscriber) {
       for(let col of table.columns) {
         columns.push(describeColumn(col));
       };
-      tempTableName = `temp_${Utils.sid()}`;
+      tempTableName = `temp_${sid()}`;
       from = { mame: tempTableName, alias: as[1]};
       model = { tableName: tempTableName, associations: {} }
       model.alias = from.alias;
