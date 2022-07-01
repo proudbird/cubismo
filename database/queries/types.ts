@@ -3,6 +3,9 @@ import DataTable from "../../common/DataCollections/DataSet";
 import Application from "../../classes/application/Application";
 
 export declare type QueryStatement = {
+  /**
+   * A list of fields
+   */
   select   : Fields | '*',
   from     : QueryFromStatement | [QueryFromStatement, string],
   distinct?: boolean,
@@ -78,6 +81,7 @@ export declare type QuerySchema = {
   models: QueryDataSources,
   sources: Map<string, SourceDefinition>,
   groupBy?: string[],
+  orderBy?: string[],
   tempSources?: QueryDataSource[],
   mainSchema?: QuerySchema,
   childSchema?: QuerySchema,
@@ -94,6 +98,7 @@ export declare type FieldDefinition = {
   dataType: string,
   length?: number,
   scale?: number,
+  func?: string
 }
 
 declare type QueryFunction = 'MIN' | 'MAX' | 'COUNT' | 'AVG' | 'SUM';
@@ -254,6 +259,7 @@ export interface QueryDataSourceDefinition {
   nameLang?: string,
   multilevel?: true,
   owners?: string[],
+  ownerModel?: DataBaseModel,
   attributes?: QueryDataSourceAttributes,
   joinedAttributes?: QueryDataSourceAttributes
 }
