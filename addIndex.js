@@ -1,4 +1,4 @@
-const Cubismo = require( "./.dist/core/Cubismo");
+const Cubismo = require( "./.dist/core/Cubismo").default;
 const path = require( "path");
 const fs = require( "fs");
 
