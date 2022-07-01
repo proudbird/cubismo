@@ -1,4 +1,4 @@
-import Cubismo from "/core/Cubismo";
+const Cubismo = require( "/core/Cubismo");
 
 const configFile = process.argv[2];
 const configPath = path.join(__dirname, configFile);
