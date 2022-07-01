@@ -1,5 +1,5 @@
 import Cubismo        from '../core/Cubismo'
-import Application    from './Application/Application'
+import Application    from './application/Application'
 import Cube           from './Cube'
 import MetaDataObject from './MetaDataObject'
 import MetaDataInstance from './MetaDataInstance'
