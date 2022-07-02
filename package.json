@@ -9,7 +9,12 @@
     "lint": "eslint core/**",
     "test": "jest",
     "start": "node .dist/cli/cli.js ../cubismo.apps -a index",
-    "add_index": "node addIndex.js ../cubismo.apps/cubismo.config ../cubismo.apps/index.config"
+    "add_index": "node addIndex.js ../cubismo.apps/cubismo.config ../cubismo.apps/index.config",
+    "pull_cubismo": "cd /home/cubismo/cubismo && git pull --force",
+    "pull_cubes": "cd /home/cubismo/cubismo.apps && git pull --force",
+    "build_cubismo": "npm --prefix /home/cubismo/cubismo run build",
+    "update": "npm run pull_cubismo && npm run pull_cubes && npm run build_cubismo",
+    "serve": "pm2 start /home/cubismo/cubismo/.dist/cli/cli.js --node-args=\"../cubismo.apps -a index\""
   },
   "repository": {
     "type": "git",
@@ -57,6 +62,7 @@
     "node-code-generator": "^1.0.3",
     "nodemailer": "^6.7.2",
     "pg": "^8.6.0",
+    "pm2": "^5.2.0",
     "sequelize": "^6.6.2",
     "shortid": "^2.2.16",
     "tslog": "^3.3.1"
