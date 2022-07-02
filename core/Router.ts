@@ -196,7 +196,7 @@ export default class Router extends EventEmitter {
 
       if (!application.getApiHandler(request)) {
         Logger.debug(`API request '${request}' is not registered`);
-        return res.status(404).send({ error: true, message: 'NotFound' });
+        return res.status(404).send({ error: true, message: `API request '${request}' is not registered` });
       }
 
       const { handler, needAuthenication } = application.getApiHandler(request);
