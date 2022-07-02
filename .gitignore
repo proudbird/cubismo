@@ -8,3 +8,4 @@ node_modules
 addIns/1C/node_modules
 coverage
 index.config
+package-lock.json
