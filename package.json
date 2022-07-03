@@ -4,7 +4,7 @@
   "main": "./.dist/core/cubismo.js",
   "scripts": {
     "build": "tsc --build tsconfig.json",
-    "postbuild": "npm --prefix /home/cubismo/cubismo/.dist i && npm --prefix /home/cubismo/cubismo/.dist/addIns/1C i",
+    "install_addins": "npm --prefix /home/cubismo/cubismo/.dist i && npm --prefix /home/cubismo/cubismo/.dist/addIns/1C i",
     "watch_cubismo": "tsc --build tsconfig.json -w",
     "lint": "eslint core/**",
     "test": "jest",
