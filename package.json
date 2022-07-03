@@ -4,8 +4,8 @@
   "main": "./.dist/core/cubismo.js",
   "scripts": {
     "build": "tsc --build tsconfig.json",
-    "install_addins": "npm --prefix /home/cubismo/cubismo/.dist i && npm --prefix /home/cubismo/cubismo/.dist/addIns/1C i",
     "watch_cubismo": "tsc --build tsconfig.json -w",
+    "install_addins": "npm --prefix /home/cubismo/cubismo/.dist i && npm --prefix /home/cubismo/cubismo/.dist/addIns/1C i",
     "lint": "eslint core/**",
     "test": "jest",
     "start": "node .dist/cli/cli.js ../cubismo.apps -a index",
@@ -13,7 +13,7 @@
     "pull_cubismo": "cd /home/cubismo/cubismo && git pull --force",
     "pull_cubes": "cd /home/cubismo/cubismo.apps && git pull --force",
     "build_cubismo": "npm --prefix /home/cubismo/cubismo run build",
-    "update": "npm run pull_cubismo && npm run pull_cubes && npm run build_cubismo",
+    "update": "npm run pull_cubismo && npm run pull_cubes",
     "serve": "pm2 start /home/cubismo/cubismo/.dist/cli/cli.js --node-args=\"../cubismo.apps -a index\""
   },
   "repository": {
