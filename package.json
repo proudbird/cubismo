@@ -8,7 +8,7 @@
     "install_addins": "npm --prefix /home/cubismo/cubismo/.dist i && npm --prefix /home/cubismo/cubismo/.dist/addIns/1C i",
     "lint": "eslint core/**",
     "test": "jest",
-    "start": "node .dist/cli/cli.js ../cubismo.apps -a index",
+    "start": "node .dist/cli/cli.js ../cubismo.apps -a orlix",
     "add_index": "node addIndex.js ../cubismo.apps/cubismo.config ../cubismo.apps/index.config",
     "pull_cubismo": "cd /home/cubismo/cubismo && git pull --force",
     "pull_cubes": "cd /home/cubismo/cubismo.apps && git pull --force",
