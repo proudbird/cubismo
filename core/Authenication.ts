@@ -22,7 +22,7 @@ export default async function Authenticate(application: Application, tokenKey: s
     }
     req.user = user;
   } catch (err) {
-    return res.status(401).send('Invalid Token');
+    return res.status(401).send({ error: true, data: 'invalid_token' });
   }
 
   if (handler) {
