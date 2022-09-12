@@ -1,7 +1,7 @@
 import { Sequelize } from 'sequelize';
 import Application from '../classes/application/Application';
 
-import QuerySelectItem from '../database/QuerySelectItem';
+import QuerySelectItem from './QueryResultEntry';
 import Utils, { sid } from '../common/Utils';
 
 import DBDriver from '../database/DBDriver';

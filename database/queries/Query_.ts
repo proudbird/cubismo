@@ -1,7 +1,9 @@
+
+//@ts-nocheck
 import { Sequelize } from 'sequelize';
 import Application from '../../classes/application/Application';
 
-import QuerySelectItem from '../QuerySelectItem';
+import QuerySelectItem from '../QueryResultEntry';
 
 import QueryError from "./QueryError";
 import { QueryStatement, QuerySchema, SourceDefinition, TableDefinition, FieldDefinition, LeftJoinStatement, JoinStatement, InnerJoinStatement, RightJoinStatement, FullJoinStatement, JoinType, ConditionStatement, ComparisonOperatorType, BooleanStatement, BooleanConditionDefinition, ConditionDefinition, BitwiseOperatorType, ValueDefinition, SourceType, QuerySource, QueryDataSource, QueryDataSources, QueryDataSourceAttributes, QueryDataSourceAttribute, QueryDataSourceDefinition } from "./types";
