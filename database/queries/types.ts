@@ -85,8 +85,37 @@ export declare type QuerySchema = {
   tempSources?: QueryDataSource[],
   mainSchema?: QuerySchema,
   childSchema?: QuerySchema,
-  alias?: string
+  alias?: string,
+  providers?: QueryDataProviders;
 }
+
+export type QueryDataProviders = {
+  [id: string]: {
+    [position: string]: {
+      [participator: string]: {
+        [connector: string]: QueryDataProviderDefinition
+      }
+    }
+  }
+}
+
+export type QueryDataProviderDefinition = {
+  model: QueryDataSource;
+  tableId: string;
+  alias: string;
+  position: QueryDataProviderPosition;
+  participator: QueryDataSource;
+  connector: string;
+}
+
+export type QueryDataProviderParams = {
+  model: QueryDataSource;
+  position: QueryDataProviderPosition;
+  participator?: QueryDataSource;
+  connector?: string;
+}
+
+export type QueryDataProviderPosition = 'LEFT' | 'RIGHT';
 
 export declare type FieldDefinition = {
   name: string,
@@ -95,7 +124,7 @@ export declare type FieldDefinition = {
   model: QueryDataSource,
   fieldId: string,
   functioin?: QueryFunction,
-  dataType: string,
+  dataType: ApplicationDataType,
   length?: number,
   scale?: number,
   func?: string
@@ -271,7 +300,7 @@ export type QueryDataSourceAttributes = {
 export type QueryDataSourceAttribute = {
   fieldId: string,
   type: {
-    dataType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM' | 'FK',
+    dataType: ApplicationDataType,
     lang?: string[],
     length?: number,
     scale?: number,
@@ -282,3 +311,50 @@ export type QueryDataSourceAttribute = {
     }
   }
 }
+
+type QueryResultEntry<T> = {
+  [field in keyof T]: T[field]
+}
+
+export interface QueryResult<T = {}> {
+  [Symbol.iterator]():  IterableIterator<QueryResultEntry<T>>;
+  forEach(callbackfn: (entry: QueryResultEntry<T>, index: number, source: QueryResult<T>) => void, thisArg?: any): void;
+  toJSON(): string;
+  readonly length: number;
+}
+
+export type TableDataSource = {
+  attributes: {
+    [name: string]: DataSourceAtrribute;
+  };
+  entries: [TableDataSourceEntry];
+  count: number;
+}
+
+type TableDataSourceEntry = DataSourceDataType[];
+
+export type DataSourceAtrribute = {
+  index: number; // index in the entry Array
+  name: string;
+  title?: string;
+  type: DataSourceAtrributeType;
+}
+
+export type DataSourceAtrributeType = {
+  dataType: ApplicationDataType;
+  dateType?: DateType;
+  length?: number;
+  scale?: number;
+  reference?: string;
+}
+
+export type ApplicationDataType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM' | 'FK';
+
+export type DateType = 'DATE' | 'DATETIME' | 'TIME';
+
+export type DataSourceDataType = string | number | boolean | null | ReferenceDataType;
+
+export type ReferenceDataType = [
+  string, // id
+  string, // presentation
+]

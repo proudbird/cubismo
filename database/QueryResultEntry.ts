@@ -1,11 +1,7 @@
-import { Sequelize } from 'sequelize';
-import Application from '../classes/application/Application';
-
-import DBDriver from './DBDriver';
 import { FieldDefinition } from './queries/types';
 import { DataBaseModel } from './types';
 
-export default class QuerySelectItem {
+export default class QueryResultEntry {
 
   constructor(record, fieldsMap: Map<string, FieldDefinition>) {
 
