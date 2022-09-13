@@ -26,7 +26,8 @@ import {
   QueryDataSourceAttribute, 
   ApplicationDataType, 
   QueryDataProviderParams,
-  QueryDataProviderPosition
+  QueryDataProviderPosition,
+  QueryDataProviderDefinition
 } from "./types";
 import { DataBaseModel, ModelAttributeDefinition, DataBaseTableDefinition, DataBaseModels } from "../types";
 import DataTable from "../../common/DataCollections/DataSet";
@@ -277,6 +278,34 @@ function getFrom(query: QueryStatement | JoinStatement, schema: QuerySchema): So
   return getSourceDefinition(fromModel, alias);
 }
 
+function getProvider(schema: QuerySchema, { alias, params }: { alias?: string, params?: QueryDataProviderParams }): QueryDataProviderDefinition {
+  if(alias && schema.providers[alias]) {
+    return schema.providers[alias] as QueryDataProviderDefinition;
+  }
+  
+  const  { model, position, participator, connector } = params;
+  let provider = Utils.get(schema.providers, `${model.alias}.${position}.${participator}.${connector}`);
+  if(provider) {
+    return provider as QueryDataProviderDefinition;
+  }
+
+  provider = {
+    model,
+    position,
+    participator,
+    connector,
+    alias: alias || (position === 'LEFT' ? 'l_' : 'r_') + sid()
+  };
+
+  schema.providers[model.alias][position][participator][connector] = provider;
+
+  if(alias) {
+    schema.providers[alias] = provider;
+  }
+
+  return provider;
+}
+
 function defineDataTableAttributes(source: DataTable): QueryDataSourceAttributes {
   
   const attributes: QueryDataSourceAttributes = {};
@@ -365,10 +394,12 @@ function defineFields(query: QueryStatement, schema: QuerySchema): void {
     return;
   }
 
-  const provider: QueryDataProviderParams = {
-    model: schema.from.model,
-    position: 'LEFT'
-  };
+  const provider = getProvider(schema, { 
+    alias: schema.from.alias, 
+    params: { 
+      model: schema.from.model, position: 'LEFT', 
+      participator: schema.from.model, connector: 'id' 
+    }});
 
   if(query.select === '*') {
     return defineAllFields({ provider, schema });
@@ -424,8 +455,15 @@ function defineJoinFields(query: JoinStatement, joinModel: QueryDataSource, sche
     return;
   }
 
+  const provider = getProvider(schema, { 
+    alias: query.from.alias, 
+    params: { 
+      model: joinModel, position: 'RIGHT', 
+      participator: schema.from.model, connector: query.on
+    }});
+
   if(query.select === '*') {
-    return defineAllJoinFields(joinModel, schema, query);
+    return defineAllJoinFields(joinModel, provider, schema, query);
   }
 
   const selectFields = query.select.split(',');
@@ -433,7 +471,7 @@ function defineJoinFields(query: JoinStatement, joinModel: QueryDataSource, sche
   for (let fieldStatement of selectFields) {
     fieldStatement = fieldStatement.trim();
     if(fieldStatement) {
-      defineJoinField(fieldStatement, joinModel, schema, query);
+      defineJoinField(fieldStatement, joinModel, provider, schema, query);
     }
   }
 }
@@ -559,36 +597,36 @@ function defineField({
   if(name.includes('.')) {
     determineReferenceJoins(name, alias, schema.from.model, schema);
   } else {
-    addFieldDefinition({name, alias, provider: provider, model: schema.from.model, schema, func});
+    addFieldDefinition({ name, alias, provider, model: schema.from.model, schema, func });
   }
 }
 
-function defineJoinField(fieldStatement: string, joinModel: QueryDataSource, schema: QuerySchema, query: JoinStatement): void {
+function defineJoinField(fieldStatement: string, joinModel: QueryDataSource, provider, schema: QuerySchema, query: JoinStatement): void {
 
   const { name, alias } = getNameAndAlias(fieldStatement);
 
   if(name.includes('.')) {
     determineJoins(name, alias, schema, query);
   } else {   
-    addFieldDefinition(name, alias, joinModel, schema);
+    addFieldDefinition({ name, alias, provider, model: joinModel, schema });
   }
 }
 
-function defineAllJoinFields(joinModel: QueryDataSource, schema: QuerySchema, query: JoinStatement): void {
+function defineAllJoinFields(joinModel: QueryDataSource, provider, schema: QuerySchema, query: JoinStatement): void {
 
   const definition = joinModel.definition;
   if(definition.nameLenght) {
-    addFieldDefinition('Name', 'Name', joinModel, schema);
+    addFieldDefinition({ name: 'Name', alias: 'Name', provider, model: joinModel, schema });
   }
   if(definition.codeLenght) {
-    addFieldDefinition('Code', 'Code', joinModel, schema);
+    addFieldDefinition({ name: 'Code', alias: 'Code', provider, model: joinModel, schema });
   }
   if(definition.multilevel) {
-    addFieldDefinition('Parent', 'Parent', joinModel, schema);
+    addFieldDefinition({ name: 'Parent', alias: 'Parent', provider, model: joinModel, schema });
   }
   
   for(let attributeName in definition.attributes) {
-    addFieldDefinition(attributeName, attributeName, joinModel, schema);
+    addFieldDefinition({ name: attributeName, alias: attributeName, provider, model: joinModel, schema });
   }
 }
 

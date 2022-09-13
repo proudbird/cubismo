@@ -96,12 +96,11 @@ export type QueryDataProviders = {
         [connector: string]: QueryDataProviderDefinition
       }
     }
-  }
+  } | QueryDataProviderDefinition;
 }
 
 export type QueryDataProviderDefinition = {
   model: QueryDataSource;
-  tableId: string;
   alias: string;
   position: QueryDataProviderPosition;
   participator: QueryDataSource;
@@ -111,8 +110,8 @@ export type QueryDataProviderDefinition = {
 export type QueryDataProviderParams = {
   model: QueryDataSource;
   position: QueryDataProviderPosition;
-  participator?: QueryDataSource;
-  connector?: string;
+  participator: QueryDataSource;
+  connector: string;
 }
 
 export type QueryDataProviderPosition = 'LEFT' | 'RIGHT';
