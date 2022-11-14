@@ -77,7 +77,7 @@ function defineCubeStructure(
   modelStructure
 ) {
 
-  const cubeFullPath = join(cubismo.settings.cubes, cubeName, '.dist');
+  const cubeFullPath = join(cubismo.settings.cubes, '.dist', cubeName);
   const cubeModuleFile = `${cubeName}.js`;
   
   const _cube = new Cube(

@@ -13,6 +13,12 @@ import Application from '../classes/application/Application';
 import { NewApplicationParameters } from './types';
 import auth from './Authenication';
 import Logger from '../common/Logger';
+import { parse } from 'yaml'
+
+import * as swc from '@swc/core';
+
+//@ts-ignore
+import uimo from 'uimo';
 
 export default class Router extends EventEmitter {
   public cubismo: Cubismo;
@@ -29,10 +35,10 @@ export default class Router extends EventEmitter {
     const router = express();
     router.use(express.json());
     router.use(bodyParserFrom1C);
-    router.use(express.static(path.join(__dirname, '../client/')));
+    router.use(express.static(uimo.static()));
 
     router.all('*', (req, res, next) => {
-      Logger.debug(`Income recquest: ${req.url}`);
+      Logger.debug(`Income request: ${req.url}`);
       next();
     });
 
@@ -168,6 +174,52 @@ export default class Router extends EventEmitter {
       authControl(self.cubismo.settings.tokenKey, req, res, next, handler);
     });
 
+    const cache = {};
+
+    router.get('/app/:applicationId/views/:viewId', async (req, res, next) => {
+      const { viewId } = req.params;
+      cache[viewId] = cache[viewId] || {};
+      const p = uimo.view('Window');
+
+      if(viewId.includes('.js.map')) {
+        return res.status(200).send(cache[viewId].map);
+      }
+      if(viewId === 'Window.js') {
+        
+        if(cache[viewId].code) {
+          Logger.debug(`cache compile`);
+          return res.status(200).send(cache[viewId].code);
+        }
+
+        const source = fs.readFileSync(p, 'utf8');
+        Logger.debug(`Start compile`);
+        swc.transform(`var a = 0;${source}`, {
+          filename: `../../../${viewId.replace('.js', '.ts')}`,
+          sourceMaps: true,
+          module: {
+            type: "commonjs"
+          },
+          isModule: true,
+          jsc: {
+            parser: {
+              syntax: "typescript",
+            },
+            transform: {},
+          },
+        }).then((output: any) => {
+          const config = parse(fs.readFileSync(p.replace('.ts', '.yaml'), 'utf8'));
+          const result = `(() => { const exports = { __config: ${JSON.stringify(config)} }; window.views["${viewId.replace('.js', '')}"] = exports; ((exports) => { ${output.code.replace('var a = 0;','')} })(exports);})();//# sourceMappingURL=${viewId.replace('.js', '')}.js.map`;
+          //fs.writeFileSync(p.replace('.ts', '.js.map'), output.map.replace('var a = 0;',''), 'utf8');
+          
+          cache[viewId].code = result;
+          cache[viewId].map = output.map.replace('var a = 0;','');
+          res.status(200).send(result);
+          Logger.debug(`Stop compile`);
+        });
+      }
+      
+    });
+
     async function authControl(tokenKey: string, req, res, next, handler) {
       let application: Application;
       try {
@@ -236,15 +288,16 @@ export default class Router extends EventEmitter {
         console.log(`║  ${message}  ║`);
         console.log(`║  ${space}  ║`);
         console.log(`╚${border}╝`);
+
         resolve();
       });
+      uimo.watch(this.server, this.cubismo.settings.cubes);
     });
   }
 }
 
 function windowTemplate() {
-  const fileName = path.join(__dirname, '../client/window.html');
-  return fs.readFileSync(fileName, 'UTF-8' as null);
+  return uimo.window();
 }
 
 function onSessionStart(application) {

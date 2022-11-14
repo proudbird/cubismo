@@ -1,6 +1,7 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
+    
       "module": "commonjs",
       "esModuleInterop": true,
       "target": "ES2020",
