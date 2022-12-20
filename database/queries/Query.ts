@@ -431,14 +431,19 @@ function defineJoinFields(query: JoinStatement, joinModel: QueryDataSource, sche
 function defineGroupBy(query: QueryStatement, schema: QuerySchema): void {
   
   if(query.groupBy && Array.isArray(query.groupBy)) {
-    const model = schema.from.model;
+    let model: QueryDataSource | SourceDefinition  = schema.from.model;
     for(let fieldId of query.groupBy) {
-      let fieldName = fieldId;
       if(fieldId.includes('.')) {
-       
-      } else {   
-        const lang = model.application.lang;
-        const modelDefinition = model.definition;
+        const parts = fieldId.split('.');
+        const modelAlias = parts[0];
+        model = schema.models[modelAlias] || schema.sources.get(modelAlias);
+        fieldId = parts[1];
+      }
+      
+      if(!(model as QueryDataSource).dataSource) {
+        const lang = (model as SourceDefinition).model.application.lang;
+        const modelDefinition = (model as SourceDefinition).model.definition;
+        let fieldName = schema.fields.get(fieldId.toLocaleLowerCase()).name;
         if (fieldName === 'Name') {
           if (modelDefinition.nameLang && modelDefinition.nameLang.length) {
             fieldId = fieldId + '_' + lang;
@@ -457,16 +462,21 @@ function defineGroupBy(query: QueryStatement, schema: QuerySchema): void {
           const attribute = modelDefinition.attributes[fieldName];
           if(!attribute) {
             throw new QueryError(`Can not find attribute '${fieldName}' in ${model.name}`);
-          }
-          if (attribute.type.lang && attribute.type.lang.length) {
-            fieldId = attribute.fieldId + '_' + lang;
           } else {
-            fieldId = attribute.fieldId;
+            if (attribute.type.lang && attribute.type.lang.length) {
+              fieldId = attribute.fieldId + '_' + lang;
+            } else {
+              fieldId = attribute.fieldId;
+            }
           }
         }
       }
 
-      schema.groupBy.push(`${schema.from.alias}."${fieldId}"`);
+      if(model.alias) {
+        schema.groupBy.push(`${model.alias}."${fieldId}"`);
+      } else {
+        schema.groupBy.push(`${(model as QueryDataSource).modelName}.${fieldId}`);
+      }
     }
   }
 }
