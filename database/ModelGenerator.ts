@@ -427,7 +427,8 @@ export default class ModelGenerator extends EventEmitter {
         attributeOptions = { attributes: undefined, belongsTo: undefined }
         _model.collections = [];
         for(let id in model.collections) {
-          const colModel = model.collections[id]
+          const colModel = model.collections[id];
+          colModel.id = id;
           colModel.ownerModelName = modelName
           colModel.ownerModel = _model
           const _collection = defineModel(colModel)

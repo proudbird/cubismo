@@ -19,7 +19,7 @@ export declare type QueryStatement = {
   as      ?: string 
 }
 
-declare type QueryFromStatement = MetaDataObjectName | DataBaseModel | QueryStatement | DataTable;
+export declare type QueryFromStatement = MetaDataObjectName | DataBaseModel | QueryStatement | DataTable;
 
 declare type Field = string;
 /**
