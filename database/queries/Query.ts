@@ -1177,10 +1177,10 @@ function buildSQLQueryString(schema: QuerySchema): string {
 
   let fields = [];
 
-  function wrapIfFunc(input: string, func: string | undefined): string {
+  function wrapIfFunc(input: string, func: string | undefined, cast?: string): string {
     let result = input;
     if(func) {
-      result = `${func}(${input})`;
+      result = `${func}(${input}${cast})`;
     }
     return result;
   }
@@ -1192,7 +1192,11 @@ function buildSQLQueryString(schema: QuerySchema): string {
     if((fieldDefinition.model && fieldDefinition.model.dataSource) || !fieldDefinition.model) { 
       fields.push(`${wrapIfFunc(`${tableAlias}.${fieldDefinition.fieldId}`, fieldDefinition.func)} AS ${fieldDefinition.alias}`);
     } else {
-      fields.push(`${wrapIfFunc(`${tableAlias}."${fieldDefinition.fieldId}"`, fieldDefinition.func)} AS ${fieldDefinition.alias}`);
+      let cast = '';
+      if(fieldDefinition.dataType === 'FK') {
+        cast = '::varchar';
+      }
+      fields.push(`${wrapIfFunc(`${tableAlias}."${fieldDefinition.fieldId}"`, fieldDefinition.func, cast)} AS ${fieldDefinition.alias}`);
     }
   })
 
