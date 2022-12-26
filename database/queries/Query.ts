@@ -1180,7 +1180,7 @@ function buildSQLQueryString(schema: QuerySchema): string {
   function wrapIfFunc(input: string, func: string | undefined, cast?: string): string {
     let result = input;
     if(func) {
-      result = `${func}(${input}${cast})`;
+      result = `${func}(${input}${cast || ''})`;
     }
     return result;
   }
