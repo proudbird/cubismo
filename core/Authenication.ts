@@ -3,10 +3,10 @@ import Application from '../classes/application/Application';
 import Logger from '../common/Logger';
 
 export default async function Authenticate(application: Application, tokenKey: string, req, res, next, handler) {
-  Logger.debug('Trying to authenicate');
+  // Logger.debug('Trying to authenicate');
 
   const { token } = req.headers;
-  Logger.debug(`Token is ${token}`);
+  // Logger.debug(`Token is ${token}`);
 
   if (!token) {
     Logger.debug('There is no token');
@@ -14,7 +14,7 @@ export default async function Authenticate(application: Application, tokenKey: s
   }
 
   try {
-    Logger.debug('Trying to detect user');
+    // Logger.debug('Trying to detect user');
     const decoded = jwt.verify(token, tokenKey) as any;
     const user = await application.users.findOne({ where: { id: decoded.userId } });
     if (!user) {
@@ -26,9 +26,9 @@ export default async function Authenticate(application: Application, tokenKey: s
   }
 
   if (handler) {
-    Logger.debug('Calling handler');
+    // Logger.debug('Calling handler');
     return handler(req, res);
   }
-  Logger.debug('Calling next');
+  // Logger.debug('Calling next');
   return next();
 }

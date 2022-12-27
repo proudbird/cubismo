@@ -220,7 +220,7 @@ export default class Cubismo {
 
     try {
       settings = await this.getAppSettings(id) as ApplicationSettings;
-      Logger.debug(`Application <${id}> is found in the list`);
+      // Logger.debug(`Application <${id}> is found in the list`);
     } catch (error) {
       throw new Error(`Can't read application settings: ${error}`);
     }
@@ -229,7 +229,7 @@ export default class Cubismo {
     const self = this;
 
     if (applications.has(id)) { // app is defined already
-      Logger.debug(`Application <${id}> is running already`);
+      // Logger.debug(`Application <${id}> is running already`);
       return applications.get(id).application;
     }
 
