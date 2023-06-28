@@ -199,41 +199,87 @@ function getFrom(query: QueryStatement | JoinStatement, schema: QuerySchema): So
       throw new QueryError(`Can not find sourse table '${name}', described in 'FROM' clause`);
     }
   } else if(isSubquery((query.from as QueryStatement))) {
-    const from = query.from['from'];
-    let childSchema: QuerySchema = { 
-      application: schema.application, 
-      fields: new Map, 
-      additionalfields: new Map, 
-      from: {}, 
-      joins: {}, 
-      tables: {}, 
-      models: schema.models, 
-      sources: new Map() };
-    childSchema.mainSchema = schema.mainSchema || schema;
-    childSchema.alias = query.from['as'];
-    schema.childSchema = childSchema;
-    //@ts-ignore
-    const sql = buildSQLStatement(query.from, childSchema);
-    const dataSource = (from || from[0])[0];
-    const tableId = 'temp_' + sid();
+    if((query.from as QueryStatement)?.from instanceof Dataroll 
+        || (Array.isArray((query.from as QueryStatement)?.from) && (query.from as QueryStatement)?.from[0] instanceof Dataroll)) {
+      const from = query.from['from'];
+      let childSchema: QuerySchema = { 
+        application: schema.application, 
+        fields: new Map, 
+        additionalfields: new Map, 
+        from: {}, 
+        joins: {}, 
+        tables: {}, 
+        models: schema.models, 
+        sources: new Map() };
+      childSchema.mainSchema = schema.mainSchema || schema;
+      childSchema.alias = query.from['as'];
+      schema.childSchema = childSchema;
+      //@ts-ignore
+      const sql = buildSQLStatement(query.from, childSchema);
+      const dataSource = (from || from[0])[0];
+      const tableId = 'temp_' + sid();
+  
+      alias = tableId;
+      fromModel = {
+        tableName: tableId,
+        definition: {
+          id: alias,
+          tableId,
+          attributes: defineDataTableAttributes(dataSource)
+        },
+        name: alias,
+        modelName: alias,
+        application: schema.application,
+        dataSource: dataSource,
+        alias: query.from['as'],
+        sql
+      }
+      schema.models[childSchema.alias] = fromModel;
+      schema.tables[tableId] = { name: alias, alias: query.from['as'], tableId: tableId };
+    } else if (typeof (query.from as QueryStatement)?.from === 'string') {
+      const statement = getNameAndAlias((query.from as QueryStatement)?.from as string);
+      name = statement.name;
+      alias = statement.alias;
+      fromModel = schema.models[name];
+      if(!fromModel) {
+        throw new QueryError(`Can not find sourse table '${name}', described in 'FROM' clause`);
+      }
 
-    alias = tableId;
-    fromModel = {
-      tableName: tableId,
-      definition: {
-        id: alias,
-        tableId,
-        attributes: defineDataTableAttributes(dataSource)
-      },
-      name: alias,
-      modelName: alias,
-      application: schema.application,
-      dataSource: dataSource,
-      alias: query.from['as'],
-      sql
+      let childSchema: QuerySchema = { 
+        application: schema.application, 
+        fields: new Map, 
+        additionalfields: new Map, 
+        from: {}, 
+        joins: {}, 
+        tables: {}, 
+        models: schema.models, 
+        sources: new Map() };
+      childSchema.mainSchema = schema.mainSchema || schema;
+      childSchema.alias = query.from['as'];
+      schema.childSchema = childSchema;
+
+      //@ts-ignore
+      const sql = buildSQLStatement((query.from as QueryStatement), childSchema);
+      fromModel = {
+        tableName: fromModel.tableName,
+        definition: {
+          id: alias,
+          tableId: fromModel.tableName,
+          attributes: fromModel.definition.attributes
+        },
+        name: alias,
+        modelName: alias,
+        application: schema.application,
+        alias: query.from['as'],
+        sql
+      }
+
+      schema.models[childSchema.alias] = fromModel;
+      //schema.tables[fromModel.tableName] = { name: alias, alias: query.from['as'], tableId: fromModel.tableName };
+
+    } else {
+      throw new Error(`Subquering from subqueries not implemented`);
     }
-    schema.models[childSchema.alias] = fromModel;
-    schema.tables[tableId] = { name: alias, alias: query.from['as'], tableId: tableId };
   } else if(query.from instanceof Dataroll || (Array.isArray(query.from) && query.from[0] instanceof Dataroll)) {
     const tableId = 'temp_' + sid();
     alias = Array.isArray(query.from) && query.from.length > 1 ? query.from[1] : tableId;
@@ -415,7 +461,11 @@ function defineJoinFields(query: JoinStatement, joinModel: QueryDataSource, sche
   }
 
   if(query.select === '*') {
-    return defineAllJoinFields(joinModel, schema, query);
+    if(joinModel.sql) {
+      return defineAllJoinFieldsFromSubQuery(schema.childSchema.fields, schema.childSchema, query);
+    } else {
+      return defineAllJoinFields(joinModel, schema, query);
+    }
   }
 
   const selectFields = query.select.split(',');
@@ -423,7 +473,11 @@ function defineJoinFields(query: JoinStatement, joinModel: QueryDataSource, sche
   for (let fieldStatement of selectFields) {
     fieldStatement = fieldStatement.trim();
     if(fieldStatement) {
-      defineJoinField(fieldStatement, joinModel, schema, query);
+      if(joinModel.sql) {
+        defineJoinFieldFromSubQuery(fieldStatement, schema.childSchema, query);
+      } else {
+        defineJoinField(fieldStatement, joinModel, schema, query);
+      }
     }
   }
 }
@@ -431,14 +485,19 @@ function defineJoinFields(query: JoinStatement, joinModel: QueryDataSource, sche
 function defineGroupBy(query: QueryStatement, schema: QuerySchema): void {
   
   if(query.groupBy && Array.isArray(query.groupBy)) {
-    const model = schema.from.model;
+    let model: QueryDataSource | SourceDefinition  = schema.from.model;
     for(let fieldId of query.groupBy) {
-      let fieldName = fieldId;
       if(fieldId.includes('.')) {
-       
-      } else {   
-        const lang = model.application.lang;
-        const modelDefinition = model.definition;
+        const parts = fieldId.split('.');
+        const modelAlias = parts[0];
+        model = schema.models[modelAlias] || schema.sources.get(modelAlias);
+        fieldId = parts[1];
+      }
+      
+      if(!(model as QueryDataSource).dataSource) {
+        const lang = (model as SourceDefinition).model.application.lang;
+        const modelDefinition = (model as SourceDefinition).model.definition;
+        let fieldName = schema.fields.get(fieldId.toLocaleLowerCase()).name;
         if (fieldName === 'Name') {
           if (modelDefinition.nameLang && modelDefinition.nameLang.length) {
             fieldId = fieldId + '_' + lang;
@@ -457,16 +516,21 @@ function defineGroupBy(query: QueryStatement, schema: QuerySchema): void {
           const attribute = modelDefinition.attributes[fieldName];
           if(!attribute) {
             throw new QueryError(`Can not find attribute '${fieldName}' in ${model.name}`);
-          }
-          if (attribute.type.lang && attribute.type.lang.length) {
-            fieldId = attribute.fieldId + '_' + lang;
           } else {
-            fieldId = attribute.fieldId;
+            if (attribute.type.lang && attribute.type.lang.length) {
+              fieldId = attribute.fieldId + '_' + lang;
+            } else {
+              fieldId = attribute.fieldId;
+            }
           }
         }
       }
 
-      schema.groupBy.push(`${schema.from.alias}."${fieldId}"`);
+      if(model.alias) {
+        schema.groupBy.push(`${model.alias}."${fieldId}"`);
+      } else {
+        schema.groupBy.push(`${(model as QueryDataSource).modelName}.${fieldId}`);
+      }
     }
   }
 }
@@ -534,11 +598,11 @@ function defineField(fieldStatement: string, schema: QuerySchema): void {
   if(match) {
     func = match[1];
     name = match[2];
-    alias = name;
+    alias = alias || name.replace(/\./g, '');
   }
 
   if(name.includes('.')) {
-    determineReferenceJoins(name, alias, schema);
+    determineReferenceJoins(name, alias, schema, func);
   } else {
     addFieldDefinition(name, alias, schema.from.model, schema, func);
   }
@@ -546,12 +610,46 @@ function defineField(fieldStatement: string, schema: QuerySchema): void {
 
 function defineJoinField(fieldStatement: string, joinModel: QueryDataSource, schema: QuerySchema, query: JoinStatement): void {
 
-  const { name, alias } = getNameAndAlias(fieldStatement);
+  let { name, alias } = getNameAndAlias(fieldStatement);
+  let func;
+
+  const agreegateFunctionsPattern = /(MAX|MIN|AVG|SUM|COUNT)\((.*)\)/;
+  let match = agreegateFunctionsPattern.exec(name);
+  if(match) {
+    func = match[1];
+    name = match[2];
+    alias = alias || name.replace(/\./g, '');
+  }
 
   if(name.includes('.')) {
     determineJoins(name, alias, schema, query);
   } else {   
-    addFieldDefinition(name, alias, joinModel, schema);
+    addFieldDefinition(name, alias, joinModel, schema, func);
+  }
+}
+
+function defineJoinFieldFromSubQuery(fieldStatement: string, schema: QuerySchema, query: JoinStatement): void {
+
+  let { name, alias } = getNameAndAlias(fieldStatement);
+  let func;
+
+  const agreegateFunctionsPattern = /(MAX|MIN|AVG|SUM|COUNT)\((.*)\)/;
+  let match = agreegateFunctionsPattern.exec(name);
+  if(match) {
+    func = match[1];
+    name = match[2];
+    alias = alias || name.replace(/\./g, '');
+  }
+
+  if(name.includes('.')) {
+    throw new Error(`Nested atributes selecting from subqueries not implemented`);
+  } else {   
+    const fieldDefinition = schema.fields.get(name.toLocaleLowerCase());
+    if(fieldDefinition) {
+      addFieldDefinitionFromSubQuery(fieldDefinition, schema, func);
+    } else {
+      throw new Error(`Can't find field definition for '${name}' field`);
+    }
   }
 }
 
@@ -573,8 +671,17 @@ function defineAllJoinFields(joinModel: QueryDataSource, schema: QuerySchema, qu
   }
 }
 
-function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSource, schema: QuerySchema, func?: string): void {
+function defineAllJoinFieldsFromSubQuery(fields: Map<string, FieldDefinition>, schema: QuerySchema, query: JoinStatement): void {
+
+  for(let [_, fieldDefinition] of fields.entries()) {
+    addFieldDefinitionFromSubQuery(fieldDefinition, schema);
+  }
+}
+
+function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSource, schema: QuerySchema, func?: string, noRef?: boolean): void {
   
+  alias = alias || fieldName;
+
   let fieldId = fieldName;
   let dataType: string;
   let length: number;
@@ -614,17 +721,22 @@ function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSo
     if(!attribute) {
       throw new QueryError(`Can not find attribute '${fieldName}' in ${model.name}`);
     }
+    dataType = attribute.type.dataType;
+    length = attribute.type.length;
+    scale = attribute.type.scale;
     if (attribute.type.lang && attribute.type.lang.length) {
       fieldId = attribute.fieldId + '_' + lang;
     } else {
       fieldId = attribute.fieldId;
       if(attribute.type.dataType === 'FK') {
-        referenceModelId = attribute.type.reference.modelId;
+        if(!noRef) {
+          referenceModelId = attribute.type.reference.modelId;
+        } else {
+          dataType = 'STRING ';
+        }
       }
     }
-    dataType = attribute.type.dataType;
-    length = attribute.type.length;
-    scale = attribute.type.scale;
+    
   }
 
   const fieldDefinition = {
@@ -642,11 +754,29 @@ function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSo
   schema.fields.set(alias.toLocaleLowerCase(), fieldDefinition);
 }
 
+function addFieldDefinitionFromSubQuery(field: FieldDefinition, schema: QuerySchema, func?: string): void {
+  
+  const alias = field.alias;
+  const fieldDefinition = {
+    name: alias,
+    alias: alias,
+    tableId: schema.alias,
+    model: undefined,
+    fieldId: alias,
+    dataType: undefined,
+    length: undefined,
+    scale: undefined, 
+    func: func
+  }
+
+  schema.mainSchema.fields.set(alias.toLocaleLowerCase(), fieldDefinition);
+}
+
 function getNameAndAlias(sourceStatement: string): { name: string, alias: string} {
   
   const statement = sourceStatement.replace(' as ', ' AS ').split(' AS ');
   let name: string = statement[0];
-  let alias: string = name.replace(/\./g, '');
+  let alias: string;
   if(statement.length > 1) {
     alias = statement[1]; 
   }
@@ -654,9 +784,13 @@ function getNameAndAlias(sourceStatement: string): { name: string, alias: string
   return { name, alias };
 }
 
-function determineReferenceJoins(fieldName: string, alias: string, schema: QuerySchema): void {
+function determineReferenceJoins(fieldName: string, alias: string, schema: QuerySchema, func?: string): void {
 
     const track = fieldName.split('.');
+    if(track.length && track[1] === 'id') {
+      alias = alias || track.join(); 
+      return  addFieldDefinition(track[0], alias, schema.from.model, schema, func, true);
+    }
     let mainModel = schema.from.model;
     let parentField: FieldDefinition;
     for(let i = 0; i < track.length - 1; i++) {
@@ -667,7 +801,7 @@ function determineReferenceJoins(fieldName: string, alias: string, schema: Query
     }
 
     const attributeName = track[track.length-1];
-    addFieldDefinition(attributeName, alias, mainModel, schema);
+    addFieldDefinition(attributeName, alias, mainModel, schema, func);
 }
 
 function determineJoins(fieldName: string, alias: string, schema: QuerySchema, query: JoinStatement): void {
@@ -1052,10 +1186,10 @@ function buildSQLQueryString(schema: QuerySchema): string {
 
   let fields = [];
 
-  function wrapIfFunc(input: string, func: string | undefined): string {
+  function wrapIfFunc(input: string, func: string | undefined, cast?: string): string {
     let result = input;
     if(func) {
-      result = `${func}(${input})`;
+      result = `${func}(${input}${cast || ''})`;
     }
     return result;
   }
@@ -1067,7 +1201,11 @@ function buildSQLQueryString(schema: QuerySchema): string {
     if((fieldDefinition.model && fieldDefinition.model.dataSource) || !fieldDefinition.model) { 
       fields.push(`${wrapIfFunc(`${tableAlias}.${fieldDefinition.fieldId}`, fieldDefinition.func)} AS ${fieldDefinition.alias}`);
     } else {
-      fields.push(`${wrapIfFunc(`${tableAlias}."${fieldDefinition.fieldId}"`, fieldDefinition.func)} AS ${fieldDefinition.alias}`);
+      let cast = '';
+      if(fieldDefinition.dataType === 'FK') {
+        cast = '::varchar';
+      }
+      fields.push(`${wrapIfFunc(`${tableAlias}."${fieldDefinition.fieldId}"`, fieldDefinition.func, cast)} AS ${fieldDefinition.alias}`);
     }
   })
 
@@ -1116,7 +1254,15 @@ function buildSQLQueryString(schema: QuerySchema): string {
       if (join.rigthTable.model.dataSource) {
         quoteR = '';
       }
-      result += `ON ${join.leftTable.alias}.${quoteL+join.leftTable.on.fieldId+quoteL+leftCast} = ${join.rigthTable.alias}.${quoteR+join.rigthTable.on.fieldId+quoteR+rigthCast} `
+      let leftTableOnFieldId = join.leftTable.on.fieldId;
+      if(join.leftTable.model.sql) {
+        leftTableOnFieldId = join.leftTable.on.name;
+      }
+      let rigthTableOnFieldId = join.rigthTable.on.fieldId;
+      if(join.rigthTable.model.sql) {
+        rigthTableOnFieldId = join.rigthTable.on.name;
+      }
+      result += `ON ${join.leftTable.alias}.${quoteL+leftTableOnFieldId+quoteL+leftCast} = ${join.rigthTable.alias}.${quoteR+rigthTableOnFieldId+quoteR+rigthCast} `
     }
   }
 
@@ -1398,9 +1544,20 @@ function defineConditions(
       for(let operator in condition ) {
         if(!ComparisonOperators[operator]) {
           if(!BitwiseOperators[operator]) {
-            condition = { equal: [operator, condition[operator]] };
-            operator = 'equal';
-            where[index] = condition;
+            let definedCondition = false;
+            // for(let conditionKey in condition[operator]) {
+            //   if(ComparisonOperators[conditionKey]) {
+            //     condition = condition[operator];
+            //     operator = conditionKey;
+            //     where[index] = condition;
+            //     definedCondition = true;
+            //   } 
+            // }
+            if(!definedCondition) {
+              condition = { equal: [operator, condition[operator]] };
+              operator = 'equal';
+              where[index] = condition;
+            }
           }
         }
 
