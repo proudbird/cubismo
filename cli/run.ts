@@ -31,7 +31,7 @@ export async function run(options: CLIOptions): Promise<void> {
 
   let config: CubismoSettings;
   try {
-    config = JSON.parse(readFileSync(pathToConfig, 'utf-8'));
+    config = require(pathToConfig);
   } catch (error) {
     throw new CubismoError(`Can't read config file from ${pathToConfig}`);
   }
