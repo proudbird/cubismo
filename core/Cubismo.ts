@@ -77,7 +77,7 @@ export default class Cubismo {
       process.exit();
     }
 
-    if (key === API_KEY) {
+    if (key === SECRET_KEY) {
       Logger.info('cubismo server is stopped');
       // we need some delay to show notification
       setTimeout(exit, 500);
