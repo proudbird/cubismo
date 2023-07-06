@@ -14,7 +14,10 @@ import { NewApplicationParameters } from './types';
 import auth from './Authenication';
 import Logger from '../common/Logger';
 
+import Uimo from 'uimo';
+
 export default class Router extends EventEmitter {
+  #uimo: Uimo;
   public cubismo: Cubismo;
 
   public server: http.Server;
@@ -22,6 +25,7 @@ export default class Router extends EventEmitter {
   constructor(cubismo: Cubismo) {
     super();
     this.cubismo = cubismo;
+    this.#uimo = new Uimo({ pathToCubes: this.cubismo.settings.cubes });
   }
 
   async run(port: number, host: string): Promise<void> {
@@ -29,7 +33,7 @@ export default class Router extends EventEmitter {
     const router = express();
     router.use(express.json());
     router.use(bodyParserFrom1C);
-    router.use(express.static(path.join(__dirname, '../client/')));
+    router.use(express.static(this.#uimo.static()));
 
     router.all('*', (req, res, next) => {
       // Logger.debug(`Income recquest: ${req.url}`);
@@ -45,14 +49,16 @@ export default class Router extends EventEmitter {
           let application: Application;
           try {
             application = await this.cubismo.runApplication(applicationId);
-            res.send(windowTemplate());
-            setTimeout(onSessionStart, 1000, application);
+            Logger.debug('Gettin index page');
+            res.send(this.#uimo.index());
           } catch (error) {
             Logger.error(`Unsuccessful attempt to run application '${applicationId}'`, error);
           }
         }
       }
     });
+
+    
 
     router.get('/favicon.ico', (req, res, next) => {
       // Logger.debug('Request for the favicon')
@@ -219,6 +225,39 @@ export default class Router extends EventEmitter {
           res.status(500).send({ error: true, message: error.message });
         }
       }
+    });
+
+    router.get('/app/:applicationId/view/:viewId', async (req, res, next) => {
+      Logger.debug(`Going to load view ${req.params.viewId}`);
+      const { viewId } = req.params;
+      let view: any;
+      try {
+        view = await this.#uimo.loadView(this.cubismo.settings.cubes, viewId);
+      } catch (error) {
+        Logger.warn(`Error on loading view: ${error.message}`);
+        return res.status(500).send(error.message);
+      }
+      res.status(200).send(view);
+    });
+
+    router.post('/app/:applicationId/instance', async (req, res, next) => {
+      const { applicationId } = req.params;
+      let application: Application;
+      try {
+        application = await this.cubismo.runApplication(applicationId);
+      } catch (error) {
+        return res.status(404).send({ error: true, message: error.message });
+      }
+
+      const { cube, className, object, method, args } = req.body;
+
+      const handler = application.cubes[cube][className][object][method];
+      if (!handler) {
+        return res.status(404).send({ error: true, message: `Method ${method} is not registered` });
+      }
+      const thisObject = application.cubes[cube][className][object];
+      const result = await handler.call(thisObject, ...args);
+      res.status(200).send(result);
     });
 
     return new Promise((resolve, reject) => {
