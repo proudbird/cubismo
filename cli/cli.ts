@@ -14,7 +14,7 @@ program
   .option('-p --port <port>', 'Specifies a port number server have to listen to')
   .option('-a --app <id>', 'Specifies an application ID to run on server start')
   .action(async (path, options, command) => {
-    options.config = path || options.config || '.';
+    options.config = options.config || path || '.';
     try {
       await run(options);
     } catch (error) {

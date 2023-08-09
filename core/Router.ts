@@ -32,7 +32,7 @@ export default class Router extends EventEmitter {
     router.use(express.static(path.join(__dirname, '../client/')));
 
     router.all('*', (req, res, next) => {
-      Logger.debug(`Income recquest: ${req.url}`);
+      // Logger.debug(`Income recquest: ${req.url}`);
       next();
     });
 
@@ -173,13 +173,13 @@ export default class Router extends EventEmitter {
       try {
         const { applicationId } = req.params;
         application = await self.cubismo.runApplication(applicationId);
-        Logger.debug(`Application is running: ${application.id}`);
+        // Logger.debug(`Application is running: ${application.id}`);
       } catch (error) {
         Logger.warn(`Error on running app: ${error.message}`);
         return res.status(500).send({ error: true, message: error.message });
       }
 
-      Logger.debug('Going to authenication');
+      // Logger.debug('Going to authenication');
       await auth(application, tokenKey, req, res, next, handler);
     }
 
@@ -206,7 +206,7 @@ export default class Router extends EventEmitter {
         commonHandler.handler(req, res, handler);
       } else if (needAuthenication) {
         try {
-          Logger.debug('Going to handler');
+          // Logger.debug('Going to handler');
           authControl(self.cubismo.settings.tokenKey, req, res, next, handler);
         } catch (error) {
           res.status(500).send({ error: true, message: error.message });

@@ -602,7 +602,7 @@ function defineField(fieldStatement: string, schema: QuerySchema): void {
   }
 
   if(name.includes('.')) {
-    determineReferenceJoins(name, alias, schema);
+    determineReferenceJoins(name, alias, schema, func);
   } else {
     addFieldDefinition(name, alias, schema.from.model, schema, func);
   }
@@ -678,7 +678,7 @@ function defineAllJoinFieldsFromSubQuery(fields: Map<string, FieldDefinition>, s
   }
 }
 
-function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSource, schema: QuerySchema, func?: string): void {
+function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSource, schema: QuerySchema, func?: string, noRef?: boolean): void {
   
   alias = alias || fieldName;
 
@@ -721,17 +721,22 @@ function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSo
     if(!attribute) {
       throw new QueryError(`Can not find attribute '${fieldName}' in ${model.name}`);
     }
+    dataType = attribute.type.dataType;
+    length = attribute.type.length;
+    scale = attribute.type.scale;
     if (attribute.type.lang && attribute.type.lang.length) {
       fieldId = attribute.fieldId + '_' + lang;
     } else {
       fieldId = attribute.fieldId;
       if(attribute.type.dataType === 'FK') {
-        referenceModelId = attribute.type.reference.modelId;
+        if(!noRef) {
+          referenceModelId = attribute.type.reference.modelId;
+        } else {
+          dataType = 'STRING ';
+        }
       }
     }
-    dataType = attribute.type.dataType;
-    length = attribute.type.length;
-    scale = attribute.type.scale;
+    
   }
 
   const fieldDefinition = {
@@ -779,9 +784,13 @@ function getNameAndAlias(sourceStatement: string): { name: string, alias: string
   return { name, alias };
 }
 
-function determineReferenceJoins(fieldName: string, alias: string, schema: QuerySchema): void {
+function determineReferenceJoins(fieldName: string, alias: string, schema: QuerySchema, func?: string): void {
 
     const track = fieldName.split('.');
+    if(track.length && track[1] === 'id') {
+      alias = alias || track.join(); 
+      return  addFieldDefinition(track[0], alias, schema.from.model, schema, func, true);
+    }
     let mainModel = schema.from.model;
     let parentField: FieldDefinition;
     for(let i = 0; i < track.length - 1; i++) {
@@ -792,7 +801,7 @@ function determineReferenceJoins(fieldName: string, alias: string, schema: Query
     }
 
     const attributeName = track[track.length-1];
-    addFieldDefinition(attributeName, alias, mainModel, schema);
+    addFieldDefinition(attributeName, alias, mainModel, schema, func);
 }
 
 function determineJoins(fieldName: string, alias: string, schema: QuerySchema, query: JoinStatement): void {
