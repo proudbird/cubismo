@@ -205,6 +205,10 @@ export default class Application implements IApplication  {
 
     return this.#users;
   }
+
+  async transaction() {
+    return this.#dbDriver.connection.transaction({ autocommit: false });
+  }
 }
 
 async function onStart(application: Application) {
