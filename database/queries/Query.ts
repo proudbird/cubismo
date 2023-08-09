@@ -48,7 +48,10 @@ export default class Query {
       const select = [];
       const models = ((this.#driver.models as unknown) as QueryDataSources)
       const query = await buildSQLQuery(this.#application, models, options);
-      writeFileSync('c:\\ITProjects\\cubismo\\workspaces\\optima\\sql.txt', query.sql)
+      // writeFileSync('c:\\ITProjects\\cubismo\\workspaces\\optima\\sql.txt', query.sql);
+      const matches = /at async (.*) \(.*cubismo\.apps\/cubes\/(.*)\)/.exec((new Error()).stack);
+      const id = `${matches[1]}_${matches[2]}`.replace('.dist', '').replace(/\//g, '-').replace('.js', '').replace(/\:/g, '-');
+      this.#application.fs.writeFileSync(`query-${id}.sql`, query.sql);
       const result = await this.#driver.query(query.sql, queryModel);
       if(result && result[0]) {
         const data: [] = result[0];
@@ -716,6 +719,9 @@ function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSo
     fieldId = 'ownerid';
     dataType = 'FK';
     referenceModelId = modelDefinition.owners[0];
+  } else if (fieldName === 'Updated') {
+    fieldId = 'updatedAt';
+    dataType = 'DATE';
   } else {
     const attribute = modelDefinition.attributes[fieldName];
     if(!attribute) {
@@ -1062,6 +1068,17 @@ function getAttributeDefinition(attributeName: string, model: QueryDataSource, s
       }
     }
 
+  } else if (attributeName === 'Updated') {
+    referenceModelId = modelDefinition.id;
+    attribute = {
+      fieldId: 'updatedAt',
+      type: {
+        dataType: 'DATE',
+        reference: {
+          modelId: referenceModelId
+        }
+      }
+    }
   } else {
     attribute = modelDefinition.attributes[attributeName];
     if(!attribute) {
@@ -1075,7 +1092,7 @@ function getAttributeDefinition(attributeName: string, model: QueryDataSource, s
         throw new QueryError(`Can not find sourse table with ID '${referenceModelId}' as reference table, described id field '${attributeName}'`);
       }
     }
-  }
+  } 
 
   return { dataType: attribute.type.dataType, fieldId: attribute.fieldId, referenceModel };
 }
