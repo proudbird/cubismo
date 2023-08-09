@@ -85,6 +85,10 @@ export default class Instance {
       throw new Error(`Can't get property's value '${property}' of ${this.#model.name}: ${error.message}`);
     }
 
+    if(!value) {
+      return value;
+    }
+
     switch (element.type.dataType) {
       case 'STRING':
         return value || '';
@@ -186,6 +190,15 @@ export default class Instance {
       return this;
     } catch (error) {
       throw new Error(`Unsuccessful attempt to save instance to database: ${error}`);
+    }
+  }
+
+  async delete(): Promise<void> {
+    
+    try {
+      this.#record.destroy();
+    } catch (error) {
+      throw new Error(`Unsuccessful attempt to delete instance from database: ${error}`);
     }
   }
 
