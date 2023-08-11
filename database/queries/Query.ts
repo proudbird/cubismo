@@ -50,8 +50,10 @@ export default class Query {
       const query = await buildSQLQuery(this.#application, models, options);
       // writeFileSync('c:\\ITProjects\\cubismo\\workspaces\\optima\\sql.txt', query.sql);
       const matches = /at async (.*) \(.*cubismo\.apps\/cubes\/(.*)\)/.exec((new Error()).stack);
-      const id = `${matches[1]}_${matches[2]}`.replace('.dist', '').replace(/\//g, '-').replace('.js', '').replace(/\:/g, '-');
-      this.#application.fs.writeFileSync(`query-${id}.sql`, query.sql);
+      if(matches) {
+        const id = `${matches[1]}_${matches[2]}`.replace('.dist', '').replace(/\//g, '-').replace('.js', '').replace(/\:/g, '-');
+        this.#application.fs.writeFileSync(`query-${id}.sql`, query.sql);
+      }
       const result = await this.#driver.query(query.sql, queryModel);
       if(result && result[0]) {
         const data: [] = result[0];
