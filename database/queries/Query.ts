@@ -53,6 +53,8 @@ export default class Query {
       if(matches) {
         const id = `${matches[1]}_${matches[2]}`.replace('.dist', '').replace(/\//g, '-').replace('.js', '').replace(/\:/g, '-');
         this.#application.fs.writeFileSync(`query-${id}.sql`, query.sql);
+      } else {
+        this.#application.fs.writeFileSync(`last-query.sql`, query.sql);
       }
       const result = await this.#driver.query(query.sql, queryModel);
       if(result && result[0]) {
@@ -517,6 +519,8 @@ function defineGroupBy(query: QueryStatement, schema: QuerySchema): void {
           fieldId = 'parentId';
         } else if (fieldName === 'Owner') {
           fieldId = 'ownerid';
+        } else if (fieldName === 'order') {
+          fieldId = 'order';
         } else {
           const attribute = modelDefinition.attributes[fieldName];
           if(!attribute) {
@@ -575,6 +579,8 @@ function defineOrderBy(query: QueryStatement, schema: QuerySchema): void {
           fieldId = 'parentId';
         } else if (fieldName === 'Owner') {
           fieldId = 'ownerid';
+        } else if (fieldName === 'order') {
+          fieldId = 'order';
         } else {
           const attribute = modelDefinition.attributes[fieldName];
           if(!attribute) {
@@ -717,6 +723,9 @@ function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSo
     fieldId = 'ownerid';
     dataType = 'FK';
     referenceModelId = modelDefinition.owners[0];
+  } else if (fieldName === 'order') {
+    fieldId = 'order';
+    dataType = 'NUMBER';
   } else if (fieldName === 'Registrator') {
     fieldId = 'ownerid';
     dataType = 'FK';
@@ -890,6 +899,17 @@ function addReferenceJoin(
         }
       }
     }
+  } else if(attributeName === 'order') {
+    referenceModelId = modelDefinition.id;
+    attribute = {
+      fieldId: 'order',
+      type: {
+        dataType: 'NUMBER',
+        reference: {
+          modelId: referenceModelId 
+        }
+      }
+    }
 
   } else if(attributeName === 'Parent') {
     referenceModelId = modelDefinition.id;
@@ -906,10 +926,7 @@ function addReferenceJoin(
   } else {
     attribute = modelDefinition.attributes[attributeName];
     if(!attribute) {
-      throw new QueryError(`} else if (fieldName === 'Owner') {
-        fieldId = 'ownerid';
-        dataType = 'FK';
-        referenceModelId = modelDefinition.owners[0]; '${attributeName}' in ${mainModel.name}`);
+      throw new QueryError(`Can not find attribute '${attributeName}' in ${mainModel.name}`);
     }
 
     if(level < trackLength && attribute.type.dataType !== 'FK') {
@@ -1076,6 +1093,17 @@ function getAttributeDefinition(attributeName: string, model: QueryDataSource, s
       fieldId: 'updatedAt',
       type: {
         dataType: 'DATE',
+        reference: {
+          modelId: referenceModelId
+        }
+      }
+    }
+  } else if (attributeName === 'order') {
+    referenceModelId = modelDefinition.id;
+    attribute = {
+      fieldId: 'order',
+      type: {
+        dataType: 'NUMBER',
         reference: {
           modelId: referenceModelId
         }
