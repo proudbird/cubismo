@@ -992,11 +992,15 @@ function addReferenceJoin(
   if(!schema.joins[mainModel.modelName]) {
     schema.joins[mainModel.modelName] = [];
   }
-  schema.joins[mainModel.modelName].push({
-    joinType: JoinType.LEFT, 
-    leftTable,
-    rigthTable
-  });
+
+  if(!(leftTableDefinition && rigthTableDefinition)) {
+    // add join to schema only if it is uniq
+    schema.joins[mainModel.modelName].push({
+      joinType: JoinType.LEFT, 
+      leftTable,
+      rigthTable
+    });
+  }
 
   schema.tables[leftTable.tableId] = leftTable;
   schema.tables[rigthTable.tableId] = rigthTable;
