@@ -493,6 +493,7 @@ function defineGroupBy(query: QueryStatement, schema: QuerySchema): void {
   
   if(query.groupBy && Array.isArray(query.groupBy)) {
     let model: QueryDataSource | SourceDefinition  = schema.from.model;
+    let tableAlias: string;
     for(let fieldId of query.groupBy) {
       if(fieldId.includes('.')) {
         const parts = fieldId.split('.');
@@ -503,8 +504,15 @@ function defineGroupBy(query: QueryStatement, schema: QuerySchema): void {
       
       if(!(model as QueryDataSource).dataSource) {
         const lang = (model as SourceDefinition).model.application.lang;
-        const modelDefinition = (model as SourceDefinition).model.definition;
-        let fieldName = schema.fields.get(fieldId.toLocaleLowerCase()).name;
+        let modelDefinition = (model as SourceDefinition).model.definition;
+        const fieldDefinition = schema.fields.get(fieldId.toLocaleLowerCase());
+        const tableId = fieldDefinition.tableId;
+        const tableDefinition = schema.tables[tableId];
+        if(fieldDefinition.tableId !== modelDefinition.tableId) {
+          modelDefinition = fieldDefinition.model.definition;
+        }
+        tableAlias = tableDefinition.alias;
+        let fieldName = fieldDefinition.name;
         if (fieldName === 'Name') {
           if (modelDefinition.nameLang && modelDefinition.nameLang.length) {
             fieldId = fieldId + '_' + lang;
@@ -518,7 +526,7 @@ function defineGroupBy(query: QueryStatement, schema: QuerySchema): void {
         } else if (fieldName === 'Parent') {
           fieldId = 'parentId';
         } else if (fieldName === 'Owner') {
-          fieldId = 'ownerid';
+          fieldId = 'ownerId';
         } else if (fieldName === 'order') {
           fieldId = 'order';
         } else {
@@ -535,8 +543,10 @@ function defineGroupBy(query: QueryStatement, schema: QuerySchema): void {
         }
       }
 
+      
+
       if(model.alias) {
-        schema.groupBy.push(`${model.alias}."${fieldId}"`);
+        schema.groupBy.push(`${tableAlias || model.alias}."${fieldId}"`);
       } else {
         schema.groupBy.push(`${(model as QueryDataSource).modelName}.${fieldId}`);
       }
@@ -578,7 +588,7 @@ function defineOrderBy(query: QueryStatement, schema: QuerySchema): void {
         } else if (fieldName === 'Parent') {
           fieldId = 'parentId';
         } else if (fieldName === 'Owner') {
-          fieldId = 'ownerid';
+          fieldId = 'ownerId';
         } else if (fieldName === 'order') {
           fieldId = 'order';
         } else {
