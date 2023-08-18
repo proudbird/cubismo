@@ -730,14 +730,14 @@ function addFieldDefinition(fieldName: string, alias: string, model: QueryDataSo
     fieldId = 'parentId';
     dataType = 'FK';
   } else if (fieldName === 'Owner') {
-    fieldId = 'ownerid';
+    fieldId = 'ownerId';
     dataType = 'FK';
     referenceModelId = modelDefinition.owners[0];
   } else if (fieldName === 'order') {
     fieldId = 'order';
     dataType = 'NUMBER';
   } else if (fieldName === 'Registrator') {
-    fieldId = 'ownerid';
+    fieldId = 'ownerId';
     dataType = 'FK';
     referenceModelId = modelDefinition.owners[0];
   } else if (fieldName === 'Updated') {
