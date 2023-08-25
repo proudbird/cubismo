@@ -85,8 +85,17 @@ export declare type QuerySchema = {
   tempSources?: QueryDataSource[],
   mainSchema?: QuerySchema,
   childSchema?: QuerySchema,
-  alias?: string
+  alias?: string;
+  providers: Record<string, QuerySourceProvider>;
 }
+
+export declare type QuerySourceProvider = {
+  model: QueryDataSource,
+  position,
+  participator,
+  connector,
+  alias: string;
+}; 
 
 export declare type FieldDefinition = {
   name: string,
@@ -98,7 +107,8 @@ export declare type FieldDefinition = {
   dataType: string,
   length?: number,
   scale?: number,
-  func?: string
+  func?: string,
+  provider?: QuerySourceProvider
 }
 
 declare type QueryFunction = 'MIN' | 'MAX' | 'COUNT' | 'AVG' | 'SUM';
@@ -219,7 +229,7 @@ declare type JoinsMap = { [tableName: string]: JoinDefinition[] };
 declare type JoinDefinition = {
   joinType: JoinType
   leftTable: TableDefinition & { on: FieldDefinition}
-  rigthTable: TableDefinition & { on: FieldDefinition},
+  rigthTable: TableDefinition & { on: FieldDefinition}
 }
 
 export enum JoinType {
