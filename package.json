@@ -49,6 +49,7 @@
     "catalogist": "^1.0.4",
     "chalk": "^4.1.2",
     "commander": "^8.3.0",
+    "cookie-parser": "^1.4.6",
     "dataroll": "^0.0.8",
     "deepdash": "^5.3.9",
     "demander": "0.0.1",

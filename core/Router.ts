@@ -3,7 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import EventEmitter from 'events';
 import http from 'http';
-import express from 'express';
+import express, { application } from 'express';
+import cookieParser from 'cookie-parser';
 import bodyParserFrom1C from 'bodyparser-1c-internal';
 import jwt from 'jsonwebtoken';
 import chalk from 'chalk';
@@ -32,6 +33,7 @@ export default class Router extends EventEmitter {
     const self = this;
     const router = express();
     router.use(express.json());
+    router.use(cookieParser());
     router.use(bodyParserFrom1C);
     router.use(express.static(this.#uimo.static()));
 
@@ -149,15 +151,17 @@ export default class Router extends EventEmitter {
         Logger.debug(`We found user ${user.login}`);
         Logger.debug(JSON.stringify(self.cubismo.settings));
         if (user && (user.testPassword(password))) {
+          const session = { userId: user.id, login, username: user.name, email: user.email };
           const token = jwt.sign(
-            { userId: user.id, login },
+            session,
             self.cubismo.settings.tokenKey,
             {
               expiresIn: '7d',
             },
           );
           Logger.debug(`We granted user ${user.login} with token`);
-          res.status(200).send({ error: false, data: token });
+          const cookieTokenMaxAge = 1000 * 60 * 60 * 24 * 7;
+          res.cookie('Bearer', token, { maxAge: cookieTokenMaxAge , httpOnly: true }).status(200).send({ error: false, data: session });
         } else {
           res.status(400).send({ error: true, message: 'Invalid Credentials' });
         }
