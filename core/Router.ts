@@ -15,7 +15,9 @@ import { NewApplicationParameters } from './types';
 import auth from './Authenication';
 import Logger from '../common/Logger';
 
-import Uimo from 'uimo';
+import { Uimo } from 'uimo';
+//@ts-ignore
+// import Uimo from '../../uimo-pwa/controller/uimo';
 
 export default class Router extends EventEmitter {
   #uimo: Uimo;
@@ -237,6 +239,83 @@ export default class Router extends EventEmitter {
           res.status(500).send({ error: true, message: error.message });
         }
       }
+    });
+
+    router.get('/app/:applicationId', async (req, res, next) => {
+      Logger.debug(`Going to load index page`);
+      let view: any;
+      try {
+        view = await this.#uimo.index();
+      } catch (error) {
+        Logger.warn(`Error on loading index page: ${error.message}`);
+        return res.status(500).send(error.message);
+      }
+      res.status(200).send(view);
+    });
+
+    router.post('/app/:applicationId/init', async (req, res, next) => {
+      Logger.debug(`Going to init client side application`);
+      let application: Application;
+      const { applicationId } = req.params;
+      try {
+        application = await this.cubismo.runApplication(applicationId);
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
+
+      if(application.appStructure) {
+        return res.status(200).send(application.appStructure);
+      }
+      const appSettings = this.cubismo.applications.get(applicationId).settings;
+      let appStructure: any;
+      try {
+        appStructure = await this.#uimo.initApp({ appId: applicationId, cubesDir: this.cubismo.settings.cubes, appCubes: appSettings.cubes });
+        application.appStructure = appStructure;
+      } catch (error) {
+        Logger.warn(`Error on initing client side application: ${error.message}`);
+        return res.status(500).send(error.message);
+      }
+      res.status(200).send(appStructure); 
+    });
+
+    router.get('/app/:applicationId/cube/:cubeId', async (req, res, next) => {
+      Logger.debug(`Going to load module ${req.params.cubeId}`);
+      let application: Application;
+      const { applicationId } = req.params;
+      try {
+        application = await this.cubismo.runApplication(applicationId);
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
+
+      const { cubeId } = req.params;
+      let module: any;
+      
+      try {
+        const moduleFilename = application.appStructure.cubes[cubeId];
+        module = await this.#uimo.loadModule(cubeId.split('.')[0], moduleFilename, cubeId); 
+      } catch (error) {
+        Logger.warn(`Error on loading module: ${error.message}`);
+        return res.status(500).send(error.message);
+      }
+      res.status(200).setHeader('Content-Type', 'application/javascript').send(module);
+    });
+
+    router.get('/app/:applicationId/module/:moduleId', async (req, res, next) => {
+      Logger.debug(`Going to load module ${req.params.moduleId}`);
+      const { moduleId } = req.params;
+      let module: any;
+      const { applicationId } = req.params;
+      const application = this.cubismo.applications.get(applicationId);
+      console.log(moduleId)
+      try {
+        const moduleFilename = application.appStructure.modules[moduleId];
+        module = await this.#uimo.loadModule(moduleId.split('.')[0], moduleFilename, moduleId); 
+      } catch (error) {
+        Logger.warn(`Error on loading module: ${error.message}`);
+        return res.status(500).send(error.message);
+      }
+      res.status(200).setHeader('Content-Type', 'application/javascript').send(module);
     });
 
     router.get('/app/:applicationId/view/:viewId', async (req, res, next) => {

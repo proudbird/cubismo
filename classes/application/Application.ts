@@ -158,6 +158,7 @@ export default class Application implements IApplication  {
   }
 
   addCube(element: ICube, fileName: string): ICube {
+    //@ts-ignore
     return addElement(element, this, this.#cubismo, this,  this.#elements, this.#cache, fileName)
   } 
 
@@ -205,6 +206,8 @@ export default class Application implements IApplication  {
 
     return this.#users;
   }
+
+  appStructure: any;
 }
 
 async function onStart(application: Application) {
