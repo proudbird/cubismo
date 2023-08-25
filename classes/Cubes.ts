@@ -42,6 +42,7 @@ export default class Cubes{
   }
 
   addCube(element: ICube, fileName: string): ICube {
+    //@ts-ignore
     return addElement(element, this, this.#cubismo, this.#application, this.#elements, this.#cache, fileName)
   } 
 }

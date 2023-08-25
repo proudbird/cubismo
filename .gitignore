@@ -4,6 +4,7 @@
 .gitignore
 .env
 .nyc_output
+.hintrc
 node_modules
 addIns/1C/node_modules
 coverage
