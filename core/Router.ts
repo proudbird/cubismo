@@ -170,9 +170,9 @@ export default class Router extends EventEmitter {
       }
     });
 
-    router.post('/app/:applicationId/check_authentication', async (req, res, next) => {
-      function handler(req, res) {
-        res.status(200).send({ error: false });
+    router.get('/app/:applicationId/session', async (req, res, next) => {
+      function handler(req, res, session) {
+        res.status(200).send({ error: false, data: session });
       }
 
       authControl(self.cubismo.settings.tokenKey, req, res, next, handler);
@@ -192,6 +192,14 @@ export default class Router extends EventEmitter {
       // Logger.debug('Going to authenication');
       await auth(application, tokenKey, req, res, next, handler);
     }
+
+    router.post('/app/:applicationId/check_authentication', async (req, res, next) => {
+      function handler(req, res) {
+        res.status(200).send({ error: false });
+      }
+
+      authControl(self.cubismo.settings.tokenKey, req, res, next, handler);
+    });
 
     router.all('/app/:applicationId/api/*', async (req, res, next) => {
       const { applicationId } = req.params;
