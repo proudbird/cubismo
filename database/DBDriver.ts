@@ -15,6 +15,7 @@ export default class DBDriver {
       config.username,
       config.password,
       { dialect: config.dialect,
+        port: config.port,
         logging: false,
         //@ts-ignore
         charset: "utf8",
