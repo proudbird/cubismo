@@ -12,6 +12,10 @@ export default class QueryResul {
     this.#entries = entries;
   }
 
+  get length(): number {
+    return this.#entries.length;
+  }
+
   [Symbol.iterator] = () => {
     let count = 0;
     let done = false;
@@ -26,13 +30,15 @@ export default class QueryResul {
     return { next };
   }
 
-  toJSON(): string {
+  toJSON(): any {
     let result = '';
 
     const fields: DataSourceAtrribute[] = [];
     const attributes: { [name: string]: DataSourceAtrribute } = {};
     let index = 0;
     for(let [key, value] of this.#fieldsMap) {
+      if(key.includes('_p')) continue;
+      
       attributes[value.alias] = {
         index,
         name: value.alias,
@@ -55,7 +61,7 @@ export default class QueryResul {
         const fieldDefinition = this.#fieldsMap.get(field.name.toLowerCase());
         let value = entry[field.name.toLowerCase()];
         if(field.type.dataType === 'FK') {
-          value = [value, fieldDefinition.model.definition.id];
+          value = [value, fieldDefinition.model.definition.id, entry[field.name.toLowerCase() + '_p']];
         }
         values.push(value);
       }
@@ -67,7 +73,6 @@ export default class QueryResul {
       entries
     }
     
-    result = JSON.stringify(data);
-    return result;
+    return data;
   }
 }
