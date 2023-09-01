@@ -167,3 +167,9 @@ export type Value<T extends Instance> = string | number | boolean | Date | EnumV
 export type ModelDefinition = CatalogModelDefinition;
 
 export type SaveOptions = Sequelize.Transactionable;
+
+export declare type Result = {
+  error: boolean,
+  message?: string,
+  data?: any
+}

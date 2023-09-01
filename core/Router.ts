@@ -16,6 +16,7 @@ import auth from './Authenication';
 import Logger from '../common/Logger';
 
 import { Uimo } from 'uimo';
+import { getModelList } from '../database/getModelList';
 //@ts-ignore
 // import Uimo from '../../uimo-pwa/controller/uimo';
 
@@ -349,6 +350,27 @@ export default class Router extends EventEmitter {
       const thisObject = application.cubes[cube][className][object];
       const result = await handler.call(thisObject, ...args);
       res.status(200).send(result);
+    });
+
+    router.post('/app/:applicationId/list', async (req, res, next) => {
+      const { applicationId } = req.params;
+      let application: Application;
+      try {
+        application = await this.cubismo.runApplication(applicationId);
+      } catch (error) {
+        return res.status(404).send({ error: true, message: error.message });
+      }
+
+      try {
+        const result = await getModelList(application, req.body);
+        if (result.error) {
+          res.status(500).send(result);
+        } else {
+          res.status(200).send(result);
+        }
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
     });
 
     return new Promise((resolve, reject) => {
