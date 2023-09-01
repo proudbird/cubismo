@@ -93,13 +93,13 @@ export type QueryDataProviders = {
   [id: string]: {
     [position: string]: {
       [participator: string]: {
-        [connector: string]: QueryDataProviderDefinition
+        [connector: string]: QueryDataProvider
       }
     }
-  }
+  } | QueryDataProvider;
 }
 
-export type QueryDataProviderDefinition = {
+export type QueryDataProvider = {
   model: QueryDataSource;
   tableId: string;
   alias: string;
@@ -127,7 +127,8 @@ export declare type FieldDefinition = {
   dataType: ApplicationDataType,
   length?: number,
   scale?: number,
-  func?: string
+  func?: string,
+  provider?: QueryDataProvider,
 }
 
 declare type QueryFunction = 'MIN' | 'MAX' | 'COUNT' | 'AVG' | 'SUM';

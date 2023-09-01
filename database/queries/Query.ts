@@ -1,10 +1,10 @@
 import { Sequelize } from 'sequelize';
 import Application from '../../classes/application/Application';
 
-import QuerySelectItem from '../QuerySelectItem';
+import QueryResult from '../QueryResult';
 
 import QueryError from "./QueryError";
-import { QueryStatement, QuerySchema, SourceDefinition, TableDefinition, FieldDefinition, LeftJoinStatement, JoinStatement, InnerJoinStatement, RightJoinStatement, FullJoinStatement, JoinType, ConditionStatement, ComparisonOperatorType, BooleanStatement, BooleanConditionDefinition, ConditionDefinition, BitwiseOperatorType, ValueDefinition, SourceType, QuerySource, QueryDataSource, QueryDataSources, QueryDataSourceAttributes, QueryDataSourceAttribute, QueryDataSourceDefinition, QuerySourceProvider } from "./types";
+import { QueryStatement, QuerySchema, SourceDefinition, TableDefinition, FieldDefinition, LeftJoinStatement, JoinStatement, InnerJoinStatement, RightJoinStatement, FullJoinStatement, JoinType, ConditionStatement, ComparisonOperatorType, BooleanStatement, BooleanConditionDefinition, ConditionDefinition, BitwiseOperatorType, ValueDefinition, SourceType, QuerySource, QueryDataSource, QueryDataSources, QueryDataSourceAttributes, QueryDataSourceAttribute, QueryDataSourceDefinition, QueryDataProvider, ApplicationDataType } from "./types";
 import { DataBaseModel, ModelAttributeDefinition, DataBaseTableDefinition, DataBaseModels } from "../types";
 import DataTable from "../../common/DataCollections/DataSet";
 import { writeFileSync } from 'fs';
@@ -23,7 +23,7 @@ export default class Query {
     this.#driver = driver;
   }
 
-  async execute(options, model, subscriber) {
+  async execute(options, model?, subscriber?) {
     const self = this;
 
     if (!options) {
@@ -45,7 +45,7 @@ export default class Query {
     }
     
     // try {
-      const select = [];
+      let select: QueryResult | [] = [];
       const models = ((this.#driver.models as unknown) as QueryDataSources)
       const query = await buildSQLQuery(this.#application, models, options);
       // writeFileSync('c:\\ITProjects\\cubismo\\workspaces\\optima\\sql.txt', query.sql);
@@ -58,13 +58,7 @@ export default class Query {
       }
       const result = await this.#driver.query(query.sql, queryModel);
       if(result && result[0]) {
-        const data: [] = result[0];
-        //let fieldsMap = query.fieldsMap.
-        for(let index in data) {
-          const record = data[index];
-          const selectItem = new QuerySelectItem(record, query.fieldsMap);
-          select.push(selectItem);
-        }
+        select = new QueryResult(query.fieldsMap,  result[0]);
       } 
       return select;
     // } catch(err) {
@@ -111,7 +105,7 @@ function buildSQLStatement(query: QueryStatement, schema: QuerySchema, mainSchem
     statement: JoinStatement,
     joinType: JoinType,
     model: QueryDataSource ,
-    provider: QuerySourceProvider
+    provider: QueryDataProvider
   }
   > = new Map();
   
@@ -509,7 +503,7 @@ function defineAllFields({ provider, schema }): void {
   }
 }
 
-function defineJoinFields(query: JoinStatement, joinModel: QueryDataSource, provider: QuerySourceProvider, schema: QuerySchema): void {
+function defineJoinFields(query: JoinStatement, joinModel: QueryDataSource, provider: QueryDataProvider, schema: QuerySchema): void {
 
   if (!query.select) {
     return;
@@ -659,7 +653,7 @@ function defineOrderBy(query: QueryStatement, schema: QuerySchema): void {
 
 interface DefineField {
   statement: string, 
-  provider: QuerySourceProvider, 
+  provider: QueryDataProvider, 
   schema: QuerySchema
 }
 function defineField({ statement, provider, schema }): void {
@@ -682,7 +676,7 @@ function defineField({ statement, provider, schema }): void {
   }
 }
 
-function defineJoinField(fieldStatement: string, joinModel: QueryDataSource, provider: QuerySourceProvider, schema: QuerySchema, query: JoinStatement): void {
+function defineJoinField(fieldStatement: string, joinModel: QueryDataSource, provider: QueryDataProvider, schema: QuerySchema, query: JoinStatement): void {
 
   let { name, alias } = getNameAndAlias(fieldStatement);
   let func;
@@ -727,7 +721,7 @@ function defineJoinFieldFromSubQuery(fieldStatement: string, schema: QuerySchema
   }
 }
 
-function defineAllJoinFields(joinModel: QueryDataSource, provider: QuerySourceProvider, schema: QuerySchema, query: JoinStatement): void {
+function defineAllJoinFields(joinModel: QueryDataSource, provider: QueryDataProvider, schema: QuerySchema, query: JoinStatement): void {
 
   const definition = joinModel.definition;
   if (definition.nameLenght) {
@@ -759,7 +753,7 @@ function defineAllJoinFieldsFromSubQuery(fields: Map<string, FieldDefinition>, s
 interface AddFieldDefinition {
   name: string, 
   alias: string, 
-  provider: QuerySourceProvider, 
+  provider: QueryDataProvider, 
   model: QueryDataSource, 
   schema: QuerySchema, 
   func?: string, 
@@ -771,7 +765,7 @@ function addFieldDefinition({ name, alias, provider, model, schema, func, noRef 
   alias = alias || name;
 
   let fieldId = name;
-  let dataType: string;
+  let dataType: ApplicationDataType;
   let length: number;
   let scale: number;
 
@@ -785,7 +779,7 @@ function addFieldDefinition({ name, alias, provider, model, schema, func, noRef 
     dataType = 'STRING';
   } else if (name === 'id') {
     fieldId = 'id';
-    dataType = 'STRING ';
+    dataType = 'STRING';
   } else if (name === 'Reference') {
     fieldId = 'id';
     dataType = 'FK';
@@ -825,7 +819,7 @@ function addFieldDefinition({ name, alias, provider, model, schema, func, noRef 
           referenceModelId = attribute.type.reference.modelId;
           determineReferenceJoins(`${name}.Name`, `${alias}_p`, model, schema);
         } else {
-          dataType = 'STRING ';
+          dataType = 'STRING';
         }
       }
     }
@@ -925,7 +919,7 @@ function determineReferenceJoins(fieldName: string, alias: string, model: QueryD
     addFieldDefinition({ name: attributeName, alias, provider, model: mainModel, schema });
 }
 
-function determineJoins(fieldName: string, alias: string, provider: QuerySourceProvider, schema: QuerySchema, query: JoinStatement): void {
+function determineJoins(fieldName: string, alias: string, provider: QueryDataProvider, schema: QuerySchema, query: JoinStatement): void {
 
   const track = fieldName.split('.');
   const joinFrom = getFrom(query, schema);
@@ -1086,7 +1080,7 @@ function addReferenceJoin(
     tableId: referenceModel.definition.tableId,
     model:  referenceModel,
     fieldId: 'id',
-    dataType: 'FK'
+    dataType: 'FK' as ApplicationDataType
   }
   
   leftTable.on = leftTableReferenceField;
@@ -1132,7 +1126,7 @@ function addReferenceJoin(
 }
 
 function getAttributeDefinition(attributeName: string, model: QueryDataSource, schema: QuerySchema): 
-  { dataType: string, fieldId: string, referenceModel?: QueryDataSource,  } {
+  { dataType: ApplicationDataType, fieldId: string, referenceModel?: QueryDataSource,  } {
 
   const modelDefinition = model.definition;
   let attribute: ModelAttributeDefinition;
