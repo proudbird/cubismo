@@ -27,7 +27,9 @@ export async function getModelList(application: Application, {
 
   const query: QueryStatement = {
     select: `*`,
-    from: modelAlias
+    from: modelAlias,
+    limit: options.limit,
+    offset: options.offset,
   }
 
   try {

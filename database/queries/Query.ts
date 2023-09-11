@@ -84,7 +84,9 @@ function buildSQLQuery(application: Application, models: QueryDataSources, query
     models: models, 
     sources: new Map(), 
     tempSources: [],
-    providers: {}
+    providers: {},
+    limit: query.limit,
+    offset: query.offset,
    };
 
   const sql = buildSQLStatement(query, schema);
@@ -1452,6 +1454,14 @@ function buildSQLQueryString(schema: QuerySchema): string {
 
   if(schema.orderBy?.length) {
     result += `\nORDER BY ${schema.orderBy.join(', ')}`;
+  }
+
+  if(schema.limit) {
+    result += `\nLIMIT ${schema.limit}`;
+  }
+
+  if(schema.offset) {
+    result += `\nOFFSET ${schema.offset}`;
   }
 
   return result;

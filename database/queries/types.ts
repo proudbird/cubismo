@@ -87,6 +87,8 @@ export declare type QuerySchema = {
   childSchema?: QuerySchema,
   alias?: string,
   providers?: QueryDataProviders;
+  limit?: number;
+  offset?: number;
 }
 
 export type QueryDataProviders = {
