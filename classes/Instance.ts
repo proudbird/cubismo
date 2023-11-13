@@ -189,7 +189,7 @@ export default class Instance {
     }
   }
 
-  type(): string {
+  get type(): string {
     return this.#model.name;
   }
 }

@@ -133,6 +133,11 @@ declare type QueryStatement = {
   limit   ?: number,
   offset  ?: number, 
   as      ?: string 
+  with    ?: {
+    [key: string]: QueryStatement
+  },
+  unionAll?: QueryStatement[],
+  orderAllBy?: OrderByStatement,
 }
 
 declare type QueryFromStatement = MetaDataObjectName | QueryStatement | Dataroll;

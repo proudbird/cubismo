@@ -14,7 +14,7 @@ export default class ConstantValue {
     this.#record = record;
   }
 
-  type(): string {
+  get type(): string {
     return this.#model.name;
   }
 }

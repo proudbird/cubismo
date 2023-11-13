@@ -1,8 +1,8 @@
 import Iterable from '../core/Iterable';
-import { DataSourceAtrribute, FieldDefinition } from './queries/types';
+import { DataSourceAttribute, FieldDefinition } from './queries/types';
 import QueryResultEntry from './QueryResultEntry';
 
-export default class QueryResul {
+export default class QueryResult {
 
   #fieldsMap: Map<string, FieldDefinition>;
   #entries: any[];
@@ -33,8 +33,8 @@ export default class QueryResul {
   toJSON(): any {
     let result = '';
 
-    const fields: DataSourceAtrribute[] = [];
-    const attributes: { [name: string]: DataSourceAtrribute } = {};
+    const fields: DataSourceAttribute[] = [];
+    const attributes: { [name: string]: DataSourceAttribute } = {};
     let index = 0;
     for(let [key, value] of this.#fieldsMap) {
       if(key.includes('_p')) continue;
@@ -47,7 +47,9 @@ export default class QueryResul {
           dataType: value.dataType, 
           length: value.length,
           scale: value.scale,
-          reference: value.model.definition.id
+          cube: value.model.definition.cube,
+          className: value.model.definition.class,
+          model: value.model.definition.name,
         }         
       }
       fields.push(attributes[value.alias]);
@@ -61,7 +63,7 @@ export default class QueryResul {
         const fieldDefinition = this.#fieldsMap.get(field.name.toLowerCase());
         let value = entry[field.name.toLowerCase()];
         if(field.type.dataType === 'FK') {
-          value = [value, fieldDefinition.model.definition.id, entry[field.name.toLowerCase() + '_p']];
+          value = [value, entry[field.name.toLowerCase() + '_p'], fieldDefinition.model.definition.id];
         }
         values.push(value);
       }

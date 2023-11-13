@@ -17,6 +17,7 @@ import Logger from '../common/Logger';
 
 import { Uimo } from 'uimo';
 import { getModelList } from '../database/getModelList';
+import { saveInstance } from '../database/saveInstance';
 //@ts-ignore
 // import Uimo from '../../uimo-pwa/controller/uimo';
 
@@ -332,7 +333,7 @@ export default class Router extends EventEmitter {
       res.status(200).send(view);
     });
 
-    router.post('/app/:applicationId/instance', async (req, res, next) => {
+    router.post('/app/:applicationId/method', async (req, res, next) => {
       const { applicationId } = req.params;
       let application: Application;
       try {
@@ -352,6 +353,33 @@ export default class Router extends EventEmitter {
       res.status(200).send(result);
     });
 
+    router.post('/app/:applicationId/instance', async (req, res, next) => {
+      const { applicationId } = req.params;
+      let application: Application;
+      try {
+        application = await this.cubismo.runApplication(applicationId);
+      } catch (error) {
+        return res.status(404).send({ error: true, message: error.message });
+      }
+
+      const id = req.body.options.where.id;
+      req.body.options.where = {
+        [`${req.body.model}.Reference`]: { id }
+      };
+
+      try {
+        const dbDriver = this.cubismo.applications.get(applicationId).dbDriver.connection;
+        const result = await getModelList(application, dbDriver, req.body);
+        if (result.error) {
+          res.status(500).send(result);
+        } else {
+          res.status(200).send(result);
+        }
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
+    });
+
     router.post('/app/:applicationId/list', async (req, res, next) => {
       const { applicationId } = req.params;
       let application: Application;
@@ -362,7 +390,30 @@ export default class Router extends EventEmitter {
       }
 
       try {
-        const result = await getModelList(application, req.body);
+        const dbDriver = this.cubismo.applications.get(applicationId).dbDriver.connection;
+        const result = await getModelList(application, dbDriver, req.body);
+        if (result.error) {
+          res.status(500).send(result);
+        } else {
+          res.status(200).send(result);
+        }
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
+    });
+
+    router.post('/app/:applicationId/save', async (req, res, next) => {
+      const { applicationId } = req.params;
+      let application: Application;
+      try {
+        application = await this.cubismo.runApplication(applicationId);
+      } catch (error) {
+        return res.status(404).send({ error: true, message: error.message });
+      }
+
+      try {
+        const dbDriver = this.cubismo.applications.get(applicationId).dbDriver.connection;
+        const result = await saveInstance(application, dbDriver, req.body);
         if (result.error) {
           res.status(500).send(result);
         } else {

@@ -39,7 +39,7 @@ export class EnumValue {
     return this.#title
   }
 
-  type(): string {
+  get type(): string {
     return this.#modelName;
   }
 

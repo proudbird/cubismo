@@ -97,7 +97,7 @@ export default class MetaDataObject {
     })
   }
 
-  type(): string {
+  get type(): string {
     return this.#type.type
   }
 

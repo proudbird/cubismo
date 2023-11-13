@@ -63,7 +63,7 @@ class CollectionItems<T extends Instance> {
       
       return item;
     } catch (error) {
-      throw new Error(`Can't add item to '${this.#owner.type()}' collection '${this.#model.name}': ${error}`);
+      throw new Error(`Can't add item to '${this.#owner.type}' collection '${this.#model.name}': ${error}`);
     }
   } 
 
@@ -152,7 +152,7 @@ export default class Collection<T extends Instance> {
         return this.#items;
       }
     } catch (error) {
-      throw new Error(`Can't get '${this.#owner.type()}' collection '${this.#model.name}': ${error}`);
+      throw new Error(`Can't get '${this.#owner.type}' collection '${this.#model.name}': ${error}`);
     }
   }
 }

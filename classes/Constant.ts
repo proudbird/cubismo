@@ -173,7 +173,7 @@ export default class Constant {
     }
   }
 
-  type(): string {
+  get type(): string {
     return this.#model.name;
   }
 }

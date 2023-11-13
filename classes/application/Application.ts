@@ -126,7 +126,7 @@ export default class Application implements IApplication  {
         await initInternationalization(this.lang);
         loadMetaDataModules(cubismo, this, applicationStructure); 
         await onStart(this);
-        resolve({ error: null, mdStructure: applicationStructure }); 
+        resolve({ error: null, mdStructure: applicationStructure, dbDriver: this.#dbDriver}); 
       } catch (error) {
         const convertedMessage = iconv.decode(error.message, 'win1251');
         error.message = `Can't initialize application '${this.#id}': ${convertedMessage}`

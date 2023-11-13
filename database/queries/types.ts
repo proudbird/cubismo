@@ -16,7 +16,10 @@ export declare type QueryStatement = {
   orderBy ?: OrderByStatement,
   limit   ?: number,
   offset  ?: number,
-  as      ?: string 
+  as      ?: string,
+  with?: WithStatement;
+  unionAll?: QueryStatement[];
+  orderAllBy?: OrderByStatement;
 }
 
 export declare type QueryFromStatement = MetaDataObjectName | DataBaseModel | QueryStatement | DataTable;
@@ -70,10 +73,14 @@ declare type CaseValue     = string | number | boolean | Date | Field | null;
 declare type GroupByStatement = Field[];
 declare type OrderByStatement = Field[];
 
+declare type WithStatement = {
+  [name: string]: QueryStatement
+}
+
 export declare type QuerySchema = {
   application: Application,
   fields: Map<string, FieldDefinition>,
-  additionalfields: Map<string, FieldDefinition>,
+  additionalFields: Map<string, FieldDefinition>,
   from: SourceDefinition,
   joins?: JoinsMap,
   where?: BooleanConditionDefinition | ConditionDefinition,
@@ -139,7 +146,8 @@ export declare type SourceDefinition = {
   name?: string,
   alias?: string,
   tableId?: string,
-  model?: QueryDataSource
+  model?: QueryDataSource,
+  tempTable?: boolean,
 }
 
 // export interface QueryDataSource {
@@ -209,7 +217,8 @@ export enum SourceType {
 export declare type ConditionDefinition = {
   field: FieldDefinition & { tableAlias: string},
   etalon: ValueDefinition,
-  operation: ComparisonOperatorType
+  operation: ComparisonOperatorType,
+  schema: QuerySchema,
 }
 
 export declare type BooleanConditionDefinition = {
@@ -269,11 +278,13 @@ export interface QueryDataSource {
   tableName   : string,
   definition  : QueryDataSourceDefinition,
   name        : string,
+  cube?       : string,
   modelName   : string,
   application?: Application,
   dataSource ?: DataTable,
   alias      ?: string,
-  sql        ?: string
+  sql        ?: string,
+  tempTable  ?: boolean,
 }
 
 export type QueryDataSources = {
@@ -282,6 +293,7 @@ export type QueryDataSources = {
 
 export interface QueryDataSourceDefinition {
   id: string,
+  name?: string,
   cube?: string,
   class?: string,
   tableId: string,
@@ -328,7 +340,7 @@ export interface QueryResult<T = {}> {
 
 export type TableDataSource = {
   attributes: {
-    [name: string]: DataSourceAtrribute;
+    [name: string]: DataSourceAttribute;
   };
   entries: [TableDataSourceEntry];
   count: number;
@@ -336,19 +348,21 @@ export type TableDataSource = {
 
 type TableDataSourceEntry = DataSourceDataType[];
 
-export type DataSourceAtrribute = {
+export type DataSourceAttribute = {
   index: number; // index in the entry Array
   name: string;
   title?: string;
-  type: DataSourceAtrributeType;
+  type: DataSourceAttributeType;
 }
 
-export type DataSourceAtrributeType = {
+export type DataSourceAttributeType = {
   dataType: ApplicationDataType;
   dateType?: DateType;
   length?: number;
   scale?: number;
-  reference?: string;
+  cube?: string;
+  className?: string;
+  model?: string;
 }
 
 export type ApplicationDataType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM' | 'FK';

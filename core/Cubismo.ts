@@ -236,7 +236,7 @@ export default class Cubismo {
     return new Promise<Application>((resolve, reject) => {
       let application: Application;
 
-      async function onReady(ready: Promise<{ error: Error, mdStructure: MetaDataClassDefinitions }>) {
+      async function onReady(ready: Promise<{ error: Error, mdStructure: MetaDataClassDefinitions, dbDriver: Sequelize }>) {
         const result = await ready;
         if (result.error) {
           applications.delete(id);
@@ -250,6 +250,7 @@ export default class Cubismo {
             mdStructure: result.mdStructure,
             enums: {},
             workspace: settings.workspace,
+            dbDriver: result.dbDriver,
           });
           resolve(application);
         }

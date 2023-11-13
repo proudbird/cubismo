@@ -1,6 +1,6 @@
 import EventEmitter from 'events'
 import { Sequelize, DataTypes } from 'sequelize'
-import { AttributeOptions, CatalogAtrributes, ConstantAtrributes, RegistratorAtrributes } from './types'
+import { AttributeOptions, CatalogAttributes, ConstantAtrributes, RegistratorAttributes } from './types'
 import { MetaDataTypes } from '../common/Types'
 
 export default class ModelGenerator extends EventEmitter {
@@ -188,7 +188,7 @@ export default class ModelGenerator extends EventEmitter {
 
       const belongsTo = []
 
-      const attributes: CatalogAtrributes = {
+      const attributes: CatalogAttributes = {
         // field 'id' and 'dropped' are must be
         id: {
           type        : DataTypes.UUID,
@@ -254,7 +254,7 @@ export default class ModelGenerator extends EventEmitter {
 
       const belongsTo = []
 
-      const attributes: CatalogAtrributes = {
+      const attributes: CatalogAttributes = {
         // field 'id' and 'dropped' are must be
         id: {
           type        : DataTypes.UUID,
@@ -275,7 +275,7 @@ export default class ModelGenerator extends EventEmitter {
 
     function defineRegistratorAttributes(model) {
 
-      const attributes: RegistratorAtrributes = {
+      const attributes: RegistratorAttributes = {
         // field 'id', 'dropped' and 'Date' are must be
         id: {
           type        : DataTypes.UUID,

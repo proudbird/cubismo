@@ -140,7 +140,7 @@ export type ConstantAtrributes = {
   id       : DataTypeConfig
 }
 
-export type CatalogAtrributes = {
+export type CatalogAttributes = {
   id       : DataTypeConfig,
   dropped  : DataTypeConfig,
   isFolder?: DataTypeConfig,
@@ -149,7 +149,7 @@ export type CatalogAtrributes = {
   Name?    : DataTypeConfig
 }
 
-export type RegistratorAtrributes = {
+export type RegistratorAttributes = {
   id       : DataTypeConfig,
   dropped  : DataTypeConfig,
   booked?  : DataTypeConfig,

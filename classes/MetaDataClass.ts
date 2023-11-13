@@ -69,7 +69,7 @@ export default class MetaDataClass {
       get() {
         console.log(`123`)
         const value = this.#elements.get(element.name)
-        loadModule(value[1], element.type(), element.name, this, element, this.#cache)
+        loadModule(value[1], element.type, element.name, this, element, this.#cache)
         return value[0]
       }
     })

@@ -51,7 +51,7 @@ export function isTypeOf(value: any, type: string): boolean {
   }
   
   if(value.type) {
-    return (value.type().toLowerCase() === _type);
+    return (value.type.toLowerCase() === _type);
   }
 
   return false;
