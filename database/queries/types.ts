@@ -96,6 +96,7 @@ export declare type QuerySchema = {
   providers?: QueryDataProviders;
   limit?: number;
   offset?: number;
+  isConditionSubQuery?: boolean;
 }
 
 export type QueryDataProviders = {
@@ -131,6 +132,7 @@ export declare type FieldDefinition = {
   alias?: string,
   tableId: string,
   model: QueryDataSource,
+  parentModel: QueryDataSource,
   fieldId: string,
   functioin?: QueryFunction,
   dataType: ApplicationDataType,

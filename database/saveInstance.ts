@@ -26,6 +26,25 @@ export async function saveInstance(application: Application, dbDriver: Sequelize
   const modelAlias = `${cube}.${className}.${modelName}`;
 
   const model = (dbDriver.models[modelAlias] as unknown as DataBaseModel);
+
+  if(!options.id) {
+    try {
+      const initValues = {};
+      for(const [key, value] of Object.entries(options.changes)) {
+        if(!value) {
+          continue;
+        }
+
+        initValues[key] = value;
+      }
+      
+      const instance = await model.create(initValues);
+
+      return { error: null, data: { operation: 'create', id: instance.id } };
+    } catch (error) {
+      return { error: null, message: error.message };
+    }
+  }
   
   try {
     const instance = await model.findOne({ where: { id: options.id }});
@@ -34,7 +53,7 @@ export async function saveInstance(application: Application, dbDriver: Sequelize
     }
 
     await instance.save();
-    return { error: null, data: options.id };
+    return { error: null, data: { operation: 'update', id: instance.id } };
   } catch (error) {
     return { error: null, message: error.message };
   }

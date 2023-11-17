@@ -101,7 +101,26 @@ export type CatalogModelDefinition = ModelDefinitionBase & {
   nameLang: string[],
   template: string,
   owners: string[],
-  collections: CollectionSDefinition
+  collections: CollectionSDefinition;
+  "attributes": {
+    "Product": {
+      "fieldId": "FL_WkNJicn9",
+      "title": "Product",
+      "description": "Product",
+      "type": {
+        "dataType": "FK",
+        "reference": {
+          "cube": "this",
+          "class": "Catalogs",
+          "modelId": "cc9516a3-0aeb-458b-8d1e-e2c76ffd6c4b"
+        }
+      },
+      "defaultValue": "",
+      "toolTip": "",
+      "belonging": "item",
+      "required": true
+    },
+  }
 }
 
 export type CollectionSDefinition = {

@@ -113,12 +113,22 @@ function buildSQLStatement(query: QueryStatement, schema: QuerySchema, mainSchem
   
       const endingToken = index === Object.keys(query.with).length - 1 ? '\n\n' : ',\n';
       result = `${result} ${alias} AS (\n${withSql}\n)${endingToken}`;
+
+      const attributes = {};
+      for(let [alias, field] of withSchema.fields) {
+        if(alias.endsWith('_p')) {
+          continue;
+        }
+
+        attributes[field.name] = field.parentModel.definition.attributes[field.name];
+      }
   
       schema.models[alias] = {
         tableName: alias,
         definition: {
           id: alias,
           tableId: alias,
+          attributes
         },
         name: alias,
         modelName: alias,
@@ -692,6 +702,10 @@ function defineOrderBy(query: QueryStatement, schema: QuerySchema): void {
           } else {
             fieldId = attribute.fieldId;
           }
+
+          if(schema.from.tempTable) {
+            fieldId = fieldName;
+          }
         }
       }
 
@@ -725,7 +739,12 @@ function defineField({ statement, provider, schema }): void {
   if (name.includes('.')) {
     determineReferenceJoins(name, alias, schema.from.model, schema, func);
   } else {
-    addFieldDefinition({ name, alias, provider, model: schema.from.model, schema, func });
+    try {
+      addFieldDefinition({ name, alias, provider, model: schema.from.model, schema, func });
+      
+    } catch (error) {
+      throw console.log(error);
+    }
   }
 
   if(name === 'Reference') {
@@ -871,7 +890,7 @@ function addFieldDefinition({ name, alias, provider, model, schema, func, noRef 
     } else {
       fieldId = attribute.fieldId;
       if (attribute.type.dataType === 'FK') {
-        if (!noRef) {
+        if (!schema.isConditionSubQuery && !noRef) {
           // to add reference join for getting presentation (name currently)
           referenceModelId = attribute.type.reference.modelId;
           determineReferenceJoins(`${name}.Name`, `${alias}_p`, model, schema);
@@ -892,6 +911,7 @@ function addFieldDefinition({ name, alias, provider, model, schema, func, noRef 
     tableId: modelDefinition.tableId,
     provider,
     model: schema.models[referenceModelId],
+    parentModel: model,
     fieldId,
     dataType,
     length,
@@ -915,6 +935,7 @@ function addFieldDefinitionFromSubQuery(field: FieldDefinition, schema: QuerySch
     alias: alias,
     tableId: schema.alias,
     model: undefined,
+    parentModel: undefined,
     fieldId: alias,
     dataType: undefined,
     length: undefined,
@@ -1137,6 +1158,7 @@ function addReferenceJoin(
     alias: parentField ? parentField.alias + attributeName : attributeName,
     tableId: mainModel.definition.tableId,
     model: schema.models[attribute.type.reference.modelId],
+    parentModel: schema.models[attribute.type.reference.modelId],
     fieldId: attribute.fieldId,
     dataType: attribute.type.dataType
   }
@@ -1149,6 +1171,7 @@ function addReferenceJoin(
     name: 'id',
     tableId: referenceModel.definition.tableId,
     model: referenceModel,
+    parentModel: referenceModel,
     fieldId: 'id',
     dataType: 'FK' as ApplicationDataType
   }
@@ -1359,6 +1382,7 @@ function addJoin(
     name: onLeftFieldName,
     tableId: leftModel.definition.tableId,
     model: leftOnField.referenceModel,
+    parentModel: leftOnField.referenceModel,
     fieldId: leftOnField.fieldId,
     dataType: leftOnField.dataType
   }
@@ -1377,6 +1401,7 @@ function addJoin(
     name: onRigthFieldName,
     tableId: tableId,
     model: rigthOnField.referenceModel,
+    parentModel: rigthOnField.referenceModel,
     fieldId: rigthOnField.fieldId,
     dataType: rigthOnField.dataType
   }
@@ -1443,7 +1468,7 @@ function buildSQLQueryString(schema: QuerySchema): string {
     const tableDefinition = schema.tables[tableId];
     // const tableAlias = tableDefinition.alias;
     const tableAlias = fieldDefinition.provider.alias;
-    if(fieldDefinition.model && fieldDefinition.model.tempTable) {
+    if(fieldDefinition.model && fieldDefinition.model.tempTable || fieldDefinition.provider.model.tempTable) {
       fields.push(`${wrapIfFunc(`${tableAlias}.${fieldDefinition.alias}`, fieldDefinition.func)}`);
     } else if ((fieldDefinition.model && fieldDefinition.model.dataSource) || !fieldDefinition.model) {
       fields.push(`${wrapIfFunc(`${tableAlias}.${fieldDefinition.fieldId}`, fieldDefinition.func)} AS ${fieldDefinition.alias}`);
@@ -1497,18 +1522,18 @@ function buildSQLQueryString(schema: QuerySchema): string {
       } else if ((join.rigthTable.on.dataType === 'FK' || join.rigthTable.on.dataType === 'ENUM') && join.leftTable.on.dataType !== 'FK' && join.leftTable.on.dataType !== 'ENUM') {
         rigthCast = '::"varchar"';
       }
-      if (join.leftTable.model.dataSource) {
+      if (join.leftTable.model.dataSource || join.leftTable.model.tempTable) {
         quoteL = '';
       }
-      if (join.rigthTable.model.dataSource) {
+      if (join.rigthTable.model.dataSource || join.rigthTable.model.tempTable) {
         quoteR = '';
       }
       let leftTableOnFieldId = join.leftTable.on.fieldId;
-      if (join.leftTable.model.sql) {
+      if (join.leftTable.model.sql || join.leftTable.model.tempTable) {
         leftTableOnFieldId = join.leftTable.on.name;
       }
       let rigthTableOnFieldId = join.rigthTable.on.fieldId;
-      if (join.rigthTable.model.sql) {
+      if (join.rigthTable.model.sql || join.rigthTable.model.tempTable) {
         rigthTableOnFieldId = join.rigthTable.on.name;
       }
       result += `\n\t\tON ${join.leftTable.alias}.${quoteL + leftTableOnFieldId + quoteL + leftCast} = ${join.rigthTable.alias}.${quoteR + rigthTableOnFieldId + quoteR + rigthCast} `
@@ -1661,6 +1686,7 @@ function getComperisonValue(condition: ConditionDefinition): string {
   } else if (condition.etalon.value[0].select) {
     const subQuery = condition.etalon.value[0];
     const subSchema = initSchema(subQuery, condition.schema);
+    subSchema.isConditionSubQuery = true;
     const withSql = buildSQLStatement(subQuery, subSchema);
     result = `(${withSql})`;
   } else {

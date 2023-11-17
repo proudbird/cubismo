@@ -18,6 +18,7 @@ import Logger from '../common/Logger';
 import { Uimo } from 'uimo';
 import { getModelList } from '../database/getModelList';
 import { saveInstance } from '../database/saveInstance';
+import { DataBaseModel } from '../database/types';
 //@ts-ignore
 // import Uimo from '../../uimo-pwa/controller/uimo';
 
@@ -363,6 +364,50 @@ export default class Router extends EventEmitter {
       }
 
       const id = req.body.options.where.id;
+      if (!id) {
+        const { cube, className, model } = req.body;
+        const modelAlias = `${cube}.${className}.${model}`;
+
+        const dbDriver = this.cubismo.applications.get(applicationId).dbDriver.connection;
+
+        const modelDefinition = (dbDriver.models[modelAlias] as unknown as DataBaseModel).definition;
+        const attributes = {
+          Code: {
+            index: 0,
+            name: 'Code',
+            title: 'Code',
+            type: { dataType: 'STRING' }
+          },
+          Name: {
+            index: 1,
+            name: 'Name',
+            title: 'Name',
+            type: { dataType: 'STRING' }
+          }
+        };
+
+        let index = 2;
+        for(let [attrName, attribute] of Object.entries(modelDefinition.attributes)) {
+          const type = attribute.type as any;
+          if(type.reference.cube === 'this') {
+            type.cube = modelDefinition.cube;
+          } else {
+            type.cube = type.reference.cube;
+          }
+          type.className = type.reference.class;
+          type.model = (dbDriver.models[type.reference.modelId] as unknown as DataBaseModel).definition.name;
+
+          attributes[attrName] = {
+            index: index++,
+            name: attrName,
+            title: attribute.title,
+            type
+          }
+        }
+
+        return res.status(200).send({ error: false, data: { attributes, entries: [] } });
+      }
+
       req.body.options.where = {
         [`${req.body.model}.Reference`]: { id }
       };

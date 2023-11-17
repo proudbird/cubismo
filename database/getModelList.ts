@@ -7,7 +7,7 @@ type FetchPortion = 'first' | 'next' | 'prev';
 export type GetModelListOptions = {
   limit?: number;
   offset?: number;
-  order?: string;
+  orderBy?: string;
   where?: BooleanStatement | ConditionStatement;
   fields?: string;
   cursor?: string;
@@ -32,10 +32,8 @@ export async function getModelList(application: Application, dbDriver: Sequelize
 
   const modelDefinition = (dbDriver.models[modelAlias] as unknown as DataBaseModel).definition;
 
-  let orderByColumnName = options.order || 'id';
-  if(modelDefinition.class === 'Catalogs') {
-    orderByColumnName = 'Name';
-  }
+  let [orderByColumnName] = options.orderBy || [];
+  orderByColumnName = orderByColumnName || 'id';
 
   let query: QueryStatement = {} as QueryStatement;
 
