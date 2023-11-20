@@ -148,7 +148,7 @@ export async function getModelList(application: Application, dbDriver: Sequelize
     }
   }
 
-  if (options.where) {
+  if (options.where && Object.keys(options.where).length) {
     query.where = options.where;
   }
 

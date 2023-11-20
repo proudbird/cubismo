@@ -46,7 +46,7 @@ export declare type ConditionValue = string | number | boolean | Date | Conditio
 
 declare type OnClause = Field[] | ConditionStatement;
 
-export declare type ConditionStatement = Equal | Greater | Less | GreaterOrEqual | LessOrEqual | NotEqual | Between | Like | In | IsNull | IsNotNull | IsTrue | IsFalse;
+export declare type ConditionStatement = Equal | Greater | Less | GreaterOrEqual | LessOrEqual | NotEqual | Between | Like | ILike | In | IsNull | IsNotNull | IsTrue | IsFalse;
 export declare type BooleanStatement = And | Or | Not;
 
 declare type And = [BooleanStatement | ConditionStatement, BooleanStatement | ConditionStatement] | { and: [BooleanStatement | ConditionStatement, BooleanStatement | ConditionStatement] };
@@ -61,6 +61,7 @@ declare type LessOrEqual    = { lessOrEqual:  [Field, ConditionValue]};
 declare type NotEqual       = { notEqual: [Field, ConditionValue] };
 declare type Between        = { between: [Field, ConditionValue, ConditionValue] };
 declare type Like           = { like: [Field, ConditionValue] };
+declare type ILike          = { iLike: [Field, ConditionValue] };
 declare type In             = { in: [Field, ConditionValue[]] | QueryStatement };
 declare type IsNull         = { isNull: Field }; 
 declare type IsNotNull      = { isNotNull: Field };
@@ -250,6 +251,7 @@ export enum ComparisonOperatorType {
   NOT_EQUAL         = '<>',
   BEETWEN           = 'BETWEEN',
   LIKE              = 'LIKE',
+  ILIKE             = 'ILIKE',
   IN                = 'IN',
   IS_NULL           = 'IS NULL',
   IS_NOT_NULL       = 'IS NOT NULL',

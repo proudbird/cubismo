@@ -1668,6 +1668,7 @@ const operationBuilders = {
   '<>': buildOperationComparison,
   'BETWEEN': buildOperationBetween,
   'LIKE': buildOperationComparison,
+  'ILIKE': buildOperationComparison,
   'IN': buildOperationIn,
   'IS NULL': buildOperationIsNull,
   'IS NOT NULL': buildOperationIsNotNull,
@@ -1805,6 +1806,7 @@ const ComparisonOperators = {
   notEqual: ComparisonOperatorType.NOT_EQUAL,
   between: ComparisonOperatorType.BEETWEN,
   like: ComparisonOperatorType.LIKE,
+  iLike: ComparisonOperatorType.ILIKE,
   in: ComparisonOperatorType.IN,
   isNull: ComparisonOperatorType.IS_NULL
 };
@@ -1816,15 +1818,17 @@ function defineConditions(
   schema: QuerySchema) {
 
   if (where) {
+    if (!Array.isArray(where)) {
+      where = [where];
+    } else if(!where.length) {
+      return;
+    }
+
     // it doesn't metter whether we have only one condition or several ones - we
     // wrap it in AND operator block
     if (!schema.where) {
       schema.where = { type: BitwiseOperatorType.AND, conditions: [] };
       parentConditionBlock = (schema.where as BooleanConditionDefinition).conditions;
-    }
-
-    if (!Array.isArray(where)) {
-      where = [where];
     }
 
     for (let index in where) {
@@ -1864,7 +1868,11 @@ function defineConditions(
           } else {
             operation = condition[operator];
             filterFieldName = operation[0];
-            filterFieldNameTrack = filterFieldName.split('.');
+            if(filterFieldName.includes('.')) {
+              filterFieldNameTrack = filterFieldName.split('.');
+            } else {
+              filterFieldNameTrack = [schema.from.alias, filterFieldName];
+            }
             comparisonValue = operation.splice(1, operation.length - 1);
           }
 
@@ -1924,12 +1932,24 @@ function addCondition(
 
     const subQuerySourceDefinition = getSourceDefinition(referenceModel);
     tableAlias = schema.tables[subQuerySourceDefinition.tableId].alias;
+
+    const provider = getProvider(schema, {
+      alias: tableAlias,
+      params: {
+        model: referenceModel, 
+        position: 'LEFT',
+        participator: referenceModel, 
+        connector: 'id'
+      }
+    });
+
     fieldDefinition = {
       name: 'id',
       alias: 'id',
       tableAlias,
       tableId: referenceModel.definition.tableId,
       model: referenceModel,
+      provider,
       fieldId: 'id',
       dataType: 'STRING'
     };
@@ -1962,12 +1982,24 @@ function addCondition(
       schema.sources.set(sourceDefinition.alias, sourceDefinition);
     }
     tableAlias = sourceDefinition.alias;
+
+    const provider = getProvider(schema, {
+      alias: tableAlias,
+      params: {
+        model: referenceModel, 
+        position: 'LEFT',
+        participator: referenceModel, 
+        connector: 'id'
+      }
+    });
+
     fieldDefinition = {
       name: filterField,
       alias: filterField,
       tableAlias,
       tableId: mainModel.definition.tableId,
       model: mainModel,
+      provider,
       fieldId,
       dataType
     };
