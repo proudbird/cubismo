@@ -10,46 +10,22 @@ import Enum from './Enum';
 import { MetaDataTypes, isTypeOf } from '../common/Types';
 import ConstantValue from './ConstantValue'
 import Instance from './Instance'
+import MetaDataModule from './MetaDataModule'
 
-export default class Constant {
+interface MetaDataObjectOptions extends MetaDataModule {
+  model: any;
+  instanceMaker: MetaDataInstance;
+}
 
-  #cubismo      : Cubismo
-  #application  : Application
-  #cube         : Cube
-  #name         : string
-  #type         : MetaDataObjectDefinition
-  #dirname      : string
-  #filename     : string
-  #model        : any
-  #instanceMaker: MetaDataInstance
+export default class Constant extends MetaDataModule {
 
-  constructor(
-    cubismo      : Cubismo,
-    application  : Application, 
-    cube         : Cube, 
-    type         : MetaDataObjectDefinition,
-    name         : string, 
-    dirname      : string, 
-    filename     : string,
-    model        : DataBaseModel,
-    instanceMaker: MetaDataInstance
-  ) {
-    
-    this.#cubismo       = cubismo
-    this.#application   = application
-    this.#cube          = cube
-    this.#name          = name
-    this.#type          = type
-    this.#dirname       = dirname
-    this.#filename      = filename
-    this.#model         = model
-    this.#instanceMaker = instanceMaker
+  #model: any;
 
-    this.#model  = model;
-  }
+  constructor({ model, ...rest }: MetaDataObjectOptions) {
+      
+    super({ model, ...rest } as MetaDataObjectOptions);
 
-  get name(): string {
-    return this.#name
+    this.#model = model;
   }
 
   async getValue<T extends Instance>(lang?: string): Promise<Value<T>> {

@@ -440,17 +440,17 @@ function addSubQueryAttributes(source: QueryDataSource, target: QueryDataSource)
     }
   }
 
-  if (source.definition.codeLenght) {
+  if (source.definition.codeLength) {
     target.definition.joinedAttributes['Code'] = {
       fieldId: 'Code',
       type: {
         dataType: source.definition.codeType,
-        length: source.definition.codeLenght
+        length: source.definition.codeLength
       }
     }
   }
 
-  if (source.definition.nameLenght) {
+  if (source.definition.nameLength) {
     let fieldId = 'Name';
     if (source.definition.nameLang && source.definition.nameLang.length) {
       fieldId = fieldId + '_' + source.application.lang;
@@ -459,7 +459,7 @@ function addSubQueryAttributes(source: QueryDataSource, target: QueryDataSource)
       fieldId: fieldId,
       type: {
         dataType: 'STRING',
-        length: source.definition.nameLenght
+        length: source.definition.nameLength
       }
     }
   }
@@ -536,10 +536,10 @@ function defineAllFields({ provider, schema }): void {
   if (definition.class) {
     defineField({ statement: 'Reference', provider, schema });
   }
-  if (definition.nameLenght) {
+  if (definition.nameLength) {
     defineField({ statement: 'Name', provider, schema });
   }
-  if (definition.codeLenght) {
+  if (definition.codeLength) {
     defineField({ statement: 'Code', provider, schema });
   }
   if (definition.multilevel) {
@@ -800,10 +800,10 @@ function defineJoinFieldFromSubQuery(fieldStatement: string, schema: QuerySchema
 function defineAllJoinFields(joinModel: QueryDataSource, provider: QueryDataProvider, schema: QuerySchema, query: JoinStatement): void {
 
   const definition = joinModel.definition;
-  if (definition.nameLenght) {
+  if (definition.nameLength) {
     addFieldDefinition({ name: 'Name', alias: 'Name', provider, model: joinModel, schema });
   }
-  if (definition.codeLenght) {
+  if (definition.codeLength) {
     addFieldDefinition({ name: 'Code', alias: 'Code', provider, model: joinModel, schema });
   }
   if (definition.multilevel) {

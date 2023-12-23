@@ -1,7 +1,7 @@
 import { dirname } from 'path';
 import { MetaDataTypes, isTypeOf } from '../common/Types';
 import Enum from './Enum';
-import { DataBaseModel, ModelAttributeDefinition, SaveOptions, Value } from '../database/types';
+import { CatalogModelDefinition, DataBaseModel, ModelAttributeDefinition, SaveOptions, Value } from '../database/types';
 
 export default class Instance {
 
@@ -13,7 +13,8 @@ export default class Instance {
     this.#model  = model;
     this.#record = record;
 
-    for(let property in this.#model.definition.attributes) {
+    const definition = this.#model.definition as CatalogModelDefinition;
+    for(let property in definition.attributes) {
       Object.defineProperty(this, property, {
         enumerable: true,
         get() {
@@ -63,7 +64,7 @@ export default class Instance {
     let element: ModelAttributeDefinition;
     let fieldId: string;
     
-    const definition = this.#model.definition;
+    const definition = this.#model.definition as CatalogModelDefinition;
     element = definition.attributes[property];
     if(!element) {
       throw new Error(`Can't find property '${property}' of ${this.#model.name}`);
@@ -114,7 +115,7 @@ export default class Instance {
     let element: ModelAttributeDefinition;
     let fieldId = property;
     
-    const definition = this.#model.definition;
+    const definition = this.#model.definition as CatalogModelDefinition;
     element = definition.attributes[property];
     if(!element) {
       throw new Error(`Can't find property '${property}' of ${this.#model.name}`);

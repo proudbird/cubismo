@@ -48,21 +48,24 @@ static error(message: string, error?: Error | object): void
 static fatal(message: string, error?: Error | object): void
 }
 
+declare interface IConstructable {
+  new (...args: any[])
+}
 
 declare interface IApplication {
   [key: string]: any
-  lang: string 
+  lang?: string 
 }
 
-declare interface ICube {
+declare interface ICube extends IConstructable {
   [key: string]: any,
 }
 
-declare interface IMetaDataClass {
+declare interface IMetaDataClass extends IConstructable {
   [key: string]: any
 }
 
-declare interface IMetaDataObject {
+declare interface IMetaDataObject extends IConstructable {
   [key: string]: any
 }
 

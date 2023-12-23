@@ -1,4 +1,3 @@
-import MetaDataClass  from './MetaDataClass'
 import MetaDataObject from './MetaDataObject'
 
 export class MetaDataClassDefinition {

@@ -48,7 +48,7 @@ function Item(_arguments) {
         })
     }
 
-    if (definition.codeLenght) {
+    if (definition.codeLength) {
         Object.defineProperty(this, "Code", {
             get: function () {
                 const value = this._.instance.getDataValue("Code");
@@ -61,7 +61,7 @@ function Item(_arguments) {
         })
     }
 
-    if (definition.nameLenght) {
+    if (definition.nameLength) {
         Object.defineProperty(this, "Name", {
             get: function () {
                 let fieldId = "Name";

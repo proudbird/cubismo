@@ -1,3 +1,3 @@
-import * as TSLogger from "tslog";
+// import * as TSLogger from "tslog";
 
-export const tslog: TSLogger.Logger = new TSLogger.Logger();
+// export const tslog: TSLogger.Logger = new TSLogger.Logger();

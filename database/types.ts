@@ -84,20 +84,34 @@ export type ModelDefinitionBase = {
   tableId: string,
   title: string,
   description: string,
+  
+}
+
+type EnumValueDefinition = {
+  id: string;
+  name: string;
+  title: string;
+}
+
+export type EnumModelDefinition = ModelDefinitionBase & {
+  values: EnumValueDefinition[];
+};
+
+export type StandardModelDefinition = ModelDefinitionBase & {
   attributes: {
     [name: string]: ModelAttributeDefinition
   }
-}
+};
 
-export type CatalogModelDefinition = ModelDefinitionBase & {
+export type CatalogModelDefinition = StandardModelDefinition & {
   multilevel: true,
   multievelType: string,
   numberOfLevels: number,
-  codeLenght: number,
+  codeLength: number,
   codeType: string,
   uniqueCode: true,
   autoIncrement: true,
-  nameLenght: number,
+  nameLength: number,
   nameLang: string[],
   template: string,
   owners: string[],
@@ -183,7 +197,7 @@ export type AttributeOptions = {
 
 export type Value<T extends Instance> = string | number | boolean | Date | EnumValue | Promise<T>;
 
-export type ModelDefinition = CatalogModelDefinition;
+export type ModelDefinition = CatalogModelDefinition | EnumModelDefinition;
 
 export type SaveOptions = Sequelize.Transactionable;
 

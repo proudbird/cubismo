@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import EventEmitter from 'events';
 import http from 'http';
-import express, { application } from 'express';
+import express, { Request, application } from 'express';
 import cookieParser from 'cookie-parser';
 import bodyParserFrom1C from 'bodyparser-1c-internal';
 import jwt from 'jsonwebtoken';
@@ -15,15 +15,20 @@ import { NewApplicationParameters } from './types';
 import auth from './Authenication';
 import Logger from '../common/Logger';
 
-import { Uimo } from 'uimo';
 import { getModelList } from '../database/getModelList';
 import { saveInstance } from '../database/saveInstance';
-import { DataBaseModel } from '../database/types';
+import { DataBaseModel, StandardModelDefinition } from '../database/types';
 //@ts-ignore
 // import Uimo from '../../uimo-pwa/controller/uimo';
 
+type RequestExtraParams = {
+  applicationId: string;
+  application: Application;
+}
+
+type AppRequest = Request & RequestExtraParams;
+
 export default class Router extends EventEmitter {
-  #uimo: Uimo;
   public cubismo: Cubismo;
 
   public server: http.Server;
@@ -31,7 +36,6 @@ export default class Router extends EventEmitter {
   constructor(cubismo: Cubismo) {
     super();
     this.cubismo = cubismo;
-    this.#uimo = new Uimo({ pathToCubes: this.cubismo.settings.cubes });
   }
 
   async run(port: number, host: string): Promise<void> {
@@ -40,32 +44,7 @@ export default class Router extends EventEmitter {
     router.use(express.json());
     router.use(cookieParser());
     router.use(bodyParserFrom1C);
-    router.use(express.static(this.#uimo.static()));
-
-    router.all('*', (req, res, next) => {
-      // Logger.debug(`Income recquest: ${req.url}`);
-      next();
-    });
-
-    router.get('/app/:applicationId', async (req, res, next) => {
-      const { applicationId } = req.params;
-      if (applicationId != 'favicon.ico') {
-        if (applicationId == 'socket.io') {
-          Logger.debug('Request for the socket.io');
-        } else {
-          let application: Application;
-          try {
-            application = await this.cubismo.runApplication(applicationId);
-            Logger.debug('Gettin index page');
-            res.send(this.#uimo.index());
-          } catch (error) {
-            Logger.error(`Unsuccessful attempt to run application '${applicationId}'`, error);
-          }
-        }
-      }
-    });
-
-    
+    router.use(express.static(this.cubismo.getUIStaticPath()));
 
     router.get('/favicon.ico', (req, res, next) => {
       // Logger.debug('Request for the favicon')
@@ -75,15 +54,6 @@ export default class Router extends EventEmitter {
       Logger.debug('checking instance');
       res.send({ server: 'cubismo', hostname: os.hostname() });
     });
-
-    // router.get('/applist', function(req, res, next) {
-    //   const list = []
-    //   const appList = self.cubismo.getAppSettings();
-    //   for(let key in appList) {
-    //     list.push({ id: key, value: key })
-    //   }
-    //   res.send(list);
-    // });
 
     router.post('/stop', this.cubismo.access.bind(this.cubismo), (req, res, next) => {
       Logger.info('Request on stopping server');
@@ -244,131 +214,125 @@ export default class Router extends EventEmitter {
       }
     });
 
-    router.get('/app/:applicationId', async (req, res, next) => {
-      Logger.debug(`Going to load index page`);
-      let view: any;
+    router.use('/app', async (req: AppRequest, res, next) => {
+      const applicationId = req.url.split('/')[1];
+      req.applicationId = applicationId;
+
       try {
-        view = await this.#uimo.index();
+        const application = await this.cubismo.runApplication(applicationId);
+        req.application = application;
+        next();
+      } catch (error) {
+        res.status(500).send({ error: true, message: error.message });
+      }
+    });
+
+    router.get('/app/:applicationId', async (req: AppRequest, res, next) => {
+      Logger.debug(`Going to load index page`);
+
+      try {
+        const view = this.cubismo.getIndexPage(req.applicationId);
+
+        res.status(200).send(view);
       } catch (error) {
         Logger.warn(`Error on loading index page: ${error.message}`);
+
         return res.status(500).send(error.message);
       }
-      res.status(200).send(view);
     });
 
-    router.post('/app/:applicationId/init', async (req, res, next) => {
+    router.post('/app/:applicationId/init', async (req: AppRequest, res, next) => {
       Logger.debug(`Going to init client side application`);
-      let application: Application;
-      const { applicationId } = req.params;
-      try {
-        application = await this.cubismo.runApplication(applicationId);
-      } catch (error) {
-        res.status(500).send({ error: true, message: error.message });
-      }
 
-      if(application.appStructure) {
-        return res.status(200).send(application.appStructure);
-      }
-      const appSettings = this.cubismo.applications.get(applicationId).settings;
-      let appStructure: any;
-      try {
-        appStructure = await this.#uimo.initApp({ appId: applicationId, cubesDir: this.cubismo.settings.cubes, appCubes: appSettings.cubes });
-        application.appStructure = appStructure;
-      } catch (error) {
-        Logger.warn(`Error on initing client side application: ${error.message}`);
-        return res.status(500).send(error.message);
-      }
-      res.status(200).send(appStructure); 
+      const appStructure = this.cubismo.getAppStructure(req.applicationId);
+      return res.status(200).send(appStructure);
     });
 
-    router.get('/app/:applicationId/cube/:cubeId', async (req, res, next) => {
-      Logger.debug(`Going to load module ${req.params.cubeId}`);
-      let application: Application;
-      const { applicationId } = req.params;
-      try {
-        application = await this.cubismo.runApplication(applicationId);
-      } catch (error) {
-        res.status(500).send({ error: true, message: error.message });
-      }
-
+    router.get('/app/:applicationId/cube/:cubeId', async (req: AppRequest, res, next) => {
       const { cubeId } = req.params;
-      let module: any;
-      
+
+      Logger.debug(`Going to load cube module ${cubeId}`);
+
+      const appStructure = this.cubismo.getAppStructure(req.applicationId);
+
       try {
-        const moduleFilename = application.appStructure.cubes[cubeId];
-        module = await this.#uimo.loadModule(cubeId.split('.')[0], moduleFilename, cubeId); 
+        const moduleFilename = appStructure.cubes[cubeId].clientModule;
+        const module = await this.cubismo.loadClientModule(cubeId, moduleFilename, cubeId);
+
+        res.status(200).setHeader('Content-Type', 'application/javascript').send(module);
       } catch (error) {
-        Logger.warn(`Error on loading module: ${error.message}`);
+        Logger.warn(`Error on loading cube module <${cubeId}>: ${error.message}`);
+
         return res.status(500).send(error.message);
       }
-      res.status(200).setHeader('Content-Type', 'application/javascript').send(module);
     });
 
-    router.get('/app/:applicationId/module/:moduleId', async (req, res, next) => {
+    router.get('/app/:applicationId/module/:moduleId', async (req: AppRequest, res, next) => {
       Logger.debug(`Going to load module ${req.params.moduleId}`);
+
       const { moduleId } = req.params;
-      let module: any;
-      const { applicationId } = req.params;
-      const application = this.cubismo.applications.get(applicationId);
-      console.log(moduleId)
+
+      const appStructure = this.cubismo.getAppStructure(req.applicationId);
+
+      let cubeName: string;
+      let moduleName: string;
+
       try {
-        const moduleFilename = application.appStructure.modules[moduleId];
-        module = await this.#uimo.loadModule(moduleId.split('.')[0], moduleFilename, moduleId); 
+        const moduleIdParts = moduleId.split('.');
+        cubeName = moduleIdParts[0];
+        moduleName = moduleIdParts[1];
       } catch (error) {
-        Logger.warn(`Error on loading module: ${error.message}`);
+        Logger.warn(`Error on parsing module ID <${moduleId}>: ${error.message}`);
         return res.status(500).send(error.message);
       }
-      res.status(200).setHeader('Content-Type', 'application/javascript').send(module);
+
+      try {
+        const moduleFilename = appStructure.cubes[cubeName][moduleName].clientModule;
+        const module = await this.cubismo.loadClientModule(cubeName, moduleFilename, moduleId); 
+
+        res.status(200).setHeader('Content-Type', 'application/javascript').send(module);
+      } catch (error) {
+        Logger.warn(`Error on loading module <${moduleId}>: ${error.message}`);
+
+        return res.status(500).send(error.message);
+      }
     });
 
     router.get('/app/:applicationId/view/:viewId', async (req, res, next) => {
       Logger.debug(`Going to load view ${req.params.viewId}`);
       const { viewId } = req.params;
-      let view: any;
+
       try {
-        view = await this.#uimo.loadView(this.cubismo.settings.cubes, viewId);
+        const view = await this.cubismo.loadView(viewId);
+
+        res.status(200).send(view);
       } catch (error) {
         Logger.warn(`Error on loading view: ${error.message}`);
+
         return res.status(500).send(error.message);
       }
-      res.status(200).send(view);
     });
 
-    router.post('/app/:applicationId/method', async (req, res, next) => {
-      const { applicationId } = req.params;
-      let application: Application;
-      try {
-        application = await this.cubismo.runApplication(applicationId);
-      } catch (error) {
-        return res.status(404).send({ error: true, message: error.message });
-      }
-
+    router.post('/app/:applicationId/method', async (req: AppRequest, res, next) => {
       const { cube, className, object, method, args } = req.body;
 
-      const handler = application.cubes[cube][className][object][method];
+      const handler = req.application.cubes[cube][className][object][method];
       if (!handler) {
         return res.status(404).send({ error: true, message: `Method ${method} is not registered` });
       }
-      const thisObject = application.cubes[cube][className][object];
+      const thisObject = req.application.cubes[cube][className][object];
       const result = await handler.call(thisObject, ...args);
-      res.status(200).send(result);
+      res.status(200).send(result || {});
     });
 
-    router.post('/app/:applicationId/instance', async (req, res, next) => {
-      const { applicationId } = req.params;
-      let application: Application;
-      try {
-        application = await this.cubismo.runApplication(applicationId);
-      } catch (error) {
-        return res.status(404).send({ error: true, message: error.message });
-      }
-
+    router.post('/app/:applicationId/instance', async (req: AppRequest, res, next) => {
       const id = req.body.options.where.id;
+
       if (!id) {
         const { cube, className, model } = req.body;
         const modelAlias = `${cube}.${className}.${model}`;
 
-        const dbDriver = this.cubismo.applications.get(applicationId).dbDriver.connection;
+        const dbDriver = this.cubismo.applications.get(req.applicationId).dbDriver.connection;
 
         const modelDefinition = (dbDriver.models[modelAlias] as unknown as DataBaseModel).definition;
         const attributes = {
@@ -387,7 +351,7 @@ export default class Router extends EventEmitter {
         };
 
         let index = 2;
-        for(let [attrName, attribute] of Object.entries(modelDefinition.attributes)) {
+        for(let [attrName, attribute] of Object.entries((modelDefinition as StandardModelDefinition).attributes)) {
           const type = attribute.type as any;
           if(type.reference.cube === 'this') {
             type.cube = modelDefinition.cube;
@@ -413,8 +377,8 @@ export default class Router extends EventEmitter {
       };
 
       try {
-        const dbDriver = this.cubismo.applications.get(applicationId).dbDriver.connection;
-        const result = await getModelList(application, dbDriver, req.body);
+        const dbDriver = this.cubismo.applications.get(req.applicationId).dbDriver.connection;
+        const result = await getModelList(req.application, dbDriver, req.body);
         if (result.error) {
           res.status(500).send(result);
         } else {
@@ -425,18 +389,11 @@ export default class Router extends EventEmitter {
       }
     });
 
-    router.post('/app/:applicationId/list', async (req, res, next) => {
-      const { applicationId } = req.params;
-      let application: Application;
-      try {
-        application = await this.cubismo.runApplication(applicationId);
-      } catch (error) {
-        return res.status(404).send({ error: true, message: error.message });
-      }
+    router.post('/app/:applicationId/list', async (req: AppRequest, res, next) => {
 
       try {
-        const dbDriver = this.cubismo.applications.get(applicationId).dbDriver.connection;
-        const result = await getModelList(application, dbDriver, req.body);
+        const dbDriver = this.cubismo.applications.get(req.applicationId).dbDriver.connection;
+        const result = await getModelList(req.application, dbDriver, req.body);
         if (result.error) {
           res.status(500).send(result);
         } else {
@@ -447,18 +404,11 @@ export default class Router extends EventEmitter {
       }
     });
 
-    router.post('/app/:applicationId/save', async (req, res, next) => {
-      const { applicationId } = req.params;
-      let application: Application;
-      try {
-        application = await this.cubismo.runApplication(applicationId);
-      } catch (error) {
-        return res.status(404).send({ error: true, message: error.message });
-      }
+    router.post('/app/:applicationId/save', async (req: AppRequest, res, next) => {
 
       try {
-        const dbDriver = this.cubismo.applications.get(applicationId).dbDriver.connection;
-        const result = await saveInstance(application, dbDriver, req.body);
+        const dbDriver = this.cubismo.applications.get(req.applicationId).dbDriver.connection;
+        const result = await saveInstance(req.application, dbDriver, req.body);
         if (result.error) {
           res.status(500).send(result);
         } else {
@@ -487,22 +437,5 @@ export default class Router extends EventEmitter {
         resolve();
       });
     });
-  }
-}
-
-function windowTemplate() {
-  const fileName = path.join(__dirname, '../client/window.html');
-  return fs.readFileSync(fileName, 'UTF-8' as null);
-}
-
-function onSessionStart(application) {
-  if (application.onSessionStart) {
-    application.onSessionStart();
-  }
-
-  for (const cube of application.cubes) {
-    if (cube.onSessionStart) {
-      cube.onSessionStart();
-    }
   }
 }

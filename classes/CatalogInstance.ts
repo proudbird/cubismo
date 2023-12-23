@@ -1,7 +1,6 @@
-import { DataBaseModel, SaveOptions } from '../database/types';
+import { CatalogModelDefinition, DataBaseModel, SaveOptions } from '../database/types';
 import Instance from './Instance';
 import Collection from './Collection';
-import { InstanceCollections } from './Collections';
 
 export default class CatalogInstance extends Instance {
 
@@ -12,7 +11,7 @@ export default class CatalogInstance extends Instance {
   #parent  : CatalogInstance;
   #owner   : CatalogInstance;
   #isFolder: boolean;
-  #collections: InstanceCollections;
+  #collections: Record<string, Collection<Instance>>;
   #saveHandlers: Function[];
 
   constructor(model: DataBaseModel, record: any) {
@@ -25,8 +24,9 @@ export default class CatalogInstance extends Instance {
     this.#collections = {};
     this.#saveHandlers = [];
 
-    for (let collectionId in this.#model.definition.collections) {
-      const collectionDefinition = this.#model.definition.collections[collectionId];
+    const definition = this.#model.definition as CatalogModelDefinition;
+    for (let collectionId in definition.collections) {
+      const collectionDefinition = definition.collections[collectionId];
       const collectionName = collectionDefinition.name;
       Object.defineProperty(this, collectionName, {
         enumerable: true,
@@ -60,7 +60,7 @@ export default class CatalogInstance extends Instance {
   get Name(): string {
 
     let fieldId = 'Name';
-    const definition = this.#model.definition;
+    const definition = this.#model.definition as CatalogModelDefinition;
     if (definition.nameLang && definition.nameLang.length) {
       const lang = this.#model.application.lang;
       if(definition.nameLang.includes(lang)) {
@@ -80,7 +80,7 @@ export default class CatalogInstance extends Instance {
   set Name(value: string) {
 
     let fieldId = 'Name';
-    const definition = this.#model.definition;
+    const definition = this.#model.definition as CatalogModelDefinition;
     if (definition.nameLang && definition.nameLang.length) {
       const lang = this.#model.application.lang;
       if(definition.nameLang.includes(lang)) {

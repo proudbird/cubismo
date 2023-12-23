@@ -1,7 +1,6 @@
 import { DataBaseModel, SaveOptions } from '../database/types';
 import Instance from './Instance';
 import Collection from './Collection'
-import { InstanceCollections } from './Collections';
 
 export default class RegistratorInstance extends Instance {
 
@@ -9,7 +8,7 @@ export default class RegistratorInstance extends Instance {
   #record  : any
   #date    : Date
   #number  : string
-  #collections: InstanceCollections;
+  #collections: Record<string, Collection<Instance>>;
   #saveHandlers: Function[];
 
   constructor(model: any, record: any) {

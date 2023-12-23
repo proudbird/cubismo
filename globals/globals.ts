@@ -8,4 +8,5 @@ global.Logger = Logger;
 //@ts-ignore
 global.Utils  = Utils;
 
+//@ts-ignore
 global.Dataroll = DataRoll;

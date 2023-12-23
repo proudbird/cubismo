@@ -1,7 +1,9 @@
-import * as TSLogger from "tslog";
+import 'source-map-support/register';
+
+// import * as TSLogger from "tslog";
 import moment from "moment";
 
-const tslog: TSLogger.Logger = new TSLogger.Logger();
+// const tslog: TSLogger.Logger = new TSLogger.Logger();
 
 enum MessageType {
     WARN  = " WARN",
@@ -100,7 +102,7 @@ function log(type: MessageType, format: string, message: string, error?: any): v
       
       log(MessageType.ERROR, MessageFormat.FgRed + MessageFormat.Bright, message);
       error = error || new Error();
-      tslog.prettyError(error)
+    //   tslog.prettyError(error);
       return
 
         log(MessageType.ERROR, MessageFormat.FgRed + MessageFormat.Bright, message, error);

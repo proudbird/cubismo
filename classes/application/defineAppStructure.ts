@@ -1,226 +1,441 @@
-import path, { join } from 'path'
-import catalogist from 'catalogist'
+import { readdirSync, statSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+import { watch } from 'chokidar';
+import anymatch from 'anymatch';
 
-import Cubismo     from '../../core/Cubismo'
+import Cubismo from '../../core/Cubismo'
+import Logger from '../../common/Logger';
 import Application from './Application'
-import Cube        from '../Cube'
+import Cube from '../Cube'
+import builtInClasses from './builtInClasses';
 import { ApplicationSettings } from '../../core/types'
 import { MetaDataTypes } from '../../common/Types'
+import MetaDataCollection from '../MetaDataCollection';
+import { ModelDefinition } from '../../database/types';
+import { getAppMemberFileName } from './helpers';
+import { MetaDataClassDefinition } from '../../classes/MetaData';
 
+const EXCLUDE_MATCHERS = [
+  '**/*.d.*',
+  '**/_test*',
+  '**/Views/**',
+  '**/Types/**'
+];
 
-enum MetaDataClasses {
-  Modules      = 'Modules',
-  Constants    = 'Constants',
-  Catalogs     = 'Catalogs',
-  Registrators = 'Registrators',
-  DataSets     = 'DataSets',
-  Enums        = 'Enums',
-  Types        = 'Types'
-}
+type AppMemberPath = {
+  module: string;
+  clientModule: string;
+};
 
-
-
-type MetaDataClasse = 'Modules' | 'Constants' | 'Catalogs' | 'Registrators' | 'DataSets' | 'Enums' | 'Types'; 
+export type AppMember = AppMemberPath & Partial<{
+  [name: string]: AppMember;
+}>;
 
 export declare type ApplicationStructure = {
-  id: string,
-  dirname: string,
-  cubes: {
-    [name: string]: {
-      filename: string,
-      classes: { 
-        [name: string]: {
-          filename: string,
-          objects: {
-            [name: string]: {
-              filename: string,
-            }
-          }
-        }
-      }
-    }
+  id: string;
+  path: string;
+  cubes: Record<string, AppMember>;
+}
+
+export type ModelStructure = {
+  [name: string]: {
+    definition: ModelDefinition,
+    module: string,
   }
 }
 
 export default function defineAppStructure(
-        cubismo : Cubismo,
-        application: Application, 
-        settings : ApplicationSettings,
-        metaDataStructure: any
-      ): IModelStructure {
+  cubismo : Cubismo,
+  application: Application, 
+  settings : ApplicationSettings,
+) {
   
-  const applicationStructure: ApplicationStructure = { id: application.id, dirname: cubismo.settings.cubes, cubes: {} };        
-  const modelStructure = {};
+  const appStructure: ApplicationStructure = { 
+    id: application.id, 
+    path: cubismo.settings.cubes, 
+    cubes: {},
+  };        
+
+  const modelStructure = {} as ModelStructure;
 
   for(let cubeName of settings.cubes) {
     defineCubeStructure(
       cubeName, 
       cubismo,
-      metaDataStructure,
       application, 
-      settings, 
-      applicationStructure, 
-      modelStructure
+      appStructure,
+      modelStructure,
     );
   }
 
-  return { modelStructure, applicationStructure };
+  return { modelStructure, appStructure };
 }
 
 function defineCubeStructure(
   cubeName: string, 
   cubismo : Cubismo,
-  metaDataStructure: any,
   application: Application, 
-  settings: ApplicationSettings, 
-  applicationStructure, 
-  modelStructure
+  appStructure: ApplicationStructure,
+  modelStructure: ModelStructure,
 ) {
 
-  const cubeFullPath = join(cubismo.settings.cubes, cubeName, '.dist');
-  const cubeModuleFile = `${cubeName}.js`;
-  
-  const _cube = new Cube(
+  const cubePath = join(cubismo.settings.cubes, cubeName);
+  const filename = getAppMemberFileName(cubePath, cubeName);
+
+  const { member: cube } = registerApplicationMember({
     cubismo,
+    owner: application,
     application,
-    undefined,
-    metaDataStructure.Cube,
-    cubeName,
-    cubeFullPath,
-    cubeModuleFile);
-                        
-  const cubeFullModuleFile = path.join(cubeFullPath, cubeModuleFile);
-  application.addCube(_cube, cubeFullModuleFile);
-  application.cubes.addCube(_cube, cubeFullModuleFile);
-  applicationStructure.cubes[cubeName] = { filename: cubeFullModuleFile, classes: {} };
+    cube: undefined,
+    type: 'Cube',
+    name: cubeName,
+    filename,
+  });
 
-  const cubeTree = catalogist.treeSync(
-    cubeFullPath, {
-      withSysRoot: true,
-      childrenAlias: "next"
-    }
-  );
+  application.cubes.add({
+    type: 'Cube',
+    name: cubeName,
+    element: cube,
+  });
 
-  for(let cubeLevel of cubeTree) {
+  const clientModule = getAppMemberFileName(cubePath, `${cubeName}.client`);
 
-    if(cubeLevel.ext.includes('.map')) {
-      // skip file
+  appStructure.cubes[cubeName] = {
+    module: filename,
+    clientModule
+  } as AppMember;
+
+  if(process.env.NODE_ENV === 'development') {
+    watchChanges(cubePath, cubismo, application, cube);
+  }
+
+  for(let maybeClassName of readdirSync(cubePath)) {
+    const path = join(cubePath, maybeClassName);
+
+    if(!statSync(path).isDirectory()) {
       continue;
     }
 
-    if(cubeLevel.fullName.includes('.d.')) {
-      // skip file
+    if(anymatch(EXCLUDE_MATCHERS, path)) {
       continue;
     }
 
-    if(cubeLevel.name === 'Types') {
-      continue;
-    }
+    appStructure.cubes[cube.name][maybeClassName] = {} as AppMember;
 
-    if(cubeLevel.name === '_test') {
-      continue;
-    }
-    
-    const className = cubeLevel.fullName;
-    if(!cubeLevel.isDirectory) {
-      continue;
-    }
-
-    let classModuleFile = cubeLevel.fullName + '.js'
-
-    const classDefinition = metaDataStructure[className]
-    if(!classDefinition) {
-      throw new Error(`Application <${application.id}> doesn't has a Data Class definition for ${className}`);
-    }
-
-    const _metaDataClass = new classDefinition.classMaker(
+    defineClassStructure(
+      path,
       cubismo,
-      application,
-      _cube,
-      classDefinition.type,
-      cubeLevel.name,
-      cubeLevel.fullPath,
-      classModuleFile);
-    
-    const fileName = path.join(cubeLevel.fullPath, classModuleFile)
+      application, 
+      cube,
+      maybeClassName,
+      appStructure,
+      modelStructure,
+    );
+  }
+}
 
-    _cube.addClass(_metaDataClass, fileName);
+function defineClassStructure(
+  path: string,
+  cubismo : Cubismo,
+  application: Application, 
+  cube: Cube,
+  className: string,
+  appStructure: ApplicationStructure,
+  modelStructure: ModelStructure,
+) {
+  const { definition: classDefinition } = registerApplicationMember({
+    cubismo,
+    owner: cube as unknown as MetaDataCollection,
+    application,
+    cube: cube,
+    type: className,
+    name: className,
+  });
 
-    applicationStructure.cubes[cubeName].classes[cubeLevel.name] = { filename: path.join(cubeLevel.fullPath, classModuleFile), objects: {} };
+  for(let maybeControllerName of readdirSync(path)) {
+    const controllerPath = join(path, maybeControllerName);
 
-    for(let classLevel of cubeLevel.next) {
+    if(anymatch(EXCLUDE_MATCHERS, controllerPath)) {
+      continue;
+    }
 
-      if(classLevel.ext.includes('.map') || classLevel.fullName.includes('.d')) {
-        // skip file
-        continue;
-      }
+    if(!statSync(controllerPath).isDirectory()) {
+      const filename = join(path, maybeControllerName);
 
-      if(classLevel.dirName === 'Modules') {
-        const _metaDataObject = new classDefinition.objectMaker(
-              cubismo,
-              application,
-              _cube,
-              classDefinition.type,
-              classLevel.name,
-              classLevel.dirFullName,
-              classLevel.fullName)
-        _cube['Modules'].addObject(_metaDataObject, classLevel.fullPath);
-        applicationStructure.cubes[cubeName].classes[cubeLevel.name].objects[classLevel.name] = { filename: classLevel.fullPath };
-        continue;
-      }
+      const { objectName } = getFileRoots(filename);
 
-      let objectName: string
-      let objectModuleFile: string
-      let objectModelDefinition: any
+      const _metaDataObject = new classDefinition.objectMaker({
+        cubismo,
+        application,
+        cube: cube,
+        type: classDefinition.objectType,
+        name: objectName,
+        filename,
+      });
 
-      let fullFileName = path.join(cubeLevel.fullPath, classLevel.fullName)
-      let fileName = classLevel.fullName
-      let splitedName = fileName.split(".")
-      
-      if (splitedName[0] === className && splitedName[2] === "js") {
-        objectName = splitedName[1]
-        objectModuleFile = fullFileName
-      }
+      (cube[className] as MetaDataCollection).add({
+        name: objectName,
+        type: classDefinition.objectType,
+        element: _metaDataObject, 
+      });
 
-      if (splitedName[0] === className && splitedName[2] === "Model" && splitedName[3] === "json") {
-        objectName = splitedName[1]
-        objectModelDefinition = require(fullFileName)
-      }
+      const clientModule = getAppMemberFileName(controllerPath, `${objectName}.client`);
 
-      if (objectModelDefinition && objectName) {
+      appStructure.cubes[cube.name][className][objectName] = {
+        module: filename,
+        clientModule,
+      } as AppMember;
+    } else {
 
-        const moduleFileName= fullFileName.replace('Model.json', 'js');
-
-        for (let key in objectModelDefinition) {
-          const definition = objectModelDefinition[key]
-          definition.id = key;
-
-          applicationStructure.cubes[cubeName].classes[cubeLevel.name].objects[definition.name] = { filename: moduleFileName };
-
-          if(classLevel.dirName === 'Enums') {
-            const values = objectModelDefinition[key].values    
-            const _metaDataObject = new classDefinition.objectMaker(
-                  cubismo,
-                  application,
-                  _cube,
-                  classDefinition,
-                  definition.name,
-                  definition.id,
-                  values)
-            _cube['Enums'].addObject(_metaDataObject, moduleFileName);
-            
-            const modelName = [_cube.name, classDefinition.type, definition.name].join(".")
-            MetaDataTypes.storeTypeById(definition.id, modelName);
-    
-            continue;
-          }
-
-          modelStructure[key] = {
-            definition: definition,
-            module: moduleFileName
-          };
-        }
-      }
+      defineController(
+        controllerPath,
+        application,
+        cube,
+        className,
+        classDefinition,
+        appStructure,
+        modelStructure,
+      );
     }
   }
+}
+
+function defineController(
+  path: string,
+  application: Application, 
+  cube: Cube,
+  className: string,
+  classDefinition: MetaDataClassDefinition,
+  appStructure: ApplicationStructure,
+  modelStructure: ModelStructure,
+) {
+  for(let controllerFilename of readdirSync(path)) {
+    const objectPath = join(path, controllerFilename);
+    const { objectName, isModel } = getFileRoots(objectPath);
+
+    if(!isModel) {
+      // on this level we need only models
+      continue;
+    }
+
+    const filename = getAppMemberFileName(path, objectName);
+    const modelDefinition = require(objectPath);
+
+    for (let key in modelDefinition) {
+      const definition = modelDefinition[key]
+      definition.id = key;
+
+      const modelName = `${cube.name}.${className}.${objectName}`;
+       
+      if(className === 'Enums') {
+        const _metaDataObject = new classDefinition.objectMaker({
+          application,
+          cube,
+          type: classDefinition.objectType,
+          name: objectName,
+          model: definition
+        });
+
+        cube[className].add({
+          name: objectName,
+          type: classDefinition.objectType,
+          element: _metaDataObject
+        });
+        
+        const model = {
+          definition: definition,
+          module: filename,
+        };
+
+        Object.defineProperty(modelStructure, modelName, {
+          value: model,
+          enumerable: false,
+        });
+
+        MetaDataTypes.storeTypeById(definition.id, modelName);
+
+      } else {
+
+        const model = {
+          definition: definition,
+          module: filename,
+        };
+
+        modelStructure[key] = model;
+        Object.defineProperty(modelStructure, modelName, {
+          value: model,
+          enumerable: false,
+        });
+      }
+    }
+
+    appStructure.cubes[cube.name][className][objectName] = {
+      module: filename,
+    } as AppMember;
+  }
+}
+
+function getFileRoots(path: string) {
+  let className: string;
+  let objectName: string;
+  let isModel = false;
+
+  const dirName = dirname(path);
+  className = basename(dirName);
+
+  if(className !== 'Modules') {
+    className = basename(dirname(dirName));
+  }
+  
+  const filename = basename(path);
+  const parts = filename.split('.');
+
+  if(parts.length < 3) {
+    // we have only name and extension
+    objectName = parts[0];
+  } else {
+    objectName = parts[0];
+    isModel = parts[1] === 'Model';
+  }
+
+  return { className, objectName, isModel };
+}
+
+interface MemberRegistrationOptions {
+  cubismo: Cubismo;
+  owner: Application | MetaDataCollection;
+  application: Application;
+  cube: Cube | undefined;
+  type: string;
+  name: string;
+  filename?: string;
+}
+
+function registerApplicationMember({
+  cubismo,
+  owner,
+  application,
+  type,
+  cube,
+  name,
+  filename,
+}: MemberRegistrationOptions) {
+
+  const definition = builtInClasses[type];
+    if(!definition) {
+      throw new Error(`Application <${application.id}> doesn't has a Data Class definition for ${name}`);
+    }
+
+  const member = new definition.classMaker({
+    cubismo,
+    application,
+    cube,
+    type: definition.type,
+    name,
+    filename
+  });
+  
+  owner.add({ 
+    name, 
+    type: definition.type,
+    element: member, 
+  });
+
+  return { member, definition, filename };
+}
+
+function getMetaDataClassDefinition(type: string, application: Application) {
+  const definition = builtInClasses[type];
+
+  if(!definition) {
+    throw new Error(`Application <${application.id}> doesn't has a Data Class definition for ${type}`);
+  }
+
+  return definition;
+}
+
+function watchChanges(path: string, cubismo: Cubismo, application: Application, cube: Cube) {
+
+  // watch for classes
+  watch(path, { 
+    ignored: EXCLUDE_MATCHERS, 
+    ignoreInitial: true, 
+    depth: 0 
+  })
+    .on('addDir', (path) => {
+      const { className } = getFileRoots(path);
+
+      registerApplicationMember({
+        cubismo,
+        owner: cube as unknown as MetaDataCollection,
+        application,
+        cube,
+        type: className,
+        name: className,
+      });
+    })
+
+    .on('unlinkDir', (path) => {
+      const { className } = getFileRoots(path);
+
+      cube.remove(className);
+    });
+
+  // watch for controllers
+  watch(path, { 
+    ignored: EXCLUDE_MATCHERS, 
+    ignoreInitial: true, 
+    depth: 1, 
+  })
+    .on('add', (path) => {
+      const { className, objectName, isModel } = getFileRoots(path);
+
+      if(!isModel) {
+        if(className === 'Modules') {
+          const classDefinition = getMetaDataClassDefinition(className, application);
+
+          const _metaDataObject = new classDefinition.classMaker({
+            cubismo,
+            application,
+            cube,
+            type: classDefinition.type,
+            name: objectName,
+            dirname: dirname(path),
+            filename: path,
+          });
+  
+          (cube['Modules'] as MetaDataCollection).add({
+            name: objectName,
+            type: classDefinition.type,
+            element: _metaDataObject, 
+          });
+
+          _metaDataObject.load();
+        }
+      }
+    })
+
+    .on('unlink', (path) => {
+      const { className, objectName, isModel } = getFileRoots(path);
+      
+      if(!isModel) {
+        if(className === 'Modules') {
+          delete cube['Modules'][objectName];
+        }
+      }
+    })
+
+    .on('change', async(path) => {
+      const { className, objectName, isModel } = getFileRoots(path);
+      
+      if(!isModel) {
+        if(className === 'Modules') {
+          const module = cube['Modules'][objectName];
+          const result = module.load && module.load();
+          if(result) {
+            Logger.debug(`Application <${application.id}>; Cube <${cube.name}>: Module <${module.name}> reloaded`);
+          }
+        }
+      }
+    });
 }

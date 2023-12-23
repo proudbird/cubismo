@@ -19,9 +19,12 @@ import {
 } from './types';
 import getListOfCubes from '../classes/application/getListOfCubes';
 import initDatabase from './initDatabase';
-import { Sequelize } from 'sequelize';
+import { Sequelize, Options } from 'sequelize';
 import Database from './Database';
 import initApplicationWorkpace from './initApplicationSpace';
+import { ApplicationStructure } from '../classes/application/defineAppStructure';
+
+import { Uimo } from 'uimo';
 
 let SECRET_KEY: string;
 let API_KEY : string;
@@ -33,6 +36,7 @@ interface ISession {
 
 export default class Cubismo {
   #database: Database;
+  #ui: Uimo;
 
   public settings : CubismoSettings;
 
@@ -54,13 +58,17 @@ export default class Cubismo {
     this.addIns = new Map();
 
     loadAddIns(this);
+
+    this.#ui = new Uimo({ pathToCubes: settings.cubes });
   }
 
   async start(applicationId?: string): Promise<void> {
 
     let application;
-    this.#database = new Database(this.settings.connection);
-    await this.#database.init();
+    if(this.settings.connection !== 'none') {
+      this.#database = new Database(this.settings.connection as Options);
+      await this.#database.init();
+    }
 
     this.router = new Router(this);
     this.router.run(this.settings.port, this.settings.host);
@@ -152,7 +160,7 @@ export default class Cubismo {
     } as DatabaseOptions;
 
     try {
-      await initDatabase(this.settings.connection, connection);
+      await initDatabase(this.settings.connection as Options, connection);
     } catch (error) {
       throw new Error(`Can't init new application database: ${error}`);
     }
@@ -216,13 +224,15 @@ export default class Cubismo {
   }
 
   async runApplication(id: string, env?: Environments): Promise<Application> {
-    let settings: ApplicationSettings;
+    let settings: ApplicationSettings = this.settings.applications[id];
 
-    try {
-      settings = await this.getAppSettings(id) as ApplicationSettings;
-      // Logger.debug(`Application <${id}> is found in the list`);
-    } catch (error) {
-      throw new Error(`Can't read application settings: ${error}`);
+    if(!settings) {
+      try {
+        settings = await this.initAppSettings(id) as ApplicationSettings;
+        // Logger.debug(`Application <${id}> is found in the list`);
+      } catch (error) {
+        throw new Error(`Can't read application settings: ${error}`);
+      }
     }
 
     const { applications } = this;
@@ -236,7 +246,7 @@ export default class Cubismo {
     return new Promise<Application>((resolve, reject) => {
       let application: Application;
 
-      async function onReady(ready: Promise<{ error: Error, mdStructure: MetaDataClassDefinitions, dbDriver: Sequelize }>) {
+      async function onReady(ready: Promise<{ error: Error, mdStructure: ApplicationStructure, dbDriver: Sequelize }>) {
         const result = await ready;
         if (result.error) {
           applications.delete(id);
@@ -276,7 +286,7 @@ export default class Cubismo {
     }
   }
 
-  async getAppSettings(id: string): Promise<ApplicationSettings | ApplicationSettings[]> {
+  async initAppSettings(id: string): Promise<ApplicationSettings> {
     let app: any;
     try {
       app = await this.#database.connection.models.applications.findOne({ where: { name: id } });
@@ -319,6 +329,57 @@ export default class Cubismo {
     settings.id = id;
 
     return settings;
+  }
+
+  getAppStructure(applicationId: string) {
+    const appMetaData = this.applications.get(applicationId);
+
+    if(appMetaData) {
+      return appMetaData.mdStructure;
+    }
+  }
+
+  async getCubeModule(applicationId: string, cubeId: string) {
+    const appMetaData = this.applications.get(applicationId);
+
+    if(appMetaData) {
+      const moduleFilename = appMetaData.mdStructure.cubes[cubeId].clientModule;
+      const module = this.loadClientModule(cubeId, moduleFilename, cubeId);
+      return module;
+    }
+  }
+
+  async callMethod(applicationId: string, params: any) {
+    const { application } = this.applications.get(applicationId);
+
+    if(application) {
+      const { cube, className, object, method, args } = params;
+
+      const handler = application.cubes[cube][className][object][method];
+      if (!handler) {
+        return { error: true, message: `Method ${method} is not registered` };
+      }
+      const thisObject = application.cubes[cube][className][object];
+      const result = await handler.call(thisObject, ...args);
+
+      return result;
+    }
+  }
+
+  getUIStaticPath() {
+    return this.#ui.static();
+  }
+
+  getIndexPage(appId: string) {
+    return this.#ui.index(appId);
+  }
+
+  async loadClientModule(cubeName: string, fileName: string, alias: string) {
+    return this.#ui.loadModule(cubeName, fileName, alias);
+  }
+
+  async loadView(viewId: string) {
+    return this.#ui.loadView(this.settings.cubes, viewId);
   }
 
   destroy() {

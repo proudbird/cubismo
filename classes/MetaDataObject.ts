@@ -1,50 +1,30 @@
-import { existsSync } from 'fs'
-
-import Cubismo     from '../core/Cubismo'
-import Application from './application/Application'
-import Cube        from './Cube'
-import { MetaDataObjectDefinition } from './MetaData'
 import MetaDataInstance from './MetaDataInstance'
 import Logger from '../common/Logger';
 import Utils from '../common/Utils';
-
-import loadModule from "./loadModule";
+import MetaDataModule from './MetaDataModule'
 
 const recordsMap = new WeakMap()
 
-export default class MetaDataObject {
+interface MetaDataObjectOptions extends MetaDataModule {
+  model: any
+  instanceMaker: MetaDataInstance
+}
+
+export default class MetaDataObject extends MetaDataModule {
   
-  #cubismo      : Cubismo
-  #application  : Application
-  #cube         : Cube
-  #name         : string
-  #type         : MetaDataObjectDefinition
-  #dirname      : string
-  #filename     : string
-  #model        : any
-  #instanceMaker: MetaDataInstance
+  #model: any;
+  #instanceMaker: MetaDataInstance;
   
-  constructor(
-        cubismo      : Cubismo,
-        application  : Application, 
-        cube         : Cube, 
-        type         : MetaDataObjectDefinition,
-        name         : string, 
-        dirname      : string, 
-        filename     : string,
-        model        : any,
-        instanceMaker: MetaDataInstance
-    ) {
+  constructor({
+    model,
+    instanceMaker,
+    ...rest
+  }: MetaDataObjectOptions) {
    
-    this.#cubismo       = cubismo
-    this.#application   = application
-    this.#cube          = cube
-    this.#name          = name
-    this.#type          = type
-    this.#dirname       = dirname
-    this.#filename      = filename
-    this.#model         = model
-    this.#instanceMaker = instanceMaker
+      super(rest);
+
+      this.#model = model;
+      this.#instanceMaker = instanceMaker;
 
     const maker = this.#instanceMaker as any
 
@@ -61,20 +41,11 @@ export default class MetaDataObject {
         values = adoptValues(values, model);
         const record = new model(values, options);
         record.collections = model.collections;
-        const instanse = new maker(model, record);
-        const clas = this.#type;
-        if (existsSync(this.#filename)) {
-             loadModule(
-              this.#filename,
-              this.#type.type,
-               this.#name,
-               instanse,
-               application,
-               instanse,
-               undefined,
-               cubismo);
-           }
-        return instanse;
+        const instance = new maker(model, record);
+        
+        this.load(instance);
+
+        return instance;
       }      
     }
 
@@ -97,16 +68,8 @@ export default class MetaDataObject {
     })
   }
 
-  get type(): string {
-    return this.#type.type
-  }
-
-  get name(): string {
-    return this.#name
-  }
-
   toString(): string {
-    return this.#name
+    return this.name;
   }
 
   new(predefinedValues?: any): MetaDataInstance {
@@ -224,7 +187,7 @@ function adoptValues(values, model) {
       adoptedValue = adoptedValue ? adoptedValue.id : null;
     }
 
-    const attribute = model.definition.attributes[property];
+    const attribute = model.definition.attributes && model.definition.attributes[property];
     if(attribute) {
       const fieldId = attribute.fieldId;
       adoptedAttribute = fieldId;

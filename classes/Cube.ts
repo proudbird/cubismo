@@ -1,56 +1,63 @@
-import Cubismo       from '../core/Cubismo'
-import Application   from './application/Application'
-import MetaDataClass from './MetaDataClass'
-import { MetaDataClassDefinition } from './MetaData'
+import i18next from 'i18next';
+import MetaDataModule from './MetaDataModule';
 
-import addElement from './addElement'
-import i18next from 'i18next'
-import { join } from 'path'
-import { existsSync, readFileSync } from 'fs'
+export default class Cube extends MetaDataModule {
 
-export default class Cube extends MetaDataClass {
+  #elements: Map<string, MetaDataModule> = new Map();
 
-  #cubismo     : Cubismo
-  #application : Application
-  #elements    : Map<string, [Cube, string]>
-  #cache       : Map<string, [number, any]>
-  #cube        : Cube
-  #dirname     : string
+  [Symbol.iterator]() {
+    const entries = this.#elements.entries();
+    let done   = false;
+    let value: any;
 
-  constructor(
-    cubismo    : Cubismo,
-    application: Application, 
-    cube       : Cube, 
-    type       : MetaDataClassDefinition,
-    name       : string, 
-    dirname    : string, 
-    filename   : string
-  ) {
+    return {
+      next: function() {
+        const next =  entries.next();
+        done = next.done;
 
-    super(
-      cubismo    ,
-      application, 
-      cube       , 
-      type       ,
-      name       , 
-      dirname    , 
-      filename   
-    )
+        if(!done) {
+          value = next.value[1];
+        }
 
-    this.#application = application
-    this.#cube        = this
-    this.#elements    = new Map()
-    this.#cache       = new Map();
-    this.#dirname     = dirname;
+        return { value, done }
+      }
+    }
   }
 
-  get cube(): Cube {
-    return this.#cube;
+  add({ name, type, element }) {
+    if(this.#elements.has(name)) {
+      throw new Error(`Application '${this.application.id}'; Cube '${this.cube.name}': ${Object.getPrototypeOf(this).constructor.name} already has ${type} '${name}'`)
+    }
+  
+    this.#elements.set(name, element);
+  
+    Object.defineProperty(this, Object.getPrototypeOf(element).constructor.name, {
+      value: element,
+      enumerable: true,
+      writable: false,
+      configurable: true,
+    })
+  
+    return element;
   }
 
-  addClass(element: IMetaDataClass, fileName: string): IMetaDataClass {
-    return addElement(element, this, this.#cubismo, this.#application, this.#elements, this.#cache, fileName)
-  } 
+  remove(name: string) {
+    if(!this.#elements.has(name)) {
+      throw new Error(`Application '${this.application.id}'; Cube '${this.cube.name}': ${Object.getPrototypeOf(this).constructor.name} doesn't has ${name}`)
+    }
+  
+    this.#elements.delete(name);
+  
+    delete this[name];
+  }
+
+  load(): void {
+    super.load();
+
+    for(let [_, module] of this.#elements) {
+      module && module.load && module.load();
+    }
+  }
 
   t(key: string) {
     return i18next.t(key, { ns: this.name });

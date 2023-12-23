@@ -1,6 +1,4 @@
-import EventEmitter from 'events'
 import path from 'path'
-
 import iconv from 'iconv-lite';
 
 import DBDriver from '../../database/DBDriver';
@@ -8,44 +6,25 @@ import Query from '../../database/queries/Query';
 
 import Cubismo     from '../../core/Cubismo'
 import Cubes       from '../Cubes'
-import Cube        from '../Cube'
-import Modules     from '../Modules'
-import Module      from '../Module'
-import Constants from '../Constants';
-import Constant from '../Constant';
-import ConstantValue from '../ConstantValue';
-import Catalogs    from '../Catalogs'
-import Catalog     from '../Catalog'
-import CatalogInstance from '../CatalogInstance'
-import Registrators    from '../Registrators'
-import Registrator     from '../Registrator'
-import RegistratorInstance from '../RegistratorInstance'
-import DataSets    from '../DataSets'
-import DataSet     from '../DataSet'
-import DataSetRecord from '../DataSetRecord'
-import Enums    from '../Enums'
-import Enum     from '../Enum'
-import Collections    from '../Collections'
-import CollectionItem from '../CollectionItem'
-import { MetaDataClassDefinition } from '../MetaData'
+
 import { MetaDataClassDefinitions } from '../MetaData'
 
-import defineAppStructure   from './defineAppStructure'
+import defineAppStructure, { ApplicationStructure, ModelStructure }   from './defineAppStructure'
 import defineModelStructure from './defineModelStructure'
 import syncDBStructure from '../../database/syncDBStructure'
 
-import { ConnectionConfig } from '../../database/types'
-
-import addElement from '../addElement'
-import getListOfCubes from './getListOfCubes';
-import loadMetaDataModules from './loadMetaDataModules';
 import initSystemTables from './initSystemTables';
 import { Users } from '../../database/system/users';
 import { ApplicationSettings, Environments } from '../../core/types';
-import { fstat } from 'fs-extra';
+
 import FS from '../../common/FS';
 import Dictionary from '../../common/Dictionary';
 import i18next from 'i18next';
+import MetaDataModule from '../MetaDataModule';
+import buildDefinitionsFiles from '../../dev/types-builder/buildDefinitionsFiles';
+import { watch } from 'chokidar';
+
+import Logger from '../../common/Logger';
 
 let workspaceDir: string;
 
@@ -55,7 +34,7 @@ export default class Application implements IApplication  {
   #settings : ApplicationSettings
   #cubismo  : Cubismo
   #cubes    : Cubes
-  #elements : Map<string, [Cube, string]>
+  #elements : Map<string, MetaDataModule>
   #cache    : Map<string, [number, any]>
   #mdClasses: MetaDataClassDefinitions
   #dbDriver : DBDriver
@@ -79,8 +58,7 @@ export default class Application implements IApplication  {
     this.#cache    = new Map()
     this.#dbDriver = new DBDriver(settings.connection);
     this.#settings = settings
-    this.#mdClasses= new Map()
-    this.#cubes    = new Cubes(cubismo, this);
+    this.#cubes    = new Cubes({ application: this });
 
     this.#api      = new Map();
     this.#dictionary = new Dictionary(settings);
@@ -95,38 +73,65 @@ export default class Application implements IApplication  {
 
     this.Query = new Query(this, this.#dbDriver.connection);
 
-    const defaultTypes = {
-      Cube    : addMetaDataClassDefinition(this.#mdClasses, 'Cube'    , 'Cube'   , Cube   ),
-      Modules : addMetaDataClassDefinition(this.#mdClasses, 'Modules' , 'Module' , Modules , Module),
-      Constants: addMetaDataClassDefinition(this.#mdClasses, 'Constants', 'Constant', Constants, Constant, Constant),
-      Catalogs: addMetaDataClassDefinition(this.#mdClasses, 'Catalogs', 'Catalog', Catalogs, Catalog, CatalogInstance),
-      Registrators: addMetaDataClassDefinition(this.#mdClasses, 'Registrators', 'Registrator', Registrators, Registrator, RegistratorInstance),
-      DataSets: addMetaDataClassDefinition(this.#mdClasses, 'DataSets', 'DataSet', DataSets, DataSet, DataSetRecord),
-      Enums   : addMetaDataClassDefinition(this.#mdClasses, 'Enums'   , 'Enum'   , Enums   , Enum),
-      Collections: addMetaDataClassDefinition(this.#mdClasses, 'Collections', 'Collection', undefined, Collections, CollectionItem)
-    };
-
     const ready = new Promise(async (resolve, reject) => {
       
-      let modelStructure;
-      let applicationStructure;
+      let modelStructure: ModelStructure;
+      let appStructure: ApplicationStructure;
       try {
         const result = defineAppStructure(
           cubismo,
           this, 
-          settings,
-          defaultTypes);
+          settings);
 
         modelStructure = result.modelStructure;
-        applicationStructure = result.applicationStructure; 
+        appStructure = result.appStructure; 
         
-        await initSystemTables(this, this.#dbDriver);
-        await defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure, defaultTypes);
-        await syncDBStructure(this, this.#dbDriver);
+        if(this.#settings.connection !== 'none') {
+          await initSystemTables(this, this.#dbDriver);
+          await defineModelStructure(cubismo, this,  this.#dbDriver.connection, modelStructure);
+          await syncDBStructure(this, this.#dbDriver);
+        }
+
         await initInternationalization(this.lang);
-        loadMetaDataModules(cubismo, this, applicationStructure); 
+
+        if(process.env.NODE_ENV === 'development') {
+          const buildTypes = () => buildDefinitionsFiles({ appStructure, modelStructure});
+
+          buildTypes();
+
+          const EXCLUDE_MATCHERS = [
+            '**/tsconfig.json',
+            '**/*.d.ts',
+            '**/_test*',
+            '**/Views/**',
+            '**/Types/**',
+            '**/node_modules/**'
+          ];
+
+          watch(cubismo.settings.cubes, { 
+            ignored: EXCLUDE_MATCHERS, 
+            ignoreInitial: true, 
+            awaitWriteFinish: true,
+            interval: 500,
+          })
+            .on('add', (path) => {
+              buildTypes();
+            })
+        
+            .on('unlink', (path) => {
+              buildTypes();
+            })
+        
+            .on('change', async(path) => {
+              buildTypes();
+            });
+        }
+
+        this.load();
+        
         await onStart(this);
-        resolve({ error: null, mdStructure: applicationStructure, dbDriver: this.#dbDriver}); 
+
+        resolve({ error: null, mdStructure: appStructure, dbDriver: this.#dbDriver}); 
       } catch (error) {
         const convertedMessage = iconv.decode(error.message, 'win1251');
         error.message = `Can't initialize application '${this.#id}': ${convertedMessage}`
@@ -135,32 +140,29 @@ export default class Application implements IApplication  {
     });
 
     onReady(ready);
-
-
-    function addMetaDataClassDefinition(metaDataClassDefinitions : Map<string, MetaDataClassDefinition>,
-                                        name          : string, 
-                                        objectName    : string, 
-                                        classMaker    : IMetaDataClass, 
-                                        objectMaker?  : IMetaDataObject,
-                                        instanceMaker?: IMetaDataInstance
-                                     ): MetaDataClassDefinition | undefined {
-    
-      if(metaDataClassDefinitions.has(name)) {
-        throw new Error(`Application already has type '${name}'`)
-      }
-      
-      const definition = new MetaDataClassDefinition(name, objectName, classMaker, objectMaker, instanceMaker)
-      metaDataClassDefinitions.set(name, definition)
-      
-      return definition
-    }
-
   }
 
-  addCube(element: ICube, fileName: string): ICube {
-    //@ts-ignore
-    return addElement(element, this, this.#cubismo, this,  this.#elements, this.#cache, fileName)
-  } 
+  add({ name, type, element }) {
+    if(this.#elements.has(name)) {
+      throw new Error(`Application '${this.#id}' already has ${type} '${name}'`)
+    }
+  
+    this.#elements.set(name, element);
+  
+    Object.defineProperty(this, element.name, {
+      value: element,
+      enumerable: true,
+      writable: false,
+    })
+  
+    return element;
+  }
+
+  load(): void {
+    for(let [_, module] of this.#elements) {
+      module && module.load && module.load();
+    }
+  }
 
   get id(): string {
       return this.#id
@@ -214,7 +216,11 @@ async function onStart(application: Application) {
 
   for(let cube of application.cubes) {
     if(cube['onStart']) {
-      await cube['onStart']();
+      try {
+        await cube['onStart']();
+      } catch (error) {
+        Logger.error(`Can't run onStart() of cube '${cube.name}': ${error.message}`, error);
+      }
     }
   }
 }

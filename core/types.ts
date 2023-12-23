@@ -1,3 +1,4 @@
+import { ApplicationStructure } from '../classes/application/defineAppStructure';
 import { MetaDataClassDefinitions } from '../classes/MetaData';
 import Application from '../classes/application/Application';
 import { ConnectionConfig } from '../database/types';
@@ -8,7 +9,7 @@ export type DatabaseOptions = Sequelize.Options
 export declare type CubismoSettings = {
   port: number,
   host: string,
-  connection: Sequelize.Options,
+  connection: Sequelize.Options | 'none',
   apiKey?: string,
   apiKeyHeader?: string,
   tokenKey?: string,
@@ -26,6 +27,9 @@ export declare type CubismoSettings = {
   },
   templates: {
     [id: string]: string[]
+  },
+  applications?: {
+    [id: string]: ApplicationSettings
   }
 }
 
@@ -33,7 +37,7 @@ export declare type Applications = {
   application : Application,
   settings   ?: ApplicationSettings,
   cubes      ?: string[],
-  mdStructure?: MetaDataClassDefinitions,
+  mdStructure?: ApplicationStructure,
   enums      ?: EnumStore,
   workspace  ?: string,
   [key: string]: any
@@ -42,7 +46,7 @@ export declare type Applications = {
 export declare type ApplicationSettings = {
   workspace: string
   defaultLang: string
-  connection: Sequelize.Options
+  connection: Sequelize.Options | 'none';
   cubes: string[]
 }
 

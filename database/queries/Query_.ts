@@ -287,17 +287,17 @@ function addSubQueryAttributes(source: QueryDataSource, target: QueryDataSource)
     }
   }
 
-  if(source.definition.codeLenght) {
+  if(source.definition.codeLength) {
     target.definition.joinedAttributes['Code'] = {
       fieldId: 'Code',
       type: {
         dataType: source.definition.codeType,
-        length: source.definition.codeLenght
+        length: source.definition.codeLength
       }
     }
   }
 
-  if(source.definition.nameLenght) {
+  if(source.definition.nameLength) {
     let fieldId = 'Name';
     if (source.definition.nameLang && source.definition.nameLang.length) {
       fieldId = fieldId + '_' + source.application.lang;
@@ -306,7 +306,7 @@ function addSubQueryAttributes(source: QueryDataSource, target: QueryDataSource)
       fieldId: fieldId,
       type: {
         dataType: 'STRING',
-        length: source.definition.nameLenght
+        length: source.definition.nameLength
       }
     }
   }
@@ -372,10 +372,10 @@ function defineAllFields(schema: QuerySchema): void {
     defineField('Reference', schema); 
   }
 
-  if(definition.nameLenght) {
+  if(definition.nameLength) {
     defineField('Name', schema);
   }
-  if(definition.codeLenght) {
+  if(definition.codeLength) {
     defineField('Code', schema);
   }
   if(definition.multilevel) {
@@ -440,10 +440,10 @@ function defineJoinField(fieldStatement: string, joinModel: QueryDataSource, sch
 function defineAllJoinFields(joinModel: QueryDataSource, schema: QuerySchema, query: JoinStatement): void {
 
   const definition = joinModel.definition;
-  if(definition.nameLenght) {
+  if(definition.nameLength) {
     addFieldDefinition('Name', 'Name', joinModel, schema);
   }
-  if(definition.codeLenght) {
+  if(definition.codeLength) {
     addFieldDefinition('Code', 'Code', joinModel, schema);
   }
   if(definition.multilevel) {

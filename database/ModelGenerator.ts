@@ -217,29 +217,29 @@ export default class ModelGenerator extends EventEmitter {
       }
 
       // catalog may be without property Code
-      if (model.codeLenght > 0) {
+      if (model.codeLength > 0) {
         attributes.Code = {
-          type         : model.codeType == "INTEGER" ? DataTypes.INTEGER : DataTypes.STRING(model.codeLenght),
+          type         : model.codeType == "INTEGER" ? DataTypes.INTEGER : DataTypes.STRING(model.codeLength),
           autoIncrement: false, //model.autoIncrement,
           unique       : model.uniqueCode
         }
       }
 
       // catalog may be without property Name
-      if (model.nameLenght > 0) {
+      if (model.nameLength > 0) {
         // 'Name' can be in diffrent languges
         if (Array.isArray(model.nameLang) && model.nameLang.length > 0) {
           for (let i = 0; i < model.nameLang.length; i++) {
             const lang = model.nameLang[i]
             attributes["Name_" + lang] = {
-              type  : DataTypes.STRING(model.nameLenght),
+              type  : DataTypes.STRING(model.nameLength),
               unique: model.uniqueName || false
             }
           }
         }
         else {
           attributes.Name = {
-            type  : DataTypes.STRING(model.nameLenght),
+            type  : DataTypes.STRING(model.nameLength),
             unique: model.uniqueName || false
           }
         }

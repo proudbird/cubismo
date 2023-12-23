@@ -14,7 +14,11 @@ declare type Context = {
 
 declare function t(key: string): string
 
-declare interface ICube {
+declare interface IConstructable {
+  new (...args: any[])
+}
+
+declare interface ICube extends IConstructable {
   t(key: string): string
 }
 
