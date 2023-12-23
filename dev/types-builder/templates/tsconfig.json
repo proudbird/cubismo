@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "noImplicitThis": false,
+    "noImplicitAny": false,
+    "jsx": "preserve",
+    "forceConsistentCasingInFileNames": true,
+  }
+}
